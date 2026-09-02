@@ -1,7 +1,44 @@
 import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.png";
 import { MdOutlineEmail } from "react-icons/md";
+import supabase from "../supabaseClient";
+import { useLocation } from "react-router-dom";
+import { useState } from "react";
 
 function VerifyAccount() {
+  const location = useLocation();
+  const email = location.state?.email;
+
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const handleResendEmail = async () => {
+    setMessage("");
+
+    if (!email) {
+      setMessage("Email address not found. Please create your account again.");
+      return;
+    }
+
+    setIsSending(true);
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    setIsSending(false);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage("Verification email sent.");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       {/* Background Image */}
@@ -23,19 +60,23 @@ function VerifyAccount() {
               Verify your account
             </h1>
             <p className="mt-2 text-base text-gray-600">
-              Please check your email for instructions on verifying your account.
+              If this email is eligible, verification instructions were sent to your inbox.
             </p>
           </div>
 
-
-            {/* Change button type to this when we end up handling button */}
-            {/* <button type="button" onClick={handleResendEmail}> */}
           <button
             type="button"
             className="w-full h-12 rounded-xl bg-zinc-800 text-xl font-medium text-white cursor-pointer"
+            onClick={handleResendEmail}
+            disabled={isSending}
           >
-            Resend Email
+            {isSending ? "Sending..." : "Resend Email"}
           </button>
+          {message && (
+            <p className="text-center text-sm font-medium text-green-700">
+              {message}
+            </p>
+          )}
         </div>
       </div>
     </div>

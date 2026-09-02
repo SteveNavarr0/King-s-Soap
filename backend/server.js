@@ -18,7 +18,7 @@ app.use(helmet());// For security headers
 
 app.use(morgan("dev"));// For logging HTTP requests
 
-app.get("/api/products", productRoutes);
+app.use("/api/products", productRoutes);
 
 app.listen(PORT, () => {
     console.log("Server is running on port " + PORT);

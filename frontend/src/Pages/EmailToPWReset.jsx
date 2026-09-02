@@ -1,6 +1,28 @@
 import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.png";
+import { NavLink } from "react-router-dom";
+import supabase from "../supabaseClient";
 
 function EmailToPWReset() {
+  const handleResetPassword = async () => {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      "cnugent773@gmail.com",
+      "king.glory11@gmail.com",
+      "hsuppal@csus.edu",
+      "imranahmad@csus.edu",
+      "rylandporter@csus.edu",
+      "stevenavarro@csus.edu",
+      {
+        redirectTo: "http://localhost:5173/UserChangePassword",
+      }
+    );
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert("Reset email sent.");
+    };
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       {/* Background Image */}
@@ -30,15 +52,18 @@ function EmailToPWReset() {
             {/* Change button type to this when we end up handling button */}
             {/* <button type="button" onClick={handleResendEmail}> */}
           <div className="flex gap-4">
-            <button
-              type="button"
-              className="flex-1 h-12 rounded-xl border border-zinc-800 text-xl font-medium text-zinc-800 cursor-pointer bg-transparent"
-            >
+            
+            <NavLink to="/Login"
+              className={({ isActive }) =>
+                'flex-1 h-12 rounded-xl border border-zinc-800 text-xl font-medium text-zinc-800 cursor-pointer bg-transparent flex items-center justify-center hover:scale-101 hover:text-[#8B6B4A]'
+              }
+              >
               Cancel
-            </button>
+            </NavLink>
 
             <button
               type="button"
+              onClick={handleResetPassword}
               className="flex-1 h-12 rounded-xl bg-zinc-800 text-xl font-medium text-white cursor-pointer"
             >
               Reset Password

@@ -17,7 +17,7 @@ function Footer() {
           <FaEnvelope />
         </a>
 
-        <a href="Cell:19168569659">
+        <a href="tel:19168569659">
           <FaPhoneAlt />
         </a>
 
@@ -26,7 +26,7 @@ function Footer() {
         </a>
       </div>
 
-      <p className="mt-3 text-md font-[Inter]">
+      <p className="mt-3 mb-3 text-md font-[Inter]">
         Sacramento, CA • kinganita25@gmail.com • (916) 856-9659 • @kingssoap
       </p>
 

@@ -1,101 +1,104 @@
 import supabase from "../supabaseClient";
 import { Link, NavLink } from "react-router-dom";
 import { BsBag } from "react-icons/bs";
+import { UserAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const getImageUrl =  (imagePath) => {
     const { data } = supabase.storage
       .from("Product Images")
       .getPublicUrl(imagePath);
       return data.publicUrl;
-  };
+};
 
 function Navbar() {
-    const logo = getImageUrl("images/logo.png");
-    return (
-        <nav className = "bg-[#C5AE98] text-[#FFFFFF] p-2 text-center">
 
-            <div className = "flex justify-between items-center">
-                
-                <div>
+  const { user, signOutUser, loading } = UserAuth();
 
-                    <Link to = "/" className="block outline-none" >
+  console.log("NAVBAR USER:", user);
+  console.log("NAVBAR LOADING:", loading);
 
-                    <img src={logo} alt="Logo" className="h-32 w-auto block" />
-                    <img src={logo} alt="Logo" className="h-30" /> {/*Need to change image*/}
-                    
-                    </Link>
+  const handleLogout = async () => {
+    const { error } = await signOutUser();
 
-                </div>
+    if(error) {
+      console.log(error.message);
+    }
+  };
 
-                <div className = "space-x-8 pr-8 font-[Inter] text-lg">
-                    <NavLink 
-            
-                        to= "/" 
-                        className={({ isActive }) => 
-                        `inline-block transition duration-200 hover:scale-105 ${
-                        isActive ? "text-[#8B6B4A]" : ""                      }`
-                        }    
-                    > 
-                    Home
-                    
-                    </NavLink>
+  const logo = getImageUrl("images/logo.png");
 
-                    <NavLink 
-            
-                        to= "/shop" 
-                        className={({ isActive }) => 
-                        `inline-block transition duration-200 hover:scale-105 ${
-                        isActive ? "text-[#8B6B4A]" : ""                      }`
-                        }    
-                    > 
-                    Shop
-                    
-                    </NavLink>
+  return (
+    <nav className="bg-[#C5AE98] text-[#FFFFFF] p-2 text-center">
+      <div className="flex justify-between items-center">
 
-                    <NavLink 
-            
-                        to= "/about" 
-                        className={({ isActive }) => 
-                        `inline-block transition duration-200 hover:scale-105 ${
-                        isActive ? "text-[#8B6B4A]" : ""                      }`
-                        }    
-                    > 
-                    About
-                    
-                    </NavLink>
+        <div>
+          <Link to="/" className="block outline-none">
+            <img src={logo} alt="Logo" className="h-32 w-auto block" />
+          </Link>
+        </div>
 
-                    <NavLink 
-            
-                        to= "/cart" 
-                        className={({ isActive }) => 
-                        `inline-block transition duration-200 hover:scale-105 ${
-                        isActive ? "text-[#8B6B4A]" : ""                      }`
-                        }    
-                    > 
-                    <BsBag className="text-2xl translate-y-[3px]" />
-                    
-                    </NavLink>
+        <div className="space-x-8 pr-8 font-[Inter] text-lg">
+          
+          <NavLink to="/" className={({ isActive }) =>
+            `inline-block transition duration-200 hover:scale-105 ${
+              isActive ? "text-[#8B6B4A]" : ""
+            }`
+          }>
+            Home
+          </NavLink>
 
-                   <NavLink
+          <NavLink to="/shop" className={({ isActive }) =>
+            `inline-block transition duration-200 hover:scale-105 ${
+              isActive ? "text-[#8B6B4A]" : ""
+            }`
+          }>
+            Shop
+          </NavLink>
 
-                        to="/login"
-                        end
-                        className={({ isActive }) =>
-                        `inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 ${
-                        isActive ? "text-[#8B6B4A] border-[#8B6B4A]"
-                        : "text-white border-white"                         }`
-                        }
-                    >
-                    Log in
+          <NavLink to="/about" className={({ isActive }) =>
+            `inline-block transition duration-200 hover:scale-105 ${
+              isActive ? "text-[#8B6B4A]" : ""
+            }`
+          }>
+            About
+          </NavLink>
 
-                    </NavLink>
+          <NavLink to="/cart" className={({ isActive }) =>
+            `inline-block transition duration-200 hover:scale-105 ${
+              isActive ? "text-[#8B6B4A]" : ""
+            }`
+          }>
+            <BsBag className="text-2xl translate-y-[3px]" />
+          </NavLink>
 
-                </div>
+          {!loading && user ? (
+            <button
+              onClick={handleLogout}
+              className="inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 text-white border-white"
+            >
+              Logout
+            </button>
+          ) : (
+            <NavLink
+              to="/login"
+              end
+              className={({ isActive }) =>
+                `inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 ${
+                  isActive
+                    ? "text-[#8B6B4A] border-[#8B6B4A]"
+                    : "text-white border-white"
+                }`
+              }
+            >
+              Log in
+            </NavLink>
+          )}
+        </div>
 
-            </div>
-
-        </nav>
-    );
+      </div>
+    </nav>
+  );
 }
 
 export default Navbar;
