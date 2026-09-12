@@ -19,7 +19,11 @@ import AdminCreateProduct from "./Pages/AdminCreateProduct"
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminDeleteProduct from "./Pages/AdminDeleteProduct";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
-
+import CoconutOilShop from "./Pages/CoconutOilShop.jsx"
+import OrganicShop from "./Pages/OrganicShop.jsx"
+import AllNaturalShop from "./Pages/AllNaturalShop.jsx"
+import LipBalmShop from "./Pages/LipBalmShop.jsx"
+import SoapDishShop from "./Pages/SoapDishShop.jsx"
 
 
 
@@ -53,7 +57,11 @@ function App() {
         <Route path="/adminUpdateProduct" element={<AdminUpdateProduct />} />
         <Route path="/adminDeleteProduct" element={<AdminDeleteProduct />} />
         <Route path="/adminUpdateWebsitePhoto" element={<AdminUpdateWebsitePhoto />} />
-
+        <Route path="/coconutOilShop" element={<CoconutOilShop />} />
+        <Route path="/organicShop" element={<OrganicShop/>} />
+        <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
+        <Route path="/lipBalmShop" element={<LipBalmShop/>} />
+        <Route path="/soapDishShop" element={<SoapDishShop/>} />
 
 
       </Routes>
