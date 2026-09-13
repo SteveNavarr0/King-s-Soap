@@ -115,7 +115,6 @@ function OldUIAdminDeleteProduct() {
             <div>
                 <label className="block text-sm text-gray-800 mb-2">Select Item to Delete</label>
                 <select className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-grey text-gray-700 outline-none"
-                  {/* Set selected product*/}
                   onChange={(e) => {
                     const product = products.find(
                       (p) => p.id.toString() === e.target.value
@@ -123,7 +122,7 @@ function OldUIAdminDeleteProduct() {
                     setSelectedProduct(product);
                   }}
                   >
-                    {/* Populate dropdown with product names */}
+                    
                     <option value="">Select a product</option>
                     {products.map((product) =>(
                       <option key={product.id} value={product.id}>
