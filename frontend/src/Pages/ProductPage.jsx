@@ -247,7 +247,12 @@ const ProductPage = () => {
 
             {/* stock display */}
             <p className="text-sm">
-              {product.stock > 4 ? `In Stock (${product.stock})` : `Limited Stock!(${product.stock})`}
+              {product.stock === 0
+              ? "Out of Stock"
+              : product.stock > 4
+              ? `In Stock (${product.stock})`
+              : `Limited Stock! (${product.stock})`
+              }
             </p>
 
 
