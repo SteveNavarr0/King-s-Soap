@@ -2,6 +2,13 @@ import { useState } from "react";
 import AdminHeader from "../components/AdminHeader";
 import AdminNav from "../components/AdminNav";
 import AdminImageManager from "../components/AdminImageManager";
+const categoryOptions = [
+  "Coconut Oil",
+  "All Natural",
+  "Organic",
+  "Lip Balm",
+  "Soap Dish",
+]; // restrict category options for easier filtering when adding an item
 
 
 //Function to add all fields to the database
@@ -11,11 +18,20 @@ function AdminCreateProduct() {
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
   const [weight, setWeight] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState([]);// change to array, maybe change how we are storing in the db?
   const [newImages, setNewImages] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const toggleCategory = (selectedCategory) => { // checks whether or not the category has already been selected 
+  if (category.includes(selectedCategory)) { //means the category has already been selected
+    setCategory(
+      category.filter((category) => category !== selectedCategory) // Removes the selected category
+    );
+  } else {
+    setCategory([...category, selectedCategory]); // sets the selected categories
+  }
+  };
   
   //Add all fields to the product table
   const dBAddItem = async () => {
@@ -59,7 +75,7 @@ function AdminCreateProduct() {
       formData.append("description", description);
       formData.append("stock", stock);
       formData.append("weight", weight);
-      formData.append("category", category);
+      formData.append("category", category.join(", ")); // split text for db handling
 
 
       //Loops through selected files and adds to formData
@@ -93,7 +109,7 @@ function AdminCreateProduct() {
           setDescription("");
           setStock("");
           setWeight("");
-          setCategory("");
+          setCategory([]);//changed to set for array
           setNewImages([]);
           setSuccess("");
         }, 3000);
@@ -185,12 +201,29 @@ function AdminCreateProduct() {
 
 
             <div>
-                <label className="block text-md md:text-2xl text-white mb-2">Category tag</label>
-                <input
-                placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
-                value = {category} onChange = {(e) => setCategory(e.target.value)}
-                />
+            <label className="block text-md md:text-2xl text-white mb-2">
+              Category tags
+            </label>
+            <details className="relative">
+            <summary className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 cursor-pointer list-none">
+            {category.length > 0 ? category.join(", ") : "Select"} {/*Checks whether or not any categories have been selected, displays them */}
+            </summary>
+            <div className="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg overflow-hidden">
+              {/*Loop through every option in category options */}
+            {categoryOptions.map((option) => (
+           <label key={option} 
+            className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 cursor-pointer"
+           ><input 
+            type="checkbox"
+            checked={category.includes(option)}
+            onChange={() => toggleCategory(option)} 
+            className="h-4 w-4"
+          />
+            <span>{option}</span> {/*Display category name */}
+            </label>
+            ))}
+            </div>
+            </details>
             </div>
 
 
