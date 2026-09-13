@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Home from "./Pages/Home";
 import Shop from "./Pages/Shop";
 import About from "./Pages/About";
@@ -17,13 +17,24 @@ import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
 import AdminCreateProduct from "./Pages/AdminCreateProduct";
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
-import AdminDeleteProduct from "./Pages/AdminDeleteProduct";
+import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
+
+function AppContent({ children }) {
+  const location = useLocation();
+  const isAdminPage = location.pathname.toLowerCase().startsWith('/admin'); // Check if the current path starts with '/admin'
+
+  return isAdminPage ? null : children; //If it's an admin page, don't render the children (Navbar and Footer), otherwise render them
+}
+
 
 function App() {
   return (
     <BrowserRouter>
-      <Navbar />
+      
+      <AppContent> {/* Makes the navbar a child */}
+        <Navbar />
+      </AppContent>
 
       <div className="flex flex-col min-h-screen">
         <div className="flex-grow">
@@ -43,8 +54,8 @@ function App() {
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/adminCreateProduct" element={<AdminCreateProduct />} />
-            <Route path="/adminUpdateProduct" element={<AdminUpdateProduct />} />
-            <Route path="/adminDeleteProduct" element={<AdminDeleteProduct />} />
+            <Route path="/adminUpdateProduct/:id" element={<AdminUpdateProduct />} /> {/* Dynamic url for whatever product is clicked */}
+            <Route path="/adminProducts" element={<AdminProducts />} />
             <Route
               path="/adminUpdateWebsitePhoto"
               element={<AdminUpdateWebsitePhoto />}
@@ -52,7 +63,10 @@ function App() {
           </Routes>
         </div>
 
+      <AppContent> {/* Makes the footer a child */}
         <Footer />
+      </AppContent>
+        
       </div>
     </BrowserRouter>
   );
