@@ -22,6 +22,11 @@ const ProductPage = () => {
   // stores how many items the user wants to buy
   const [quantity, setQuantity] = useState(1);
 
+  // scroll to the top whenever a product page opens
+  useEffect(() => {
+  window.scrollTo(0, 0);
+  }, [id]);
+
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
