@@ -9,23 +9,14 @@ export const AuthContextProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
-
-      const { data, error } = await supabase.auth.getSession();
-      console.log("Refresh session:", data.session);
-
-      if (error) {
-        console.error(error.message);
-      } else {
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-      }
-
+    // 1. Fetch current session on initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       setLoading(false);
-    };
+    });
 
-    getSession();
-
+    // 2. Listen for auth changes (sign in, sign out, token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -40,34 +31,32 @@ export const AuthContextProvider = ({ children }) => {
   }, []);
 
   const signInUser = async (email, password) => {
+    setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-      if (error) {
-        setLoading(false);
-        return { data, error};
-      }
-      
-        console.log("Login success:", data);
+    if (error) {
+      setLoading(false);
+      return { data, error };
+    }
 
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        setLoading(false);
+    // Immediately update context so navigation doesn't race ahead of state
+    setSession(data.session);
+    setUser(data.session?.user ?? null);
+    setLoading(false);
 
     return { data, error };
   };
 
   const signOutUser = async () => {
     const { error } = await supabase.auth.signOut();
-    
     if (!error) {
-    setSession(null);
-    setUser(null);
-  }
-          setLoading(false);
-
+      setSession(null);
+      setUser(null);
+    }
+    setLoading(false);
     return { error };
   };
 
@@ -86,6 +75,6 @@ export const AuthContextProvider = ({ children }) => {
   );
 };
 
-export const UserAuth = () => {
+export const useAuth = () => {
   return useContext(AuthContext);
 };

@@ -1,8 +1,7 @@
 import supabase from "../supabaseClient";
 import { Link, NavLink } from "react-router-dom";
 import { BsBag } from "react-icons/bs";
-import { UserAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const getImageUrl =  (imagePath) => {
     const { data } = supabase.storage
@@ -13,18 +12,7 @@ const getImageUrl =  (imagePath) => {
 
 function Navbar() {
 
-  const { user, signOutUser, loading } = UserAuth();
-
-  console.log("NAVBAR USER:", user);
-  console.log("NAVBAR LOADING:", loading);
-
-  const handleLogout = async () => {
-    const { error } = await signOutUser();
-
-    if(error) {
-      console.log(error.message);
-    }
-  };
+  const { user, loading } = useAuth();
 
   const logo = getImageUrl("images/logo.png");
 
@@ -73,12 +61,18 @@ function Navbar() {
           </NavLink>
 
           {!loading && user ? (
-            <button
-              onClick={handleLogout}
-              className="inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 text-white border-white"
-            >
-              Logout
-            </button>
+            <>
+              <NavLink
+                to="/userAccount"
+                className={({ isActive }) =>
+                  `inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 ${
+                    isActive ? "text-[#8B6B4A] border-[#8B6B4A]" : "text-white border-white"
+                  }`
+                }
+              >
+                Account
+              </NavLink>
+            </>
           ) : (
             <NavLink
               to="/login"
