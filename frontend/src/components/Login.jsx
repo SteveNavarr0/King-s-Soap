@@ -1,7 +1,7 @@
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import supabase from "../supabaseClient";
-import { UserAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 const getImageUrl = (imagePath) => {
   const { data } = supabase.storage
@@ -12,7 +12,7 @@ const getImageUrl = (imagePath) => {
 
 function HomeLogin() {
   const backgroundImage = getImageUrl("images/login-background-image.png");
-  const { signInUser } = UserAuth();
+  const { signInUser } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
