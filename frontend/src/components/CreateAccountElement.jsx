@@ -61,13 +61,17 @@ function CreateAccount() {
                 emailRedirectTo: `${window.location.origin}/login`,
             },
         });
-
+console.log("SIGNUP DATA:", data);
+console.log("SIGNUP ERROR:", error);
         setIsSubmitting(false);
 
 
         if (error) {
             setErrorMessage(error.message);
             return;
+        } else {
+                setSuccessMessage("Account created. Check your email if verification is sent");
+
         }
 
         navigate("/verifyaccount", {

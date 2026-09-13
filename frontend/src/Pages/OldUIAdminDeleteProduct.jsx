@@ -1,7 +1,76 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import supabase from "../supabaseClient";
 
-function AdminDeleteProduct() {
+function OldUIAdminDeleteProduct() {
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, description, stock, weight, category, product_images(image_url)");
+
+      setProducts(data);
+    };
+
+    fetchProducts();
+  }, []);
+
+  const dbDeleteItem = async () => {
+
+
+    //Make sure all fields are valid
+    setSuccess("");
+    setError("");
+
+    if (!selectedProduct?.id){
+      setError("Please select a product to delete")
+      return;
+    }
+
+
+    setLoading(true);
+
+    //Send the id to be deleted to the backend
+      try {
+        const response = await fetch(`http://localhost:3000/api/products/${selectedProduct?.id}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json();
+        console.log("Backend response:", result);
+
+        if (!response.ok) {
+          setError(result.message || "Failed to delete product");
+          return;
+        }
+        
+        //Remove deleted product from list of products that can be selected 
+        setProducts((products) =>
+          products.filter((product) => product.id !== selectedProduct.id)
+        );
+      
+        // Show success message and clear form after a delay. Don't allow double submission
+        setSuccess("Product deleted successfully!");
+        
+      } catch (err) {
+        console.error("Delete error:", err);
+        setError("Could not reach backend");
+      }
+      finally {
+      setLoading(false);
+    }
+  
+};
   return (
+    
     <div className="min-h-screen bg-gray-200 p-8">
       
       {/* Greeting, Admin in light grey box */}
@@ -45,11 +114,21 @@ function AdminDeleteProduct() {
             </div>
             <div>
                 <label className="block text-sm text-gray-800 mb-2">Select Item to Delete</label>
-                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-grey text-gray-700 outline-none">
-                    <option value="">Select an item</option>
-                    <option value="soap">Item 1</option>
-                    <option value="scrub">Item 2</option>
-                    <option value="oil">Item 3</option>
+                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-grey text-gray-700 outline-none"
+                  onChange={(e) => {
+                    const product = products.find(
+                      (p) => p.id.toString() === e.target.value
+                    );
+                    setSelectedProduct(product);
+                  }}
+                  >
+                    
+                    <option value="">Select a product</option>
+                    {products.map((product) =>(
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
                 </select>
             </div>
 
@@ -61,6 +140,7 @@ function AdminDeleteProduct() {
                 <input
                 placeholder="Value"
                 readOnly
+                value={selectedProduct?.name || ""}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
                 />
             </div>
@@ -72,6 +152,7 @@ function AdminDeleteProduct() {
                 <input
                 placeholder="Value"
                 readOnly
+                value={selectedProduct?.product_images?.[0]?.image_url|| ""}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
                 />
             </div>
@@ -81,6 +162,7 @@ function AdminDeleteProduct() {
                 <input
                 placeholder="Value"
                 readOnly
+                value={selectedProduct?.price || ""}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
                 />
             </div>
@@ -90,6 +172,7 @@ function AdminDeleteProduct() {
                 <input
                 placeholder="Value"
                 readOnly
+                value={selectedProduct?.description || ""}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
                 />
             </div>
@@ -99,12 +182,29 @@ function AdminDeleteProduct() {
                 <input
                 placeholder="Value"
                 readOnly
+                value={selectedProduct?.category || ""}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
                 />
             </div>
+          
+            {/* Display success or error messages */}
+            {error && (
+               <p className="text-red-600 text-sm text-center">{error}</p>
+            )}
 
-            <button className="w-full bg-zinc-800 text-white py-2 rounded-lg mt-2 hover:scale-105 transition">
-                Delete Product
+            {success && (
+               <p className="text-green-600 text-sm text-center">{success}</p>
+            )}
+
+            <button onClick ={dbDeleteItem}
+              disabled={loading}
+              className={`w-full bg-zinc-800 text-white py-2 rounded-lg mt-2 transition ${
+                loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
+              }`}
+              >
+                {loading ? "Deleting Item..." : "Delete Item"
+              }
+        
             </button>
             </div>
         </div>
@@ -126,4 +226,4 @@ function AdminDeleteProduct() {
   );
 }
 
-export default AdminDeleteProduct;
+export default OldUIAdminDeleteProduct;

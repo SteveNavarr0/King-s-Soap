@@ -8,14 +8,14 @@ const SoapDishShop = () => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProducts = async () => { //fucntion that retrievs the products
 
       const { data, error } = await supabase
         .from("products")
         .select("id, name, price, product_images(image_url)")
-        .ilike("category", "%Soap Dish%");
+        .ilike("category", "%Soap Dish%");//where statemnt
 
-      setProducts(data);
+      setProducts(data);// cuts out products that are not supposed to be there
     };
 
     fetchProducts();
@@ -27,18 +27,18 @@ const SoapDishShop = () => {
       <FilterBar />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-3 gap-x-10 gap-y-14">
-          {products.map((product) => {
-            const firstImage = product.product_images?.[0]?.image_url || "";
+        <div className="grid grid-cols-3 gap-x-10 gap-y-14"> 
+          {products.map((product) => { //goes through every product one by one
+            const firstImage = product.product_images?.[0]?.image_url || ""; //fetches first product image
 
             return (
-              <Link
+              <Link //Links products to product page, so they can be viewed in their own window
                 to={`/product/${product.id}`}
                 key={product.id}
                 className="block"
               >
                 <div className="rounded-lg overflow-hidden">
-                  {firstImage ? (
+                  {firstImage ? ( //If there is an image, display it
                     <img
                       src={firstImage}
                       alt={product.name}
@@ -51,7 +51,7 @@ const SoapDishShop = () => {
                   )}
 
                   <div className="pt-3 text-center">
-                    <h2 className="text-lg font-medium">{product.name}</h2>
+                    <h2 className="text-lg font-medium">{product.name}</h2>  
                     <p className="text-base">${Number(product.price).toFixed(2)}</p>
                   </div>
                 </div>
