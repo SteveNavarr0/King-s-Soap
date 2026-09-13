@@ -22,6 +22,11 @@ const ProductPage = () => {
   // stores how many items the user wants to buy
   const [quantity, setQuantity] = useState(1);
 
+  // scroll to the top whenever a product page opens.
+  useEffect(() => {
+  window.scrollTo(0, 0);
+  }, [id]);
+
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
@@ -69,39 +74,69 @@ const ProductPage = () => {
   };
 
   //  cart handler
-  const handleAddToCart = () => {
-    if (!product) return;
-    //get current cart from session storage or initialize as empty array
-    const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
+  const handleAddToCart = async() => {
+    if (!product || product.stock <=0) return;
+    //check the session 
+    const {
+      data: { user },
+       error: userError,
+      }  = await supabase.auth.getUser();
 
-    //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
-    const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
-
-    //validate the quantity to ensure it does not exceed stock or go below 1
-    const validatedQuantity = Math.min(quantity, product.stock);
-
-    if (existingItemIndex > -1) {
-      //if the item exists, add the selected quantity to the existing quantity
-      const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
-      const newTotalQuantity = Math.min(currentInCart + quantity, Number(product.stock));
-      existingCart[existingItemIndex].quantity = newTotalQuantity;
-    } else {
-      const initialQuantity = Math.min(quantity, Number(product.stock)); // Ensure at least 1 is added
-      //if the item does not exist, add it to the cart with the selected quantity
-      existingCart.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: initialQuantity,
-        image: selectedImage,
-        stock: Number(product.stock),
-      });
+    if (userError || !user){
+      console.error("User not logged in or error fetching user:", userError);
     }
-    // save the updated cart back to session storage
-    sessionStorage.setItem("cart", JSON.stringify(existingCart));
+    const selectedQuantity = Math.max(
+      1,
+      Math.min(quantity, product.stock)
+    );
+
+    const { data: existingItem, error: fecthError } = await supabase
+      .from("cart")
+      .select("*")
+      .eq("user_ID", user.id)
+      .eq("product_ID", product.id)
+      .maybeSingle();
+    
+    if (fecthError) {
+      console.error("Error fetching cart item:", fecthError);
+      return;
+    }
+
+    if (existingItem) {
+      // If the item already exists in the cart, update its quantity
+      const newQuantity = Math.min(
+        existingItem.quantity + selectedQuantity,
+        product.stock
+      );
+
+      const { error: updateError } = await supabase
+        .from("cart")
+        .update({ quantity: newQuantity })
+        .eq("id", existingItem.id)
+        .eq("user_ID", user.id);
+
+      if (updateError) {
+        console.error("Error updating cart item:", updateError);
+      }
+    } else {
+      // If the item does not exist in the cart, insert it
+      const { error: insertError } = await supabase
+      .from("cart")
+      .insert([
+        {
+          user_ID: user.id,
+          product_ID: product.id,
+          quantity: selectedQuantity,
+        },
+      ]);
+
+      if (insertError) {
+        console.error("Error adding item to cart:", insertError);
+      }
+    }   
+
+    console.log(`Added ${selectedQuantity} of ${product.name} to cart.`);
   };
-
-
   // loading screen
   if (loading) {
     return <div className="text-center mt-10">Loading...</div>;
@@ -180,7 +215,12 @@ const ProductPage = () => {
 
             {/* stock display */}
             <p className="text-sm">
-              {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+              {product.stock === 0
+              ? "Out of Stock"
+              : product.stock > 4
+              ? `In Stock (${product.stock})`
+              : `Limited Stock! (${product.stock})`
+              }
             </p>
 
 

@@ -1,4 +1,5 @@
 import supabase from "../supabaseClient";
+//pull image from supabase, PUBLIC, change ot PRIVATE when production
 const getImageUrl =  (imagePath) => {
     const { data } = supabase.storage
       .from("Product Images")
