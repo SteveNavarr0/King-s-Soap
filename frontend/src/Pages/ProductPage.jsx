@@ -69,11 +69,100 @@ const ProductPage = () => {
   };
 
   //  cart handler
-  const handleAddToCart = () => {
-    console.log("Add to cart clicked");
-    console.log("Product:", product);
-    console.log("Quantity:", quantity);
+  const handleAddToCart = async() => {
+    if (!product || product.stock <=0) return;
+    //check the session 
+    const {
+      data: { user },
+       error: userError,
+      }  = await supabase.auth.getUser();
+
+    if (userError || !user){
+      console.error("User not logged in or error fetching user:", userError);
+    }
+    const selectedQuantity = Math.max(
+      1,
+      Math.min(quantity, product.stock)
+    );
+
+    const { data: existingItem, error: fecthError } = await supabase
+      .from("cart")
+      .select("*")
+      .eq("user_ID", user.id)
+      .eq("product_ID", product.id)
+      .maybeSingle();
+    
+    if (fecthError) {
+      console.error("Error fetching cart item:", fecthError);
+      return;
+    }
+
+    if (existingItem) {
+      // If the item already exists in the cart, update its quantity
+      const newQuantity = Math.min(
+        existingItem.quantity + selectedQuantity,
+        product.stock
+      );
+
+      const { error: updateError } = await supabase
+        .from("cart")
+        .update({ quantity: newQuantity })
+        .eq("id", existingItem.id)
+        .eq("user_ID", user.id);
+
+      if (updateError) {
+        console.error("Error updating cart item:", updateError);
+      }
+    } else {
+      // If the item does not exist in the cart, insert it
+      const { error: insertError } = await supabase
+      .from("cart")
+      .insert([
+        {
+          user_ID: user.id,
+          product_ID: product.id,
+          quantity: selectedQuantity,
+        },
+      ]);
+
+      if (insertError) {
+        console.error("Error adding item to cart:", insertError);
+      }
+    }   
+
+    console.log(`Added ${selectedQuantity} of ${product.name} to cart.`);
   };
+
+/*
+    //get current cart from session storage or initialize as empty array
+    const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
+    //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
+    const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
+
+    //get the current quantity of the product in the cart, if it exists
+    //const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
+
+    //validate the quantity to ensure it does not exceed stock or go below 1
+    const validatedQuantity = Math.min(quantity, product.stock);
+
+    if (existingItemIndex > -1) {
+      //if the item exists, add the selected quantity to the existing quantity
+      existingCart[existingItemIndex].quantity = validatedQuantity;
+    } else {
+      //if the item does not exist, add it to the cart with the selected quantity
+      existingCart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        image: selectedImage,
+        stock: product.stock,
+      });
+    }
+    // save the updated cart back to session storage
+    sessionStorage.setItem("cart", JSON.stringify(existingCart));
+  };
+*/
 
   // loading screen
   if (loading) {
@@ -153,7 +242,7 @@ const ProductPage = () => {
 
             {/* stock display */}
             <p className="text-sm">
-              {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+              {product.stock > 4 ? `In Stock (${product.stock})` : `Limited Stock!(${product.stock})`}
             </p>
 
 
@@ -192,7 +281,7 @@ const ProductPage = () => {
             <button
   onClick={handleAddToCart}
   disabled={product.stock <= 0}
-  className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400"
+  className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
 >
   <span>Add {quantity} to Cart</span>
   <BsBag className="text-lg shrink-0" />
