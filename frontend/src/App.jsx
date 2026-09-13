@@ -19,7 +19,7 @@ import AdminCreateProduct from "./Pages/AdminCreateProduct";
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminDeleteProduct from "./Pages/AdminDeleteProduct";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
-
+import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -43,6 +43,7 @@ function App() {
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/adminCreateProduct" element={<AdminCreateProduct />} />
+            <Route path="/OldUIAdminDeleteProduct" element={<OldUIAdminDeleteProduct />} />
             <Route path="/adminUpdateProduct" element={<AdminUpdateProduct />} />
             <Route path="/adminDeleteProduct" element={<AdminDeleteProduct />} />
             <Route
