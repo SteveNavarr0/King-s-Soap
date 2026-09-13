@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import Home from "./Pages/Home";
 import Shop from "./Pages/Shop";
 import About from "./Pages/About";
@@ -19,6 +20,16 @@ import AdminCreateProduct from "./Pages/AdminCreateProduct";
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminDeleteProduct from "./Pages/AdminDeleteProduct";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
+
+function ProtectedRoute({ children }) {
+  const{user, loading} = useAuth();
+
+  if (loading) {
+    return<p>Loading...</p>;
+  }
+
+  return user ? children : <Navigate to="/login" replace />;
+} // use this wrapper for any page you only want users accessing (see userAccount route below for example)
 import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 function App() {
   return (
@@ -33,7 +44,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/userAccount" element={<UserAccount />} />
+            <Route path="/userAccount" element={ <ProtectedRoute> <UserAccount /> </ProtectedRoute>}/>
             <Route path="/userChangePassword" element={<UserChangePassword />} />
             <Route path="/userChangeAddress" element={<UserChangeAddress />} />
             <Route path="/verifyaccount" element={<VerifyAccount />} />
