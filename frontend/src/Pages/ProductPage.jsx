@@ -136,6 +136,41 @@ const ProductPage = () => {
     }   
 
     console.log(`Added ${selectedQuantity} of ${product.name} to cart.`);
+
+    /*
+    //get current cart from session storage or initialize as empty array
+    const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
+
+    //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
+    const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
+
+    if (existingItemIndex > -1) {
+      //gets the current quantity in the cart
+      const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
+      
+      //add new quantity to current quantity but never exceed the stock available
+      const newTotalQuantity = Math.min(currentInCart + quantity, Number(product.stock));
+
+      existingCart[existingItemIndex].quantity = newTotalQuantity;
+    } else {
+
+      //add new item to cart but capped at available stock
+      const initialQuantity = Math.min(quantity, Number(product.stock)); 
+
+      existingCart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: initialQuantity,
+        image: selectedImage,
+        stock: Number(product.stock),
+      });
+    }
+
+    // save the updated cart back to session storage
+    sessionStorage.setItem("cart", JSON.stringify(existingCart));
+    */ //saving later for guest users to checkout securely. 
+    
   };
   // loading screen
   if (loading) {

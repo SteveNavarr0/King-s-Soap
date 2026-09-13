@@ -15,13 +15,27 @@ function AdminProducts() {
 
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, product_images(image_url)");
+        .select("id, name, price, product_images(image_url), sales");
+      
+        if (error){
+          console.error("Error fetching products:", error);
+          return;
+        }
 
-      setProducts(data); //Function to store returned data to products variable
+      setProducts(data || []); //Function to store returned data to products variable
     };
 
     fetchProducts();
   }, []);
+
+  const sortedProducts = [...products].sort((a, b) => {
+    const salesA = a.sales ?? 0;
+    const salesB = b.sales ?? 0;
+    if (salesB !== salesA) {
+      return salesB - salesA; // Sort by sales in descending order
+    }
+    return (a.name || "").localeCompare(b.name || ""); // Sort by name in ascending order if sales are equal
+  });
 
 
   return (
@@ -40,7 +54,7 @@ function AdminProducts() {
 
         {/* Product list section */}
         <div className= "flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15"></div>
-          {products.map((product) => ( //Map through the products array and render each product 
+          {sortedProducts.map((product) => ( //Map through the products array and render each product 
             
             <AdminProductTile
               key={product.id} //Unique key for each product
