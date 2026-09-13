@@ -73,27 +73,28 @@ const ProductPage = () => {
     if (!product) return;
     //get current cart from session storage or initialize as empty array
     const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
+
     //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
     const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
-
-    //get the current quantity of the product in the cart, if it exists
-    //const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
 
     //validate the quantity to ensure it does not exceed stock or go below 1
     const validatedQuantity = Math.min(quantity, product.stock);
 
     if (existingItemIndex > -1) {
       //if the item exists, add the selected quantity to the existing quantity
-      existingCart[existingItemIndex].quantity = validatedQuantity;
+      const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
+      const newTotalQuantity = Math.min(currentInCart + quantity, Number(product.stock));
+      existingCart[existingItemIndex].quantity = newTotalQuantity;
     } else {
+      const initialQuantity = Math.min(quantity, Number(product.stock)); // Ensure at least 1 is added
       //if the item does not exist, add it to the cart with the selected quantity
       existingCart.push({
         id: product.id,
         name: product.name,
         price: product.price,
-        quantity: quantity,
+        quantity: initialQuantity,
         image: selectedImage,
-        stock: product.stock,
+        stock: Number(product.stock),
       });
     }
     // save the updated cart back to session storage
