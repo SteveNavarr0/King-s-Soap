@@ -70,10 +70,36 @@ const ProductPage = () => {
 
   //  cart handler
   const handleAddToCart = () => {
-    console.log("Add to cart clicked");
-    console.log("Product:", product);
-    console.log("Quantity:", quantity);
+    if (!product) return;
+    //get current cart from session storage or initialize as empty array
+    const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
+    //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
+    const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
+
+    //get the current quantity of the product in the cart, if it exists
+    //const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
+
+    //validate the quantity to ensure it does not exceed stock or go below 1
+    const validatedQuantity = Math.min(quantity, product.stock);
+
+    if (existingItemIndex > -1) {
+      //if the item exists, add the selected quantity to the existing quantity
+      existingCart[existingItemIndex].quantity = validatedQuantity;
+    } else {
+      //if the item does not exist, add it to the cart with the selected quantity
+      existingCart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        image: selectedImage,
+        stock: product.stock,
+      });
+    }
+    // save the updated cart back to session storage
+    sessionStorage.setItem("cart", JSON.stringify(existingCart));
   };
+
 
   // loading screen
   if (loading) {
@@ -192,7 +218,7 @@ const ProductPage = () => {
             <button
   onClick={handleAddToCart}
   disabled={product.stock <= 0}
-  className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400"
+  className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
 >
   <span>Add {quantity} to Cart</span>
   <BsBag className="text-lg shrink-0" />

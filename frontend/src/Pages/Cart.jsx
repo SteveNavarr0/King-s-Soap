@@ -1,12 +1,40 @@
 import PaymentSuccessful from "../Pages/PaymentSuccessful";
 import { Link } from "react-router-dom";
-
-const total = 0; //Will use later for calculating total
-const price = 0;
-const quantity = 0;
-const product ="";
+import { useEffect, useState } from "react";
 
 const Cart = () => {
+ const [cartItems, setCartItems] = useState([]);
+ useEffect(() => {
+    const storedCartItems = JSON.parse(sessionStorage.getItem("cart")) || [];
+    setCartItems(storedCartItems);
+  }, []);
+
+  const updateCart=(newCartItems) => {
+    setCartItems(newCartItems);
+    sessionStorage.setItem("cart", JSON.stringify(newCartItems));
+  };
+
+  const handleQuantityChange = (id, newQuantity) => {
+    const updatedCartItems = cartItems.map((item) => {
+      if (item.id === id) {
+        const newQty = item.CartQuantity + newQuantity;
+        return { ...item, CartQuantity: newQty };
+      }
+      return item;
+    });
+    updateCart(updatedCartItems);
+  };
+
+const handleRemoveItem = (id) => {
+    const updatedCartItems = cartItems.filter((item) => item.id !== id);
+    updateCart(updatedCartItems);
+  };
+
+const total = cartItems.reduce(
+    (acc, item) => acc + Number(item.price) * (item.quantity || 1),
+    0
+  );
+
   return (
    //The text in the white box
      <div className="flex w-full max-w-10xl gap-6"> 
@@ -31,7 +59,7 @@ const Cart = () => {
           <p className="text-left text-xs sm:text-sm text-gray-500 m-0">
             Shipping and taxes calculated at checkout
           </p>
-
+           
           <Link to="/PaymentSuccessful" className="mt-7 py-2 bg-black text-center text-white border-black w-5/6 rounded">
           Checkout
           </Link>
