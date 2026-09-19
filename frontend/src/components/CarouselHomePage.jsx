@@ -1,18 +1,21 @@
+//return Carousel component with scrolling images, along with a button that links to a product page
 import { useState, useEffect } from "react";
 import RouteButton from "./RouteButton";
 
-function MyCarousel({ images , description, buttonTo, buttonLabel}) {
+function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   
   useEffect(() => {
+    //check for images, if no images return
     if (!images || images.length === 0) return;
-
+    //rate that carousel "changes" images, currently set to: 7 seconds (7000 milliseconds)
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) =>
+        //if at last image, go back to first image, else go to next image
         prevIndex === images.length - 1 ? 0 : prevIndex + 1
       );
-    }, 7000); // changes every 7 seconds
+    }, 7000);
 
     return () => clearInterval(interval);
   }, [images]);
@@ -37,12 +40,11 @@ function MyCarousel({ images , description, buttonTo, buttonLabel}) {
           ))}  
     </div>
     </div>
-
     <div className="border border-white text-[#FFFFFF] font-[Inria_Serif] px-2 py-2 rounded">
-      <RouteButton to={buttonTo} label={buttonLabel || description} />
+      <RouteButton to={buttonTo} label={buttonLabel} />
     </div>
     </div>
   );
 }
 
-export default MyCarousel;
+export default CarouselHomePage;

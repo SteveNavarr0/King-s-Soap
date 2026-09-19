@@ -5,7 +5,13 @@ import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import { FiEdit2 } from "react-icons/fi";
 import AdminImageManager from "../components/AdminImageManager";
-
+const categoryOptions = [
+  "Coconut Oil",
+  "All Natural",
+  "Organic",
+  "Lip Balm",
+  "Soap Dish",
+];
 
 
 //Pulled from AdminCreateProduct.jsx
@@ -17,14 +23,22 @@ const AdminUpdateProduct = () => {
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
   const [weight, setWeight] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState([]);// change to array, maybe change how we are storing in the db?
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingField, setEditingField] = useState(null) //Will determine which is editable
-
+  const toggleCategory = (selectedCategory) => { // checks whether or not the category has already been selected 
+    if (category.includes(selectedCategory)) { //means the category has already been selected
+      setCategory(
+        category.filter((category) => category !== selectedCategory) // Removes the selected category
+      );
+    } else {
+      setCategory([...category, selectedCategory]); // sets the selected categories
+    }
+    };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -53,7 +67,7 @@ const AdminUpdateProduct = () => {
       setDescription(data.description || "");
       setStock(data.stock ?? "");
       setWeight(data.weight ?? "");
-      setCategory(data.category || "");
+      setCategory(data.category ? data.category.split(",").map((item) => item.trim()): []);
       setExistingImages(data.product_images || []);
     
     };
@@ -74,7 +88,7 @@ const AdminUpdateProduct = () => {
       description: description.trim(),
       stock: Number(stock),
       weight: Number(weight),
-      category: category.trim(),
+      category: category.join(","),
     };
 
     //Supabase update query
@@ -367,30 +381,28 @@ const AdminUpdateProduct = () => {
 
             <div>
                 <label className="block text-md md:text-xl text-white mb-2">Category tag</label>
-                
-                <div className="relative">
-                <textarea
-                placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 outline-none outline-none resize-none overflow-hidden [field-sizing:content]"
-                value = {category} onChange = {(e) => setCategory(e.target.value)}
-                readOnly = {editingField !== "category"} 
-                onBlur={() => setEditingField(null)}
-                  />
+            <details className="relative">
+            <summary className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 cursor-pointer list-none">
+            {category.length > 0 ? category.join(", ") : "Select"} {/*Checks whether or not any categories have been selected, displays them */}
+            </summary>
+            <div className="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg overflow-hidden">
+              {/*Loop through every option in category options */}
+            {categoryOptions.map((option) => (
+           <label key={option} 
+            className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 cursor-pointer"
+           ><input 
+            type="checkbox"
+            checked={category.includes(option)}
+            onChange={() => toggleCategory(option)} 
+            className="h-4 w-4"
+          />
+            <span>{option}</span> {/*Display category name */}
+            </label>
+            ))}
+            </div>
+            </details>
 
-                  <button
-                    type="button"
-                    onClick={() => setEditingField("category")}
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer ${
-                      editingField === "category"
-                      ? "text-gray-800"
-                      : "text-gray-500"
-                    }`}
-                    aria-label="edit category"
-                  >
-                    <FiEdit2/> {/*Icon for editing*/}
-                  </button>
-
-                </div>
+  
             </div>
 
 

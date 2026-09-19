@@ -29,6 +29,11 @@ import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
 import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
+import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
+import OrganicShop from "./Pages/OrganicShop.jsx";
+import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
+import LipBalmShop from "./Pages/LipBalmShop.jsx";
+import SoapDishShop from "./Pages/SoapDishShop.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -106,6 +111,11 @@ function App() {
               path="/adminUpdateWebsitePhoto"
               element={<AdminUpdateWebsitePhoto />}
             />
+             <Route path="/coconutOilShop" element={<CoconutOilShop />} />
+            <Route path="/organicShop" element={<OrganicShop/>} />
+            <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
+            <Route path="/lipBalmShop" element={<LipBalmShop/>} />
+            <Route path="/soapDishShop" element={<SoapDishShop/>} />
           </Routes>
         </div>
 
