@@ -14,11 +14,12 @@ export const createProduct = async (req, res) => {
 
 
 
-        //Store the public URL created for each image
+        //Store the public DB URL created for each image
         const publicUrls = [];
 
         //Upload each selected image to Supabase
-      
+        
+        //Create the unique URL for each image
         for (const [index, file] of req.files.entries()) {
             const filePath = `images/${Date.now()}-${index}-${file.originalname}`;
 
@@ -45,10 +46,6 @@ export const createProduct = async (req, res) => {
             publicUrls.push(urlData.publicUrl); 
 
         }
-
-
-
-
 
 
 
@@ -89,8 +86,6 @@ export const createProduct = async (req, res) => {
            
 
 
-
-
         if (imageError) {
         console.error("Could not add image row to database:", imageError);
         return res.status(500).json({ message: "Failed to add image row to database" });
@@ -108,6 +103,12 @@ export const createProduct = async (req, res) => {
     
 
 };
+
+
+
+
+
+
 
 //Add new images to an existing product
 export const addProductImages = async (req, res) => {
@@ -190,6 +191,10 @@ return res.status(201).json({
 });
 
 };
+
+
+
+
 
 
 
@@ -286,6 +291,12 @@ export const deleteProductImage = async (req, res) => {
 };
 
 
+
+
+
+
+
+//Delete a product
 export const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
