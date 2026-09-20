@@ -205,7 +205,7 @@ function AdminCreateProduct() {
               Category tags
             </label>
             <details className="relative">
-            <summary className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 cursor-pointer list-none">
+            <summary className="w-full bg-white rounded-lg px-3 py-2 text-gray-400 cursor-pointer list-none">
             {category.length > 0 ? category.join(", ") : "Select"} {/*Checks whether or not any categories have been selected, displays them */}
             </summary>
             <div className="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg overflow-hidden">

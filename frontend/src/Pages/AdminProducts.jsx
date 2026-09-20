@@ -15,14 +15,26 @@ function AdminProducts() {
 
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, product_images(image_url), sales");
+        .select("id, name, price, product_images(image_url, display_order), sales");
       
         if (error){
           console.error("Error fetching products:", error);
           return;
         }
 
-      setProducts(data || []); //Function to store returned data to products variable
+        //Sort each product's iamges from Main to last
+        const productsWithOrderedImages = (data || []).map(
+          (product) => ({
+            ...product,
+            product_images: [...(product.product_images || [])].sort(
+              (firstImage, secondImage) =>
+                firstImage.display_order -
+              secondImage.display_order
+            ),
+          })
+        );
+
+      setProducts(productsWithOrderedImages); 
     };
 
     fetchProducts();

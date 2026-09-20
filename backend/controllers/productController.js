@@ -12,10 +12,11 @@ export const createProduct = async (req, res) => {
         }
 
 
-
-
         //Store the public DB URL created for each image
         const publicUrls = [];
+
+        //Store each Storage path in case the upload needs to be reversed
+        const uploadedFilePaths = [];
 
         //Upload each selected image to Supabase
         
@@ -35,10 +36,26 @@ export const createProduct = async (req, res) => {
             if (uploadError) {
                 console.error("Could not upload image:", uploadError);
 
+                //Remove files that uploaded successfully during this request
+                if (uploadedFilePaths.length > 0) {
+                    const { error: cleanupError } = await supabase.storage
+                        .from("Product Images")
+                        .remove(uploadedFilePaths);
+
+                    if (cleanupError) {
+                        console.error(
+                            "Could not clean up previously uploaded files:",
+                            cleanupError
+                        );
+                    }
+                }
+
                 return res.status(500).json({ message: "Failed to upload image to storage" });
         
             }
 
+            //Remember successfully uploaded file path
+            uploadedFilePaths.push(filePath);
 
             // Get public URL for the uploaded image
             const { data: urlData } = supabase.storage.from("Product Images").getPublicUrl(filePath);
@@ -63,6 +80,21 @@ export const createProduct = async (req, res) => {
 
     if (productError) {
         console.error("Could not insert product into database:", productError);
+        
+         //Product failed, so remove all files uploaded for it
+                
+        const { error: cleanupError } = await supabase.storage
+            .from("Product Images")
+            .remove(uploadedFilePaths);
+
+        if (cleanupError) {
+            console.error(
+                "Could not clean up uploaded files:",
+                cleanupError
+            );
+                    
+        }
+        
         return res.status(500).json({ message: "Failed to insert product into database" });
     }
 
@@ -74,9 +106,10 @@ export const createProduct = async (req, res) => {
 
 
     //Create database row for every uploaded image
-    const imageRows = publicUrls.map((publicUrl) => ({
+    const imageRows = publicUrls.map((publicUrl, index) => ({
         product_id: newProduct.id,
         image_url: publicUrl,
+        display_order: index + 1,
     }));
 
     // Use id to insert image URL into the product image table
@@ -88,6 +121,36 @@ export const createProduct = async (req, res) => {
 
         if (imageError) {
         console.error("Could not add image row to database:", imageError);
+        
+        
+        //Remove product row that was created
+        const {error: productCleanupError } = await supabase
+            .from("products")
+            .delete()
+            .eq("id", newProduct.id);
+        
+        if (productCleanupError) {
+            console.error(
+                "Could not clean up the product row:",
+                productCleanupError
+            );
+        }
+
+
+        //Remove uploaded image files from Storage
+        const { error: fileCleanupError } = await supabase.storage
+            .from("Product Images")
+            .remove(uploadedFilePaths);
+
+        if (fileCleanupError) {
+            console.error(
+                "Could not clean up uploaded files:",
+                fileCleanupError
+            );
+                    
+        }    
+        
+        
         return res.status(500).json({ message: "Failed to add image row to database" });
         }
 
@@ -126,9 +189,45 @@ if (!req.files || req.files.length === 0) {
 }
 
 
+//Convert the display order JSON string back into an array
+let displayOrders = []
+
+try {
+    displayOrders = JSON.parse(
+        req.body.displayOrders || "[]"
+    );
+} catch (error) {
+    return res.status(400).json({
+        message: "Invalid image display order",
+    });
+}
+
+ //Find last image position currently used by product
+const {data: lastImageRows, error: orderError } = await supabase
+    .from("product_images")
+    .select("display_order")
+    .eq("product_id", id)
+    .order("display_order", {ascending: false})
+    .limit(1); //Only return one db row
+
+if (orderError) {
+    console.error("Could not find the current image order:", orderError);
+
+    return res.status(500).json({
+                message: "Failed to determine the next image position",
+    });
+}
+
+
+ //Use zero as default when no existing images
+        const highestExistingOrder = 
+            lastImageRows[0]?.display_order ?? 0;
+
 //Store the public URLs created for the newly uploaded images
 const publicUrls =[];
 
+//Store internal paths in the the upload has to be reversed
+const uploadedFilePaths = [];
 
  for (const [index, file] of req.files.entries()) {
             const filePath = `images/${Date.now()}-${index}-${file.originalname}`;
@@ -145,10 +244,27 @@ const publicUrls =[];
             if (uploadError) {
                 console.error("Could not upload image:", uploadError);
 
+
+                //Remove files that uploaded successfully during this request
+                if (uploadedFilePaths.length > 0) {
+                    const { error: cleanupError } = await supabase.storage
+                        .from("Product Images")
+                        .remove(uploadedFilePaths);
+
+                    if (cleanupError) {
+                        console.error(
+                            "Could not clean up previously uploaded files:",
+                            cleanupError
+                        );
+                    }
+                }
+        
                 return res.status(500).json({ message: "Failed to upload image to storage" });
         
             }
 
+            //Remember the successfully uploaded file's internal path
+            uploadedFilePaths.push(filePath);
 
             // Get public URL for the uploaded image
             const { data: urlData } = supabase.storage.from("Product Images").getPublicUrl(filePath);
@@ -159,9 +275,12 @@ const publicUrls =[];
 
 
 //Create one product_images row for every uploaded image URL
-const imageRows = publicUrls.map((publicUrl) => ({
+const imageRows = publicUrls.map((publicUrl, index) => ({
     product_id: id,
     image_url: publicUrl,
+    display_order: 
+        displayOrders[index] ??
+        highestExistingOrder + index + 1,
 }));
 
 //Connect the uploaded images to the existing product
@@ -172,11 +291,21 @@ const {data: imageData, error: imageError} = await supabase
 
 
 
-
-
 //Stop if the image rows couldn't be added
 if (imageError) {
     console.error("Could not add image rows:", imageError);
+
+    //If database insert failed, remove the uploaded files
+    const { error: cleaupError } = await supabase.storage
+        .from("Product Images")
+        .remove(uploadedFilePaths);
+
+    if (cleanrupError) {
+        console.error(
+            "Could not clean up uploaded files:",
+            cleanupError
+        );
+    }
 
     return res.status(500).json({
         message: "Failed to connect images to product",

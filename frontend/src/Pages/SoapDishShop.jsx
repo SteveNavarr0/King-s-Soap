@@ -12,10 +12,26 @@ const SoapDishShop = () => {
 
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, product_images(image_url)")
+        .select("id, name, price, product_images(image_url, display_order)")
         .ilike("category", "%Soap Dish%");//where statemnt
 
-      setProducts(data);// cuts out products that are not supposed to be there
+    if (error) {
+        console.error("Error fetching products:", error);
+        return;
+      }
+       //Sort each product's iamges from Main to last
+        const productsWithOrderedImages = (data || []).map(
+          (product) => ({
+            ...product,
+            product_images: [...(product.product_images || [])].sort(
+              (firstImage, secondImage) =>
+                firstImage.display_order -
+              secondImage.display_order
+            ),
+          })
+        );
+
+      setProducts(productsWithOrderedImages); 
     };
 
     fetchProducts();
