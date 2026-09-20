@@ -296,11 +296,11 @@ if (imageError) {
     console.error("Could not add image rows:", imageError);
 
     //If database insert failed, remove the uploaded files
-    const { error: cleaupError } = await supabase.storage
+    const { error: cleanupError } = await supabase.storage
         .from("Product Images")
         .remove(uploadedFilePaths);
 
-    if (cleanrupError) {
+    if (cleanupError) {
         console.error(
             "Could not clean up uploaded files:",
             cleanupError
