@@ -36,6 +36,29 @@ try {
   assert.strictEqual(emptyUserData.message, "Your cart is empty.");
   console.log("✓ HTTP 400 returned when cart is empty");
 
+  // 3. Task 3 (DT-489): Unauthenticated request to create-session should yield 401
+  const unauthSessionRes = await fetch(`${baseUrl}/api/checkout/create-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  assert.strictEqual(unauthSessionRes.status, 401);
+  const unauthSessionData = await unauthSessionRes.json();
+  assert.strictEqual(unauthSessionData.success, false);
+  console.log("✓ HTTP 401 returned for unauthenticated create-session request");
+
+  // 4. Task 3 (DT-489): Request to create-session with user ID having empty cart should yield 400
+  const emptyUserSessionRes = await fetch(`${baseUrl}/api/checkout/create-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: "00000000-0000-0000-0000-000000000000" }),
+  });
+  assert.strictEqual(emptyUserSessionRes.status, 400);
+  const emptyUserSessionData = await emptyUserSessionRes.json();
+  assert.strictEqual(emptyUserSessionData.success, false);
+  assert.strictEqual(emptyUserSessionData.message, "Your cart is empty.");
+  console.log("✓ HTTP 400 returned for create-session when cart is empty");
+
   console.log("All HTTP tests passed successfully!");
 } finally {
   server.close();

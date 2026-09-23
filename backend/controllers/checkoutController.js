@@ -1,4 +1,6 @@
 import supabase, { getSupabaseClient } from "../supabaseClient.js";
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
@@ -180,3 +182,100 @@ export const validateCartHandler = async (req, res) => {
   }
 };
 
+export const createCheckoutSession = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const userEmail = req.user?.email || req.body?.email || null;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required to create a checkout session.",
+      });
+    }
+
+    // 1. Validate the cart
+    const result = await validateUserCart(userId, req.authToken);
+
+    if (!result.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: result.error,
+      });
+    }
+
+    // 2. Insert Pending Order into Supabase
+    const { data: newOrder, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: userId,
+        status: "pending",
+        total_amount: result.totalAmount,
+        customer_email: userEmail,
+      })
+      .select()
+      .single();
+
+    if (orderError || !newOrder) {
+      console.error("Order creation error:", orderError);
+      throw new Error(`Failed to create order: ${orderError?.message || "Unknown error"}`);
+    }
+
+    // 3. Insert Order Items into Supabase
+    const orderItems = result.cartItems.map((item) => ({
+      order_id: newOrder.id,
+      product_id: item.product_ID,
+      quantity: item.quantity,
+      unit_price: Number(item.products.price),
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error("Order items creation error:", itemsError);
+      throw new Error(`Failed to save order items: ${itemsError.message}`);
+    }
+
+    // 4. Create Stripe Session
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: result.lineItems,
+      mode: "payment",
+      customer_email: userEmail || undefined,
+      shipping_address_collection: { allowed_countries: ["US"] },
+      success_url: `${clientUrl}/PaymentSuccessful?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientUrl}/cart?canceled=true`,
+      metadata: {
+        order_id: newOrder.id,
+        user_id: userId,
+      },
+    });
+
+    // 5. Update the Pending Order with the Stripe Session ID
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ stripe_session_id: session.id })
+      .eq("id", newOrder.id);
+
+    if (updateError) {
+      console.error("Failed to update order with Stripe session ID:", updateError);
+    }
+
+    // 6. Return the URL to the frontend
+    return res.status(200).json({
+      success: true,
+      url: session.url,
+      sessionId: session.id,
+      orderId: newOrder.id,
+    });
+  } catch (error) {
+    console.error("Checkout session error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create checkout session.",
+    });
+  }
+};

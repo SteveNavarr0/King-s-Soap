@@ -34,7 +34,10 @@ export const requireAuth = async (req, res, next) => {
     // Fallback for development/testing when userId is provided directly
     const fallbackUserId = req.body?.userId || req.query?.userId;
     if (fallbackUserId) {
-      req.user = { id: fallbackUserId };
+      req.user = {
+        id: fallbackUserId,
+        email: req.body?.email || req.query?.email || null,
+      };
       req.authToken = null;
       return next();
     }
