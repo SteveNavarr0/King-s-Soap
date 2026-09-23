@@ -5,6 +5,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import productRoutes from "./routes/productRoutes.js";
+import checkoutRoutes from "./routes/checkoutRoutes.js";
 
 dotenv.config(); // Use port from .env file if available, otherwise use default port 3000
 
@@ -19,7 +20,13 @@ app.use(helmet());// For security headers
 app.use(morgan("dev"));// For logging HTTP requests to backend console
 
 app.use("/api/products", productRoutes);//Connects request from the frontend to the backend routes in productRoutes.js
+app.use("/api/checkout", checkoutRoutes);//Checkout endpoints: validation, sessions, orders
 
-app.listen(PORT, () => {
-    console.log("Server is running on port " + PORT);
-});
+if (process.env.NODE_ENV !== "test") {
+    app.listen(PORT, () => {
+        console.log("Server is running on port " + PORT);
+    });
+}
+
+export default app;
+
