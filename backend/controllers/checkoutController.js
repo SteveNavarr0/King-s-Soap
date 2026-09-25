@@ -207,12 +207,15 @@ export const createCheckoutSession = async (req, res) => {
     }
 
     // 2. Insert Pending Order into Supabase
+    const shippingFee = isPickup ? 0 : 7.0;
+    const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
+
     const { data: newOrder, error: orderError } = await supabase
       .from("orders")
       .insert({
         user_id: userId,
         status: "pending",
-        total_amount: result.totalAmount,
+        total_amount: initialTotal,
         customer_email: userEmail,
         shipping_address: isPickup ? { type: "local_pickup" } : null,
       })
@@ -257,6 +260,28 @@ export const createCheckoutSession = async (req, res) => {
         : {
             shipping_address_collection: { allowed_countries: ["US"] },
             integration_identifier: "custom_embedded_web_0001",
+            shipping_options: [
+              {
+                shipping_rate_data: {
+                  type: "fixed_amount",
+                  fixed_amount: {
+                    amount: 700, // $7.00 flat rate shipping in cents
+                    currency: "usd",
+                  },
+                  display_name: "Standard Ground Shipping",
+                  delivery_estimate: {
+                    minimum: {
+                      unit: "business_day",
+                      value: 3,
+                    },
+                    maximum: {
+                      unit: "business_day",
+                      value: 5,
+                    },
+                  },
+                },
+              },
+            ],
           }),
       success_url: `${clientUrl}/PaymentSuccessful?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/cart?canceled=true`,
