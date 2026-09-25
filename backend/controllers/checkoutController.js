@@ -186,6 +186,8 @@ export const createCheckoutSession = async (req, res) => {
   try {
     const userId = req.user?.id;
     const userEmail = req.user?.email || req.body?.email || null;
+    const checkoutType = req.body?.checkoutType || "shipping";
+    const isPickup = checkoutType === "pickup" || checkoutType === "local_pickup";
 
     if (!userId) {
       return res.status(400).json({
@@ -212,6 +214,7 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: result.totalAmount,
         customer_email: userEmail,
+        shipping_address: isPickup ? { type: "local_pickup" } : null,
       })
       .select()
       .single();
@@ -238,21 +241,33 @@ export const createCheckoutSession = async (req, res) => {
       throw new Error(`Failed to save order items: ${itemsError.message}`);
     }
 
-    // 4. Create Stripe Session
+    // 4. Create Stripe Session configured for Shipping or Local Pickup
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig = {
       payment_method_types: ["card"],
       line_items: result.lineItems,
       mode: "payment",
       customer_email: userEmail || undefined,
-      shipping_address_collection: { allowed_countries: ["US"] },
+      submit_type: "auto",
+      billing_address_collection: isPickup ? "auto" : "required",
+      ...(isPickup
+        ? {
+            integration_identifier: "custom_embedded_web_0002",
+          }
+        : {
+            shipping_address_collection: { allowed_countries: ["US"] },
+            integration_identifier: "custom_embedded_web_0001",
+          }),
       success_url: `${clientUrl}/PaymentSuccessful?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/cart?canceled=true`,
       metadata: {
         order_id: newOrder.id,
         user_id: userId,
+        fulfillment_type: isPickup ? "pickup" : "shipping",
       },
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     // 5. Update the Pending Order with the Stripe Session ID
     const { error: updateError } = await supabase
@@ -270,6 +285,7 @@ export const createCheckoutSession = async (req, res) => {
       url: session.url,
       sessionId: session.id,
       orderId: newOrder.id,
+      fulfillmentType: isPickup ? "pickup" : "shipping",
     });
   } catch (error) {
     console.error("Checkout session error:", error);
