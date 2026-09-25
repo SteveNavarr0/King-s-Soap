@@ -4,7 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "node tests/test_checkout_validation.js && node tests/test_http_endpoint.js",
+    "test": "node tests/test_checkout_validation.js && node tests/test_fulfillment.js && node tests/test_http_endpoint.js",
     "start": "node server.js"
   },
   "keywords": [],

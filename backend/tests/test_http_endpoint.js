@@ -119,6 +119,43 @@ try {
   assert.strictEqual(validWebhookData.received, true);
   console.log("✓ DT-490: Successfully received and parsed checkout.session.completed with verified signature");
 
+// 7. DT-491: On checkout.session.completed update order to paid, store address, update stock, delete cart.
+//              on chestout.session.expired, update order status to cancelled or failed
+const mockEvent = JSON.stringify({
+    id: "evt_test_" + Date.now(),
+    object: "event",
+    type: "checkout.session.expired",
+    data: {
+      object: {
+        id: "cs_test_mock_session",
+        payment_intent: "pi_test_mock_intent",
+        customer_details: { email: "customer@example.com" },
+        metadata: {
+          fulfillment_type: "shipping",
+        },
+      },
+    },
+  });
+  const webhookSecretExpired = process.env.STRIPE_WEBHOOK_SECRET;
+  const validHeaderExpired = stripe.webhooks.generateTestHeaderString({
+    payload: mockEvent,
+    secret: webhookSecretExpired,
+  });
+
+  const validWebhookResExpired = await fetch(`${baseUrl}/api/stripe/webhook`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "stripe-signature": validHeaderExpired,
+    },
+    body: mockEvent,
+  });
+  assert.strictEqual(validWebhookResExpired.status, 200);
+  const validWebhookDataExpired = await validWebhookResExpired.json();
+  assert.strictEqual(validWebhookDataExpired.received, true);
+  console.log("✓ DT-491: Successfully received and processed checkout.session.expired");
+
+
   console.log("All HTTP tests passed successfully!");
 } finally {
   server.close();
