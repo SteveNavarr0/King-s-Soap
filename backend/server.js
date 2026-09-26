@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import messageRoutes from "./routes/messageRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import checkoutRoutes from "./routes/checkoutRoutes.js";
 import { handleStripeWebhook } from "./controllers/webhookController.js";
@@ -29,6 +30,8 @@ app.use(express.json()); // For parsing JSON request bodies
 app.use("/api/products", productRoutes); // Connects request from the frontend to the backend routes in productRoutes.js
 app.use("/api/checkout", checkoutRoutes); // Checkout endpoints: validation, sessions, orders
 
+app.use("/api/messages", messageRoutes);
+
 if (process.env.NODE_ENV !== "test") {
     app.listen(PORT, () => {
         console.log("Server is running on port " + PORT);
@@ -36,4 +39,3 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 export default app;
-

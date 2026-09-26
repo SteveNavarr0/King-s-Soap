@@ -1,7 +1,16 @@
 import AboutImage from '../components/AboutPageImage';
 import SoapVideo from '../components/SoapVideo';
+import ContactForm from "../components/ContactForm";
+import {useState} from "react";
 
 const About = () => {
+
+  const[isContactFormOpen, setIsContactFormOpen] = useState(false);
+
+
+
+
+
   return (
       <div>
   <div className="max-w-7xl mx-auto px-6 mb-30">
@@ -41,17 +50,33 @@ const About = () => {
       Contact Me
     </h1>
     <div className="w-full flex items-center justify-center mt-6 pb-30">
-      <a href="mailto:kinganita25@gmail.com" className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
+     
+      <button 
+        type="button"
+        onClick={() => setIsContactFormOpen(true)}
+        className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
         Email
-      </a>
+      </button>
+
       <a href="tel:19168569659" className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
         Mobile
       </a>
+
       <a href="https://instagram.com/kingssoap" target="_blank" rel="noopener noreferrer" className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
         Instagram
       </a>
+
     </div>
   </div>
+
+  <div>
+    <ContactForm
+      isOpen={isContactFormOpen}
+      onClose={() => setIsContactFormOpen(false)}
+      />
+  </div>
+  
+
 </div>
   );
 };

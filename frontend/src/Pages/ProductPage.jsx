@@ -34,7 +34,7 @@ const ProductPage = () => {
       // fetch one product plus its related images
       const { data, error } = await supabase
         .from("products")
-        .select("*, product_images(id, image_url)")
+        .select("*, product_images(id, image_url, display_order)")
         .eq("id", id)
         .single();
 
@@ -45,11 +45,22 @@ const ProductPage = () => {
         return;
       }
 
-      // save product data
-      setProduct(data);
+       //Sort this product's images from Main to last
+        const orderedImages = [...(data.product_images || [])].sort(
+              (firstImage, secondImage) =>
+                firstImage.display_order -
+                secondImage.display_order
+            );
+        
+      //Store the product with its ordered image records
+      setProduct({
+        ...data,
+        product_images: orderedImages,
+      }); 
+    
 
       // pull just the image_url values into a simple array
-      const urls = data.product_images?.map((img) => img.image_url) || [];
+      const urls = orderedImages.map((image) => image.image_url);
       setImageUrls(urls);
 
       // set the first image as the main displayed image
