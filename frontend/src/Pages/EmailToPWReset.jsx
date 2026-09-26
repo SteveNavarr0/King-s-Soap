@@ -43,7 +43,7 @@ function EmailToPWReset() {
                     </label>
                     <input
                     type="email"
-                    placeholder="Value"
+                    placeholder="yours@example.com"
                     class="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
                     />
                 </div>

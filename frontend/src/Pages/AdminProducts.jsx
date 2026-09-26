@@ -71,15 +71,15 @@ function AdminProducts() {
         <h1 className="text-3xl md:text-5xl font-serif">
           Your Products
         </h1>
-
-        <SearchAddProduct /> {/* Search bar and add product button */}
+         <div className="text-black">
+          <SearchAddProduct /> {/* Search bar and add product button */}
+        </div>
 
         {fetchError && (
           <p className="mt-6 text-red-300">
             {fetchError}
           </p>
         )}
-
         {/* Product list section */}
         <div className= "flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15"></div>
           {sortedProducts.map((product) => ( //Map through the products array and render each product 
