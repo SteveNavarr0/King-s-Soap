@@ -1,7 +1,7 @@
 import supabase from "../supabaseClient";
 import { Link, NavLink } from "react-router-dom";
 import { BsBag } from "react-icons/bs";
-import SearchIcon from "../components/SearchIcon";
+import Search from "./Search";
 
 function FilterBar() {
   return (
@@ -64,19 +64,11 @@ function FilterBar() {
                     > Soap Dishes
                     </NavLink>
         </div>
-
-        <div className="relative w-40">
-          <input
-            type="text"
-            className="w-full rounded-full bg-white px-4 py-1 pr-10 outline-none"
-            placeholder=""
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <SearchIcon />
-            </div>
-        </div>
+      <div className="ml-auto">
+        <Search />
       </div>
     </div>
+  </div>
   );
 }
 
