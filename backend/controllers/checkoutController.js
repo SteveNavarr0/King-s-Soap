@@ -1,6 +1,9 @@
 import supabase, { getSupabaseClient } from "../supabaseClient.js";
 import Stripe from "stripe";
+import easypost from "../easypostClient.js";  
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 
 /**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
@@ -121,6 +124,7 @@ export const validateUserCart = async (userId, authToken = null) => {
         name,
         price,
         stock,
+        weight,
         Availability,
         product_images (
           id,
@@ -196,6 +200,14 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
+    // Calculate total parcel weight (in ounces)
+    let totalWeightOz = 0;
+    result.cartItems.forEach((item) => {
+      const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
+      totalWeightOz += unitWeight * item.quantity;
+    });
+    const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
+
     // 1. Validate the cart
     const result = await validateUserCart(userId, req.authToken);
 
@@ -218,6 +230,8 @@ export const createCheckoutSession = async (req, res) => {
         total_amount: initialTotal,
         customer_email: userEmail,
         shipping_address: isPickup ? { type: "local_pickup" } : null,
+        easypost_shipment_id: easypostShipmentId,
+        easypost_rate_id: easypostRateId,
       })
       .select()
       .single();
@@ -289,6 +303,7 @@ export const createCheckoutSession = async (req, res) => {
         order_id: newOrder.id,
         user_id: userId,
         fulfillment_type: isPickup ? "pickup" : "shipping",
+        total_weight_oz: String(totalWeightOz),
       },
     };
 
@@ -320,3 +335,9 @@ export const createCheckoutSession = async (req, res) => {
     });
   }
 };
+
+const shipment = await easypost.Shipment.create({
+  from_address: SENDER_ADDRESS,
+  to_address: toAddressData,
+  parcel: { weight: totalWeightOz},
+});

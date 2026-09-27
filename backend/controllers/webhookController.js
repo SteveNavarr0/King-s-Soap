@@ -1,7 +1,86 @@
 import Stripe from "stripe";
 import supabase from "../supabaseClient.js";
+import easypost from "../easypostClient.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const SENDER_ADDRESS = {
+  street1: "6000 Jed Smith Dr",
+  city: "Sacramento",
+  state: "CA",
+  zip: "95819",
+  country: "US",
+  company: "King's Soap",
+  phone: "(916) 856-9659"
+};
+
+/**
+ * Creates and purchases postage using the shipping address returned by Stripe.
+ */
+const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, customerEmail, totalWeightOz) => {
+  try {
+    const address = shippingDetails.address;
+
+    // 1. Build EasyPost to_address from Stripe payload
+    const toAddress = {
+      name: shippingDetails.name || "Customer",
+      street1: address.line1,
+      street2: address.line2 || "",
+      city: address.city,
+      state: address.state,
+      zip: address.postal_code,
+      country: address.country || "US",
+      email: customerEmail || undefined,
+    };
+
+    // 2. Stage shipment with the weight passed in metadata
+    const shipment = await easypost.Shipment.create({
+      from_address: SENDER_ADDRESS,
+      to_address: toAddress,
+      parcel: {
+        weight: Number(totalWeightOz) || 16,
+      },
+    });
+
+    // 3. Select cheapest rate (preferring USPS Ground Advantage)
+    const selectedRate =
+      shipment.lowestRate(["USPS"], ["GroundAdvantage"]) || shipment.lowestRate();
+
+    if (!selectedRate) {
+      throw new Error(`No viable shipping rates found for order ${orderId}`);
+    }
+
+    // 4. Purchase the label
+    const boughtShipment = await easypost.Shipment.buy(shipment.id, selectedRate.id);
+
+    // 5. Update public.orders with EasyPost shipment metadata
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({
+        easypost_shipment_id: boughtShipment.id,
+        easypost_rate_id: selectedRate.id,
+        carrier: selectedRate.carrier,
+        shipping_service: selectedRate.service,
+        shipping_cost: parseFloat(selectedRate.rate),
+        tracking_number: boughtShipment.tracking_code,
+        label_url: boughtShipment.postage_label.label_url,
+      })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error(`Failed to persist shipment details for order ${orderId}:`, updateError);
+    } else {
+      console.log(`EasyPost label purchased for order ${orderId}: ${boughtShipment.tracking_code}`);
+    }
+  } catch (shippingErr) {
+    console.error(`EasyPost creation/purchase failed for order ${orderId}:`, shippingErr);
+    await supabase
+      .from("orders")
+      .update({ status: "payment_cleared_label_failed" })
+      .eq("id", orderId);
+  }
+};
+
 
 /**
  * Express Raw-Body Stripe Webhook Listener (DT-490 & DT-491)
@@ -39,6 +118,8 @@ export const handleStripeWebhook = async (req, res) => {
         const orderId = session.metadata?.order_id;
         const userId = session.metadata?.user_id;
         const fulfillmentType = session.metadata?.fulfillment_type;
+        const easypostShipmentId = session.metadata?.easypost_shipment_id;
+        const easypostRateId = session.metadata?.easypost_rate_id;
 
         const paymentIntentId =
           typeof session.payment_intent === "string"
@@ -82,7 +163,19 @@ export const handleStripeWebhook = async (req, res) => {
           console.log(`Order ${orderId || session.id} marked as paid.`);
         }
 
-        // 3. Update public.products: decrement stock, increment lifetime sales, update Availability
+        // 3. Purchase EasyPost Label using Stripe-provided shipping details  
+        if (fulfillmentType !== "pickup" && session.shipping_details && orderId) {
+          const totalWeightOz = session.metadata?.total_weight_oz || "16";
+          await purchaseEasyPostLabelFromStripe(
+            orderId,
+            session.shipping_details,
+            customerEmail,
+            totalWeightOz
+          );
+        }
+
+
+        // 4. Update public.products: decrement stock, increment lifetime sales, update Availability
         if (orderId) {
           // Fetch the purchased items for this order
           const { data: items, error: itemsError } = await supabase
@@ -132,7 +225,7 @@ export const handleStripeWebhook = async (req, res) => {
           }
         }
 
-        // 4. Clear cart: DELETE FROM public.cart WHERE user_ID = metadata.user_id
+        // 5. Clear cart: DELETE FROM public.cart WHERE user_ID = metadata.user_id
         if (userId) {
           const { error: cartClearError } = await supabase
             .from("cart")
@@ -189,3 +282,5 @@ export const handleStripeWebhook = async (req, res) => {
     });
   }
 };
+
+
