@@ -27,6 +27,7 @@ import Admin from "./Pages/Admin";
 import AdminCreateProduct from "./Pages/AdminCreateProduct";
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminProducts from "./Pages/AdminProducts.jsx";
+import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
 import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
@@ -103,6 +104,7 @@ function App() {
               path="/adminUpdateProduct/:id"
               element={<AdminUpdateProduct />}
             />
+            <Route path="/adminInbox" element = {<AdminInbox/>}/>
             <Route path="/adminProducts" element={<AdminProducts />} />
             <Route
               path="/OldUIAdminDeleteProduct"

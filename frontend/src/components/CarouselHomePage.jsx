@@ -1,6 +1,6 @@
 //return Carousel component with scrolling images, along with a button that links to a product page
 import { useState, useEffect } from "react";
-import RouteButton from "./RouteButton";
+import { Link } from "react-router-dom";
 
 function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -25,25 +25,26 @@ function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-full">
-    <div className="relative w-[500px] h-[300px] overflow-hidden rounded-lg">
-      {images.map((image, index) => ( 
-      <img
-              key={index}
-              src={image}
-              alt={`Slide ${index + 1}`}
-              className={`absolute top-0 left-0 w-full h-full object-cover rounded-lg transition-opacity duration-1000 ${
-                index === currentIndex ? "opacity-100" : "opacity-0"
-              }`}
-            />
-          ))}  
-    </div>
-    </div>
-    <div className="border border-white text-[#FFFFFF] font-[Inria_Serif] px-2 py-2 rounded">
-      <RouteButton to={buttonTo} label={buttonLabel} />
-    </div>
-    </div>
+    <Link
+      to={buttonTo}
+      className="flex flex-col items-center gap-3 cursor-pointer transition duration-200 hover:scale-102">
+        <div className="relative w-[500px] h-[300px] overflow-hidden rounded-lg">
+          {images.map((image, index) => ( 
+          <img
+                  key={index}
+                  src={image}
+                  alt={`Slide ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                    index === currentIndex ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              ))}  
+          </div>
+  
+      <div className="w-[500px] h-[70px] flex items-center justify-center border border-white text-[#FFFFFF] text-lg font-[Inria_Serif] leading-none rounded">
+        {buttonLabel}
+      </div>
+    </Link>
   );
 }
 
