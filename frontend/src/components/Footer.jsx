@@ -1,6 +1,13 @@
 import {FaMapMarkerAlt, FaEnvelope, FaPhoneAlt, FaInstagram} from "react-icons/fa";
+import ContactForm from "../components/ContactForm";
+import {useState} from "react";
+
 
 function Footer() {
+
+  const[isContactFormOpen, setIsContactFormOpen] = useState(false);
+
+
   return (
     <footer className="bg-[#C5AE98] py-6 text-center text-[#FFFFFF]">
       
@@ -13,9 +20,14 @@ function Footer() {
           <FaMapMarkerAlt />
         </a>
 
-        <a href="mailto:kinganita25@gmail.com">
+        <button 
+          type="button"
+          onClick={() => setIsContactFormOpen(true)}
+          className="cursor-pointer"
+          aria-label="Open contact form"
+        >
           <FaEnvelope />
-        </a>
+        </button>
 
         <a href="tel:19168569659">
           <FaPhoneAlt />
@@ -29,6 +41,12 @@ function Footer() {
       <p className="mt-3 mb-3 text-md font-[Inter]">
         Sacramento, CA • kinganita25@gmail.com • (916) 856-9659 • @kingssoap
       </p>
+
+
+      <ContactForm
+        isOpen={isContactFormOpen}
+        onClose={() => setIsContactFormOpen(false)}
+      />
 
     </footer>
   );
