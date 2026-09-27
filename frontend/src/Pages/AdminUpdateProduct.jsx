@@ -26,6 +26,7 @@ const AdminUpdateProduct = () => {
   const [category, setCategory] = useState([]);// change to array, maybe change how we are storing in the db?
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
+  const [newImageOrders, setNewImageOrders] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,7 @@ const AdminUpdateProduct = () => {
 
       const {data, error: fetchError} = await supabase
         .from("products")
-        .select("name, price, description, stock, weight, category, product_images(id, image_url)")
+        .select("name, price, description, stock, weight, category, product_images(id, image_url, display_order)")
         .eq("id", id) //Based on matching id
         .single(); //Retun one instead of the whole array
       
@@ -68,7 +69,17 @@ const AdminUpdateProduct = () => {
       setStock(data.stock ?? "");
       setWeight(data.weight ?? "");
       setCategory(data.category ? data.category.split(",").map((item) => item.trim()): []);
-      setExistingImages(data.product_images || []);
+      //Arrange from Main to last
+      setExistingImages(
+        [...(data.product_images || [])].sort( //Copy array > ...
+          (firstImage, secondImage) =>
+            firstImage.display_order - secondImage.display_order //Numeric comparison
+        )
+        .map((image, index) => ({
+          ...image,
+          display_order: index + 1,
+        }))
+      );
     
     };
 
@@ -103,6 +114,36 @@ const AdminUpdateProduct = () => {
       return;
     }
 
+    //Save image display order in DB through Promise.all
+    const imageOrderResults = await Promise.all( 
+      existingImages.map((image) =>
+      supabase
+        .from("product_images")
+        .update({
+          display_order: image.display_order,
+        })
+        .eq("id", image.id)
+      
+      )
+    );
+
+    //Check if iamge order update failed
+    const failedOrderUpdate = imageOrderResults.find(
+      (result) => result.error
+    );
+
+    if (failedOrderUpdate) {
+      console.error(
+        "Error updating image order:",
+        failedOrderUpdate.error
+      );
+      setError("Unable to save the image order.");
+      return;
+
+    }
+
+
+
     //Send image request if user selected > 0 image
     if (newImages.length >0) {
       const imageFormData = new FormData(); //FormData object to hold the image files
@@ -111,6 +152,12 @@ const AdminUpdateProduct = () => {
         imageFormData.append("images", image); //Loop through new images and add to formData
       });
 
+
+      //Send each new image's selected display pos
+      imageFormData.append(
+        "displayOrders",
+        JSON.stringify(newImageOrders) //Convert array to JSON string
+      );
       //Send to backend
       const imageResponse = await fetch(
          `http://localhost:3000/api/products/${id}/images`,
@@ -134,8 +181,9 @@ const AdminUpdateProduct = () => {
         ...imageResult.images,
       ]);
 
-      //Clear the newly selected files now that they are uploade
+      //Clear the newly selected files and their temp pos
       setNewImages([]);
+      setNewImageOrders([]);
 
 
       console.log("Image endpoint response:", imageResult);
@@ -191,18 +239,64 @@ const AdminUpdateProduct = () => {
 
   }
 
-  //Remove image from the displayed existing-images array
-  setExistingImages((currentImages) =>
-    currentImages.filter(
-      (existingImage) => existingImage.id != imageToDelete.id //Render ones not selected for deletion
+
+  //Remove the deleted image and renumber the remaining images
+  const reorderedRemainingImages = existingImages
+    .filter(
+      (existingImage) =>
+        existingImage.id !== imageToDelete.id //Is existingImage's id different from imageToDelete's id
+    )
+    .sort(
+      (firstImage, secondImage) =>
+        firstImage.display_order -
+      secondImage.display_order
+    )
+    .map((image, index) => ({
+      ...image,
+      display_order: index + 1,
+    }));
+
+    setExistingImages(reorderedRemainingImages);
+
+    //Save each remaining image's new position to Supabase
+    const orderUpdateResults = await Promise.all(
+      reorderedRemainingImages.map((image) =>
+      supabase
+        .from("product_images")
+        .update({
+          display_order: image.display_order,
+        })
+        .eq("id", image.id)
     )
   );
 
-  };
+  //Find the first failed image order update
+  const failedOrderUpdate = orderUpdateResults.find(
+    (result) => result.error
+  );
+
+  if (failedOrderUpdate) {
+    console.error(
+      "Could not renumber images after deletion:",
+      failedOrderUpdate.error
+    );
+
+    setError(
+      "The image was deleted, but the remaining image order could not be saved"
+    );
+
+    return;
+  }
+
+
+};
+
+
 
   const deleteProduct = () => {
   console.log("Delete product:", id);
 };
+
 
 
 
@@ -415,7 +509,10 @@ const AdminUpdateProduct = () => {
                 <AdminImageManager
                   newImages={newImages}
                   setNewImages={setNewImages}
+                  newImageOrders={newImageOrders}
+                  setNewImageOrders={setNewImageOrders}
                   existingImages={existingImages}
+                  setExistingImages={setExistingImages}
                   onDeleteExisting={deleteExistingImage}
                 />
             </div>

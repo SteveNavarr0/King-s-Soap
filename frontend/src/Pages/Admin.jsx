@@ -4,8 +4,11 @@ import AdminNav from "../components/AdminNav";
 import { useEffect, useState } from "react";
 import AdminProductTile from "../components/AdminProductTile";
 import supabase from "../supabaseClient";
+import { useAuth } from "../context/AuthContext";
 
 function Admin() {
+  const { adminName } = useAuth();
+
   const [products, setProducts] = useState([]);
 
   // Pull products from the database
@@ -54,7 +57,7 @@ function Admin() {
       
       <div className="flex flex-col justify-left mt-8 ml-8 mr-8 md:ml-13 md:mr-13 text-white">
         <h1 className="text-3xl md:text-5xl font-serif">
-          Welcome, Anita
+          Welcome, {adminName.first}
         </h1>
 
         <p className="text-base font-serif md:text-xl leading-relaxed">
@@ -72,7 +75,7 @@ function Admin() {
 
   <Link
     to="/AdminProducts"
-    className="flex items-center gap-3 font-serif italic text-sm md:text-lg"
+    className="flex items-center gap-3 font-serif italic text-sm md:text-lg hover:scale-105 cursor-pointer transition"
   >
     View All
 

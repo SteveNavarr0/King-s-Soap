@@ -12,9 +12,25 @@ const Shop = () => {
 
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, product_images(image_url)");
+        .select("id, name, price, product_images(image_url, display_order)");
 
-      setProducts(data);
+      if (error) {
+        console.error("Error fetching products:", error);
+        return;
+      }
+       //Sort each product's images from Main to last
+        const productsWithOrderedImages = (data || []).map(
+          (product) => ({
+            ...product,
+            product_images: [...(product.product_images || [])].sort(
+              (firstImage, secondImage) =>
+                firstImage.display_order -
+              secondImage.display_order
+            ),
+          })
+        );
+
+      setProducts(productsWithOrderedImages); 
     };
 
     fetchProducts();
@@ -25,7 +41,7 @@ const Shop = () => {
       <ShopPageImage />
       <FilterBar />
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 pt-14 py-10">
         <div className="grid grid-cols-3 gap-x-10 gap-y-14">
           {products.map((product) => {
             const firstImage = product.product_images?.[0]?.image_url || "";
@@ -34,23 +50,23 @@ const Shop = () => {
               <Link
                 to={`/product/${product.id}`}
                 key={product.id}
-                className="block"
+                className="block transition duration-200 hover:scale-102"
               >
-                <div className="rounded-lg overflow-hidden">
+                <div>
                   {firstImage ? (
                     <img
                       src={firstImage}
                       alt={product.name}
-                      className="w-full h-72 object-cover"
+                      className="w-full h-72 object-cover rounded-lg mb-3"
                     />
                   ) : (
-                    <div className="w-full h-72 bg-gray-200 flex items-center justify-center">
+                    <div className="w-full h-72 bg-gray-200 flex items-center justify-center rounded-lg mb-3">
                       No image available
                     </div>
                   )}
 
-                  <div className="pt-3 text-center">
-                    <h2 className="text-lg font-medium">{product.name}</h2>
+                  <div className="text-center border border-white text-[#FFFFFF] font-[Inria_Serif] px-2 py-2 rounded">
+                    <h2 className="text-base">{product.name}</h2>
                     <p className="text-base">${Number(product.price).toFixed(2)}</p>
                   </div>
                 </div>
