@@ -35,7 +35,8 @@ import OrganicShop from "./Pages/OrganicShop.jsx";
 import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
 import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
-import AdminOrders from "./Pages/AdminOrders.jsx"
+import AdminOrders from "./Pages/AdminOrders.jsx";
+import AdminPostagePage from "./Pages/AdminShipping.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -120,7 +121,12 @@ function App() {
             <Route path="/lipBalmShop" element={<LipBalmShop/>} />
             <Route path="/soapDishShop" element={<SoapDishShop/>} />
             <Route path="/adminOrders" element={<AdminOrders/>} />
-          </Routes>
+            <Route path="/admin/shipping" element={<AdminPostagePage />} />
+            <Route path="/adminShipping" element={<AdminPostagePage />} />
+            <Route path="/AdminShipping" element={<AdminPostagePage />} />
+            <Route path="/AdminPostage" element={<AdminPostagePage />} />
+            <Route path="/adminPostage" element={<AdminPostagePage />} />
+            </Routes>
         </div>
 
         <AppContent>
