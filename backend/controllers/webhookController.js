@@ -5,7 +5,7 @@ import easypost from "../easypostClient.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const SENDER_ADDRESS = {
-  street1: "6000 Jed Smith Dr",
+  street1: "6000 J St",
   city: "Sacramento",
   state: "CA",
   zip: "95819",
@@ -54,26 +54,33 @@ const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, custome
     const boughtShipment = await easypost.Shipment.buy(shipment.id, selectedRate.id);
 
     // 5. Update public.orders with EasyPost shipment metadata
+    const updateData = {
+      easypost_shipment_id: boughtShipment.id,
+      carrier: selectedRate.carrier,
+      shipping_service: selectedRate.service,
+      shipping_cost: parseFloat(selectedRate.rate),
+      tracking_number: boughtShipment.tracking_code,
+      label_url: boughtShipment.postage_label?.label_url || null,
+    };
+    if (boughtShipment.tracker?.id) {
+      updateData.easypost_tracker_id = boughtShipment.tracker.id;
+    }
+
     const { error: updateError } = await supabase
       .from("orders")
-      .update({
-        easypost_shipment_id: boughtShipment.id,
-        easypost_rate_id: selectedRate.id,
-        carrier: selectedRate.carrier,
-        shipping_service: selectedRate.service,
-        shipping_cost: parseFloat(selectedRate.rate),
-        tracking_number: boughtShipment.tracking_code,
-        label_url: boughtShipment.postage_label.label_url,
-      })
+      .update(updateData)
       .eq("id", orderId);
 
     if (updateError) {
       console.error(`Failed to persist shipment details for order ${orderId}:`, updateError);
     } else {
-      console.log(`EasyPost label purchased for order ${orderId}: ${boughtShipment.tracking_code}`);
+      console.log(`EasyPost label purchased and saved for order ${orderId}: tracking=${boughtShipment.tracking_code}, label=${boughtShipment.postage_label?.label_url}`);
     }
   } catch (shippingErr) {
-    console.error(`EasyPost creation/purchase failed for order ${orderId}:`, shippingErr);
+    console.error(`EasyPost creation/purchase failed for order ${orderId}:`, shippingErr.message || shippingErr);
+    if (shippingErr.errors) {
+      console.error(`EasyPost error details:`, JSON.stringify(shippingErr.errors, null, 2));
+    }
     await supabase
       .from("orders")
       .update({ status: "payment_cleared_label_failed" })
@@ -164,14 +171,17 @@ export const handleStripeWebhook = async (req, res) => {
         }
 
         // 3. Purchase EasyPost Label using Stripe-provided shipping details  
-        if (fulfillmentType !== "pickup" && session.shipping_details && orderId) {
+        const shippingDetails = session.shipping_details || session.customer_details;
+        if (fulfillmentType !== "pickup" && shippingDetails?.address && orderId) {
           const totalWeightOz = session.metadata?.total_weight_oz || "16";
           await purchaseEasyPostLabelFromStripe(
             orderId,
-            session.shipping_details,
+            shippingDetails,
             customerEmail,
             totalWeightOz
           );
+        } else if (fulfillmentType !== "pickup") {
+          console.warn(`EasyPost label skipped for order ${orderId}: missing shipping details or address in session. session.shipping_details=${JSON.stringify(session.shipping_details)}`);
         }
 
 

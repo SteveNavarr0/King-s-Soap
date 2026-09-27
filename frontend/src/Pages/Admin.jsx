@@ -90,17 +90,11 @@ function Admin() {
 {/* Top 3 Products */}
 {topProducts.map((product) => (
 
-  <AdminProductTile
-    key={product.id}
-    product={product}
-  />
-
-))}
-
+  <AdminProductTile key={product.id}product={product}/>))}
+</div>
 </div>
 
-</div>
-      
+
       <AdminNav />
       
     </div>

@@ -4,7 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Use SUPABASE_SERVICE_ROLE_KEY if available for server-side operations to bypass RLS policies
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
