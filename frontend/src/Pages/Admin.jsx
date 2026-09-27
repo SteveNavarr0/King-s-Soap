@@ -4,12 +4,14 @@ import AdminNav from "../components/AdminNav";
 import { useEffect, useState } from "react";
 import AdminProductTile from "../components/AdminProductTile";
 import supabase from "../supabaseClient";
+import AdminCard from "../components/AdminCard";
 import { useAuth } from "../context/AuthContext";
 
 function Admin() {
   const { adminName } = useAuth();
 
   const [products, setProducts] = useState([]);
+  const [activeOrderCount, setActiveOrderCount] = useState(0);
 
   // Pull products from the database
   useEffect(() => {
@@ -28,6 +30,22 @@ function Admin() {
     };
 
     fetchProducts();
+  }, []);
+  useEffect(() => {
+    const fetchActiveOrderCount = async () => {
+      const { count, error } = await supabase
+        .from("active_orders")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error counting active orders:", error);
+        return;
+      }
+
+      setActiveOrderCount(count ?? 0);
+    };
+
+    fetchActiveOrderCount();
   }, []);
 
 
@@ -63,6 +81,12 @@ function Admin() {
         <p className="text-base font-serif md:text-xl leading-relaxed">
           Here's your shop at a glance
         </p>
+        <AdminCard
+      title="Orders"
+      count={activeOrderCount}
+      icon={null}
+      to="/adminOrders"
+      />
  {/* Top Sellers Section */}
  <div className="mt-4 md:mt-8 bg-white/10 rounded-xl p-4 md:p-6">
 
