@@ -200,14 +200,6 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
-    // Calculate total parcel weight (in ounces)
-    let totalWeightOz = 0;
-    result.cartItems.forEach((item) => {
-      const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
-      totalWeightOz += unitWeight * item.quantity;
-    });
-    const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
-
     // 1. Validate the cart
     const result = await validateUserCart(userId, req.authToken);
 
@@ -217,8 +209,17 @@ export const createCheckoutSession = async (req, res) => {
         message: result.error,
       });
     }
+    
+  // 2. Calculate total parcel weight (in ounces)
+  let totalWeightOz = 0;
+  result.cartItems.forEach((item) => {
+   const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
+   totalWeightOz += unitWeight * item.quantity;
+  });
+  const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
 
-    // 2. Insert Pending Order into Supabase
+
+    // 3. Insert Pending Order into Supabase
     const shippingFee = isPickup ? 0 : 7.0;
     const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
 
@@ -230,8 +231,7 @@ export const createCheckoutSession = async (req, res) => {
         total_amount: initialTotal,
         customer_email: userEmail,
         shipping_address: isPickup ? { type: "local_pickup" } : null,
-        easypost_shipment_id: easypostShipmentId,
-        easypost_rate_id: easypostRateId,
+     
       })
       .select()
       .single();
@@ -241,7 +241,7 @@ export const createCheckoutSession = async (req, res) => {
       throw new Error(`Failed to create order: ${orderError?.message || "Unknown error"}`);
     }
 
-    // 3. Insert Order Items into Supabase
+    // 4. Insert Order Items into Supabase
     const orderItems = result.cartItems.map((item) => ({
       order_id: newOrder.id,
       product_id: item.product_ID,
@@ -258,7 +258,7 @@ export const createCheckoutSession = async (req, res) => {
       throw new Error(`Failed to save order items: ${itemsError.message}`);
     }
 
-    // 4. Create Stripe Session configured for Shipping or Local Pickup
+    // 5. Create Stripe Session configured for Shipping or Local Pickup
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
     const sessionConfig = {
       payment_method_types: ["card"],
@@ -309,7 +309,7 @@ export const createCheckoutSession = async (req, res) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    // 5. Update the Pending Order with the Stripe Session ID
+    // 6. Update the Pending Order with the Stripe Session ID
     const { error: updateError } = await supabase
       .from("orders")
       .update({ stripe_session_id: session.id })
@@ -319,7 +319,7 @@ export const createCheckoutSession = async (req, res) => {
       console.error("Failed to update order with Stripe session ID:", updateError);
     }
 
-    // 6. Return the URL to the frontend
+    // 7. Return the URL to the frontend
     return res.status(200).json({
       success: true,
       url: session.url,
@@ -335,9 +335,3 @@ export const createCheckoutSession = async (req, res) => {
     });
   }
 };
-
-const shipment = await easypost.Shipment.create({
-  from_address: SENDER_ADDRESS,
-  to_address: toAddressData,
-  parcel: { weight: totalWeightOz},
-});
