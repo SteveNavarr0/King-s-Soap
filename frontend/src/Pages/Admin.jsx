@@ -16,15 +16,15 @@ function Admin() {
         .from("products")
         .select("id, name, price, product_images(image_url), sales");
 
-      if (error) {
+      if (error) { //throws an error if request to supabase fails
         console.error("Error fetching products:", error);
         return;
       }
 
-      setProducts(data || []);
+      setProducts(data || []); //create the products array
     };
 
-    fetchProducts();
+    fetchProducts(); //call the fetch from the component when the page loads
   }, []);
 
 

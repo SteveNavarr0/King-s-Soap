@@ -28,6 +28,7 @@ function AdminProducts() {
     fetchProducts();
   }, []);
 
+  //sorting products by sales, highest to lowest, and then alphabetically if sales are equal
   const sortedProducts = [...products].sort((a, b) => {
     const salesA = a.sales ?? 0;
     const salesB = b.sales ?? 0;
