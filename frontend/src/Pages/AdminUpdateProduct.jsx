@@ -1,4 +1,4 @@
-import {useParams} from "react-router-dom";
+import {useParams, useNavigate} from "react-router-dom";
 import {useEffect, useState } from "react";
 import AdminHeader from "../components/AdminHeader";
 import AdminNav from "../components/AdminNav";
@@ -17,6 +17,7 @@ const categoryOptions = [
 //Pulled from AdminCreateProduct.jsx
 const AdminUpdateProduct = () => {
   const {id} = useParams(); // Get the product ID from the URL parameters
+  const navigate = useNavigate(); //Used to navigate back to AdminProducts after a soft delete
 
   const [productName, setProductName] = useState("");
   const [price, setPrice] = useState("");
@@ -293,8 +294,46 @@ const AdminUpdateProduct = () => {
 
 
 
-  const deleteProduct = () => {
-  console.log("Delete product:", id);
+const deleteProduct = async () => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this product?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    const { error: deleteError } = await supabase
+      .from("products")
+      .update({
+        is_active: false,
+      })
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("Error deleting product:", deleteError);
+      setError("Unable to delete product.");
+      return;
+    }
+
+    // Soft delete succeeded
+    setSuccess("Product deleted successfully.");
+
+    // Go back to AdminProducts
+    navigate("/adminProducts");
+
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    setError("Unable to delete product.");
+
+  } finally {
+    setLoading(false);
+  }
 };
 
 
