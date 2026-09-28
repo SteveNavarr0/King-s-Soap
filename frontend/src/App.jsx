@@ -27,6 +27,7 @@ import Admin from "./Pages/Admin";
 import AdminCreateProduct from "./Pages/AdminCreateProduct";
 import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminProducts from "./Pages/AdminProducts.jsx";
+import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
 import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
@@ -34,6 +35,8 @@ import OrganicShop from "./Pages/OrganicShop.jsx";
 import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
 import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
+import AdminOrders from "./Pages/AdminOrders.jsx";
+import AdminPostagePage from "./Pages/AdminShipping.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -102,6 +105,7 @@ function App() {
               path="/adminUpdateProduct/:id"
               element={<AdminUpdateProduct />}
             />
+            <Route path="/adminInbox" element = {<AdminInbox/>}/>
             <Route path="/adminProducts" element={<AdminProducts />} />
             <Route
               path="/OldUIAdminDeleteProduct"
@@ -116,7 +120,13 @@ function App() {
             <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
             <Route path="/lipBalmShop" element={<LipBalmShop/>} />
             <Route path="/soapDishShop" element={<SoapDishShop/>} />
-          </Routes>
+            <Route path="/adminOrders" element={<AdminOrders/>} />
+            <Route path="/admin/shipping" element={<AdminPostagePage />} />
+            <Route path="/adminShipping" element={<AdminPostagePage />} />
+            <Route path="/AdminShipping" element={<AdminPostagePage />} />
+            <Route path="/AdminPostage" element={<AdminPostagePage />} />
+            <Route path="/adminPostage" element={<AdminPostagePage />} />
+            </Routes>
         </div>
 
         <AppContent>

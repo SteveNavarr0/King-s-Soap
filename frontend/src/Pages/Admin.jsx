@@ -4,9 +4,14 @@ import AdminNav from "../components/AdminNav";
 import { useEffect, useState } from "react";
 import AdminProductTile from "../components/AdminProductTile";
 import supabase from "../supabaseClient";
+import AdminCard from "../components/AdminCard";
+import { useAuth } from "../context/AuthContext";
 
 function Admin() {
+  const { adminName } = useAuth();
+
   const [products, setProducts] = useState([]);
+  const [activeOrderCount, setActiveOrderCount] = useState(0);
 
   // Pull products from the database
   useEffect(() => {
@@ -25,6 +30,22 @@ function Admin() {
     };
 
     fetchProducts(); //call the fetch from the component when the page loads
+  }, []);
+  useEffect(() => {
+    const fetchActiveOrderCount = async () => {
+      const { count, error } = await supabase
+        .from("active_orders")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error counting active orders:", error);
+        return;
+      }
+
+      setActiveOrderCount(count ?? 0);
+    };
+
+    fetchActiveOrderCount();
   }, []);
 
 
@@ -54,12 +75,18 @@ function Admin() {
       
       <div className="flex flex-col justify-left mt-8 ml-8 mr-8 md:ml-13 md:mr-13 text-white">
         <h1 className="text-3xl md:text-5xl font-serif">
-          Welcome, Anita
+          Welcome, {adminName.first}
         </h1>
 
         <p className="text-base font-serif md:text-xl leading-relaxed">
           Here's your shop at a glance
         </p>
+        <AdminCard
+      title="Orders"
+      count={activeOrderCount}
+      icon={null}
+      to="/adminOrders"
+      />
  {/* Top Sellers Section */}
  <div className="mt-4 md:mt-8 bg-white/10 rounded-xl p-4 md:p-6">
 
@@ -72,7 +99,7 @@ function Admin() {
 
   <Link
     to="/AdminProducts"
-    className="flex items-center gap-3 font-serif italic text-sm md:text-lg"
+    className="flex items-center gap-3 font-serif italic text-sm md:text-lg hover:scale-105 cursor-pointer transition"
   >
     View All
 
@@ -87,17 +114,11 @@ function Admin() {
 {/* Top 3 Products */}
 {topProducts.map((product) => (
 
-  <AdminProductTile
-    key={product.id}
-    product={product}
-  />
-
-))}
-
+  <AdminProductTile key={product.id}product={product}/>))}
+</div>
 </div>
 
-</div>
-      
+
       <AdminNav />
       
     </div>

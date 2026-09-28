@@ -1,9 +1,10 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/test_checkout_validation.js && node tests/test_fulfillment.js && node tests/test_http_endpoint.js",
     "start": "node server.js"
   },
   "keywords": [],
@@ -17,6 +18,7 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "morgan": "^1.12.1",
-    "multer": "^2.3.0"
+    "multer": "^2.3.0",
+    "stripe": "^22.6.2"
   }
 }
