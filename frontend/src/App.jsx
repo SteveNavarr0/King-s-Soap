@@ -22,6 +22,7 @@ import UserAccount from "./Pages/UserAccount";
 import UserChangePassword from "./Pages/UserChangePassword";
 import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
+import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
 import AdminCreateProduct from "./Pages/AdminCreateProduct";
@@ -94,6 +95,10 @@ function App() {
             <Route
               path="/paymentSuccessful"
               element={<PaymentSuccessful />}
+            />
+            <Route
+              path="/request-cancellation"
+              element={<RequestCancellation />}
             />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/admin" element={<Admin />} />

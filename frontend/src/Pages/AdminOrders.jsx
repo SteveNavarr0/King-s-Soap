@@ -100,7 +100,27 @@ function AdminOrders() {
         <div>
           {new Date(order.order_date).toLocaleDateString()}
         </div>
-        <div>{order.status}</div>
+        <div>
+          {order.status === "cancel_requested" ? (
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 animate-pulse [animation-duration:2s] [@keyframes_pulse{0%,100%{opacity:1}50%{opacity:0.1}}]">
+              Cancellation Requested
+            </span>
+          ) : order.status === "on_hold" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/40">
+              On Hold
+            </span>
+          ) : order.status === "accepted" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
+              Accepted
+            </span>
+          ) : order.status === "paid" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/40">
+              Paid
+            </span>
+          ) : (
+            <span className="capitalize">{order.status}</span>
+          )}
+        </div>
       </div>
     ))}
 
