@@ -31,6 +31,8 @@ router.post("/orders/:id/accept", requireAuth, acceptOrder);
  * Decline an order on hold: release Stripe authorization hold, transition to 'cancelled', and notify customer.
  */
 router.post("/orders/:id/decline", requireAuth, declineOrder);
+router.post("/orders/:id/cancel", requireAuth, declineOrder);
+
 
 /**
  * Customer cancellation request while order is on hold (notifies store admin).

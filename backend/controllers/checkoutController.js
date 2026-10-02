@@ -496,12 +496,13 @@ export const declineOrder = async (req, res) => {
       });
     }
 
-    if (!["on_hold", "cancel_requested"].includes(order.status)) {
+    if (!["on_hold", "cancel_requested", "accepted"].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: `Order cannot be declined because it has status '${order.status}'. Only 'on_hold' or 'cancel_requested' orders can be declined.`,
+        message: `Order cannot be cancelled because it has status '${order.status}'.`,
       });
     }
+
 
     // 1. Cancel Stripe PaymentIntent authorization hold (or refund if already captured)
     if (order.stripe_payment_intent_id) {
@@ -523,7 +524,18 @@ export const declineOrder = async (req, res) => {
       }
     }
 
-    // 2. Update order status to 'cancelled'
+        // 2. Void EasyPost label if one was purchased (DT-36 / DT-546)
+    if (order.easypost_shipment_id) {
+      try {
+        await easypost.Shipment.refund(order.easypost_shipment_id);
+        console.log(`EasyPost shipment ${order.easypost_shipment_id} refunded/voided for order ${orderId}.`);
+      } catch (easypostErr) {
+        console.error(`Failed to void EasyPost label for order ${orderId}:`, easypostErr.message || easypostErr);
+      }
+    }
+
+
+    // 3. Update order status to 'cancelled'
     const { error: cancelError } = await supabase
       .from("orders")
       .update({ status: "cancelled" })
@@ -537,7 +549,7 @@ export const declineOrder = async (req, res) => {
       });
     }
 
-    // 3. Notify customer of cancellation
+    // 4. Notify customer of cancellation
     if (order.customer_email) {
       sendOrderCancelledEmail({
         customerEmail: order.customer_email,
