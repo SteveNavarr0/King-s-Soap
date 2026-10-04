@@ -20,9 +20,10 @@ const Home = () => {
             image_url
           )
         `)
-        // INSERT POPULAR ITEMS TO DISPLAY HERE, INPUT ID from supabase products table
-        //this is hardcoded right now, but we should make it this dymamic with a tag system 
-        .in("id", [4,5,6,7,8,9]);
+        //pull top sellers from products table in supabase
+        .order("sales", { ascending: false })
+        // Get top 6 products
+       .limit(6); 
 
       //error handling for fetch request 
       if (error) {

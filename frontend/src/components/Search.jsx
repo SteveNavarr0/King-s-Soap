@@ -1,17 +1,41 @@
 import { Link, NavLink } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import SearchIcon from "./SearchIcon";
 import supabase from "../supabaseClient";
+
+
+
 
 function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
+  const [isFocused, setIsFocused] = useState(false);
+  const blurTimeoutRef = useRef(null);
+
+ // Fetch top sellers when search term is empty
+ const fetchTopSellingProducts = async () => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, price, description, product_images(image_url)")
+    .order("sales", { ascending: false })
+    .limit(4);
+
+  if (error) {
+    console.error("Error fetching popular products:", error);
+    setResults([]);
+    return;
+  }
+
+  setResults(data ?? []);
+};
+
 
 const searchProducts = async (searchTerm) => {
   const trimmedSearch = searchTerm.trim();
 
   if (!trimmedSearch) {
-    setResults([]);
+    //setResults([]);
+    fetchTopSellingProducts();
     return;
   }
 
@@ -64,6 +88,14 @@ const searchProducts = async (searchTerm) => {
   console.log("Search results:", rankedResults.slice(0, 4));
 };
 useEffect(() => {
+
+  if (!searchTerm.trim()) {
+         if (isFocused) {
+           fetchTopSellingProducts();
+         }
+         return;
+      }
+
     const searchDelay = setTimeout(() => {
       searchProducts(searchTerm);
     }, 300);
@@ -71,7 +103,22 @@ useEffect(() => {
     return () => {
       clearTimeout(searchDelay);
     };
-  }, [searchTerm]);
+     }, [searchTerm, isFocused]);
+
+     const handleFocus = () => {
+       if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+       setIsFocused(true);
+       if (!searchTerm.trim()) {
+         fetchTopSellingProducts();
+       }
+     };
+    
+     const handleBlur = () => {
+       // 150ms buffer so clicking a product link registers before the menu closes
+       blurTimeoutRef.current = setTimeout(() => {
+         setIsFocused(false);
+       }, 150);
+     };
 
 
   return (
@@ -82,6 +129,8 @@ useEffect(() => {
       onChange={(event) =>
         setSearchTerm(event.target.value)
       }
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       className="w-full rounded-full bg-white px-4 py-1 pr-10 outline-none"
       placeholder="Search"
     />
@@ -90,10 +139,15 @@ useEffect(() => {
       <SearchIcon />
     </div>
 
-    {searchTerm.trim() && results.length > 0 && (
+     {isFocused && results.length > 0 && (
       <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg bg-white shadow-lg overflow-hidden">
         {results.map((product) => {
-          const firstImage =
+         {!searchTerm.trim() && (
+                 <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50 border-b border-gray-100">
+                   Popular Items
+                 </div>
+               )}
+         const firstImage =
             product.product_images?.[0]?.image_url || "";
 
           return (
