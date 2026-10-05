@@ -233,6 +233,29 @@ const archiveMessage = async () => {
 
 
   
+  //Format timestamp for display
+  const formatTimestamp = (createdAt) => {
+    if (!createdAt) {
+      return "Unknown date";
+    }
+
+    const messageDate = new Date(createdAt);
+
+    if (Number.isNaN(messageDate.getTime())) {
+      return "Invalid date";
+    }
+
+    return messageDate.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+
+
 
 
   return (
@@ -276,27 +299,35 @@ const archiveMessage = async () => {
 
             {/* Customer's name and subject*/}
             <div className="flex-1 min-w-0 mr-4">
-              <p className="text-lg md:text-3xl font-medium truncate">
+              <p className="text-lg md:text-3xl font-medium truncate capitalize">
                 {message.customer_name}
               </p>
 
-              <p className="text-lg md:text-2xl text-white/70 truncate">
+              <p className="text-lg md:text-2xl text-white/70 truncate capitalize">
                 {message.subject}
               </p>
             </div>
            
 
             {/* Status*/}
-            <span
-              className={`text-md md:text-xl whitespace-nowrap capitalize ${
-                message.status === "unread"
-                  ? "text-[#8B6B4A]"
-                  : "text-white"
-              }`}
-            >
-              
-              {message.status}
-            </span>
+            <div className="flex flex-col items-end whitespace-nowrap">
+              <span
+                className={`text-lg md:text-3xl font-medium truncate capitalize ${
+                  message.status === "unread"
+                    ? "text-[#8B6B4A]"
+                    : "text-white"
+                }`}
+              >
+                
+                {message.status}
+              </span>
+
+
+
+              <span className="text-lg md:text-2xl text-white/70 truncate">
+                {formatTimestamp(message.created_at)}
+              </span>
+            </div>
           </div>
         </div>
 
