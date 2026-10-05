@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+
 
 import supabase from "../supabaseClient";
 const getImageUrl =  (imagePath) => {
@@ -15,6 +17,8 @@ function CreateAccount() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState("");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,30 +145,51 @@ console.log("SIGNUP ERROR:", error);
                     <label className="block text-2xl font-medium text-gray-800 mb-2">
                     Password
                     </label>
+
+                    <div className="relative">
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         required
                         minLength={8}
                         autoComplete="new-password"
                         placeholder="********"
-                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+                        className="w-full h-12 pr-12 pl-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label = {showPassword ? "Hide password" : "Show password"}
+                            className="absolute inset-y-0 right-0 px-4 py-2 text-gray-700 cursor-pointer"
+                        >
+                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                    </div>
                 </div>
 
                 <div>
                     <label className="block text-2xl font-medium text-gray-800 mb-2">
                     Re-enter password
                     </label>
+
+                    <div className="relative">
                     <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(event) => setConfirmPassword(event.target.value)}
                         required
                         placeholder="********"
-                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+                        className="w-full h-12 pr-12 pl-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            aria-label = {showConfirmPassword ? "Hide password" : "Show password"}
+                            className="absolute inset-y-0 right-0 px-4 py-2 text-gray-700 cursor-pointer">
+                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                        </button>
+                    </div>
                 </div>
 
                 {errorMessage && (

@@ -2,6 +2,7 @@ import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import supabase from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const getImageUrl = (imagePath) => {
   const { data } = supabase.storage
@@ -17,6 +18,7 @@ function HomeLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e) => {
@@ -50,6 +52,7 @@ function HomeLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
               placeholder="Email Address"
               className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
             />
@@ -59,13 +62,24 @@ function HomeLogin() {
             <label className="block text-2xl font-medium text-gray-800 mb-2">
               Password
             </label>
+
+            <div className="relative">
             <input
-              type="password"
+              type= {showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
               placeholder="Password"
-              className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+              className="w-full h-12 pr-12 pl-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label = {showPassword ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 px-4 py-2 text-gray-700 cursor-pointer">
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
+            </div>
           </div>
 
           {errorMessage && (
