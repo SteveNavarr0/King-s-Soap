@@ -12,6 +12,7 @@ const getImageUrl =  (imagePath) => {
 
 
 function CreateAccount() {
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,6 +28,11 @@ function CreateAccount() {
         event.preventDefault();
 
         setErrorMessage("");
+
+        if (!name.trim()) {
+            setErrorMessage("Please enter your name.");
+            return;
+        }
 
         const trimmedEmail = email.trim();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -54,10 +60,13 @@ function CreateAccount() {
         setIsSubmitting(true);
 
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email: trimmedEmail,
             password: password,
             options: {
+                data: {
+                    first_name: name.trim(),
+                },
                 emailRedirectTo: `${window.location.origin}/login`,
             },
         });
@@ -94,6 +103,24 @@ console.log("SIGNUP ERROR:", error);
             {/*Create Account Form*/}
             <div className="w-full max-w-md px-6 py-8 bg-white rounded-2xl shadow-lg -mt-20 z-20">
                 <form className="space-y-6" onSubmit={handleCreateAccount}>
+                
+                
+                <div>
+                    <label className="block text-2xl font-medium text-gray-800 mb-2">
+                    First Name
+                    </label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        required
+                        autoComplete="given-name"
+                        placeholder="name"
+                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+                        />
+                </div>
+                
+                
                 <div>
                     <label className="block text-2xl font-medium text-gray-800 mb-2">
                     Email

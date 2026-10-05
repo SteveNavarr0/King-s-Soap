@@ -38,10 +38,7 @@ function Footer() {
         </a>
       </div>
 
-      <p className="mt-3 mb-3 text-md font-[Inter]">
-        Sacramento, CA • kinganita25@gmail.com • (916) 856-9659 • @kingssoap
-      </p>
-
+      
 
       <ContactForm
         isOpen={isContactFormOpen}
