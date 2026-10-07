@@ -235,8 +235,7 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
-        shipping_address: isPickup ? { type: "local_pickup" } : null,
-     
+        fulfillment_type: isPickup ? "pickup" : "shipping",
       })
       .select()
       .single();
@@ -405,28 +404,35 @@ export const acceptOrder = async (req, res) => {
 
     // 4. Purchase EasyPost Label if shipping (skip for local pickup)
     let shippingResult = null;
-    const isPickup = order.shipping_address?.type === "local_pickup";
+    const isPickup = (order.fulfillment_type || "shipping") === "pickup";
 
-    if (!isPickup && order.shipping_address) {
+    if (!isPickup) {
       try {
         let totalWeightOz = "16";
+        let shippingDetails = null;
+
         if (order.stripe_session_id) {
           try {
             const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
             if (session.metadata?.total_weight_oz) {
               totalWeightOz = session.metadata.total_weight_oz;
             }
+            shippingDetails = session.shipping_details || session.customer_details;
           } catch (sessionErr) {
-            console.warn(`Could not retrieve Stripe session ${order.stripe_session_id} for weight:`, sessionErr.message);
+            console.warn(`Could not retrieve Stripe session ${order.stripe_session_id} for weight or shipping details:`, sessionErr.message);
           }
         }
 
-        shippingResult = await purchaseEasyPostLabelFromStripe(
-          orderId,
-          order.shipping_address,
-          order.customer_email,
-          totalWeightOz
-        );
+        if (shippingDetails) {
+          shippingResult = await purchaseEasyPostLabelFromStripe(
+            orderId,
+            shippingDetails,
+            order.customer_email,
+            totalWeightOz
+          );
+        } else {
+          console.warn(`No shipping details found for order ${orderId}, skipping EasyPost label purchase.`);
+        }
       } catch (labelErr) {
         console.error(`Postage purchase failed for order ${orderId}:`, labelErr);
         return res.status(500).json({

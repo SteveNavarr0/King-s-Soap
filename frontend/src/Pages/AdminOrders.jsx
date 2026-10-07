@@ -13,7 +13,7 @@ function AdminOrders() {
 
       const { data, error } = await supabase
         .from("active_orders")
-        .select("order_id, status, total, customer_email, shipping_address, tracking_number, order_date, items")
+        .select("order_id, status, total, customer_email, fulfillment_type, tracking_number, order_date, items")
         .order("order_date", { ascending: true });
         if (error){
           console.error("Error fetching orders:", error);
@@ -92,7 +92,7 @@ function AdminOrders() {
         </div>
 
         <div className="col-span-2 break-all">
-          {order.shipping_address?.type === "local_pickup"
+          {order.fulfillment_type === "pickup"
           ? "Local Pickup"
           : order.tracking_number ?? ""}
         </div>

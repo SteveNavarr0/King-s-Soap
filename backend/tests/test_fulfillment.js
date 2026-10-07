@@ -85,13 +85,13 @@ async function runTests() {
     status: "paid",
     stripe_payment_intent_id: "pi_test_abc",
     total_amount: 25.0,
-    shipping_address: mockCompletedSession.shipping_details.address,
+    fulfillment_type: mockCompletedSession.metadata.fulfillment_type,
     customer_email: "buyer@example.com",
   };
 
   assert.strictEqual(expectedOrderPayload.status, "paid");
   assert.strictEqual(expectedOrderPayload.stripe_payment_intent_id, "pi_test_abc");
-  assert.strictEqual(expectedOrderPayload.shipping_address.city, "Sacramento");
+  assert.strictEqual(expectedOrderPayload.fulfillment_type, "shipping");
   assert.strictEqual(mockCompletedSession.metadata.order_id, "order_uuid_456");
   assert.strictEqual(mockCompletedSession.metadata.user_id, "user_uuid_789");
   console.log("✓ Test 4: Session metadata and order payload extraction verified");

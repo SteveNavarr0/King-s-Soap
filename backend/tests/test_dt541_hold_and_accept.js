@@ -63,10 +63,7 @@ try {
     stripe_session_id: testSessionId,
     customer_email: "testcustomer@example.com",
     total_amount: 25.00,
-    shipping_address: {
-      type: "local_pickup",
-      name: "Test Pickup Customer",
-    },
+    fulfillment_type: "pickup",
   });
 
   if (insertErr) {
@@ -183,6 +180,44 @@ try {
   console.log("✓ Test 7: Decline on_hold order transitions status to 'cancelled'");
 
   await supabase.from("orders").delete().eq("id", declineOrderId);
+
+  // Test 8: Decline accepted order transitions status to 'cancelled'
+  const declineAcceptedOrderId = "a0000000-0000-0000-0000-000000000003";
+  await supabase.from("orders").delete().eq("id", declineAcceptedOrderId);
+
+  const { error: declineAcceptedInsertErr } = await supabase.from("orders").insert({
+    id: declineAcceptedOrderId,
+    user_id: validUserId,
+    status: "accepted",
+    customer_email: "testdecline@example.com",
+    total_amount: 15.00,
+  });
+
+  if (declineAcceptedInsertErr) {
+    throw new Error(`Failed to insert decline test order: ${declineAcceptedInsertErr.message}`);
+  }
+
+  const declineAcceptedRes = await fetch(`${baseUrl}/api/checkout/orders/${declineAcceptedOrderId}/decline`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: "00000000-0000-0000-0000-000000000000" }),
+  });
+
+  assert.strictEqual(declineRes.status, 200);
+  const declineAcceptedData = await declineAcceptedRes.json();
+  assert.strictEqual(declineAcceptedData.success, true);
+  assert.strictEqual(declineAcceptedData.status, "cancelled");
+
+  const { data: cancelledAcceptedOrder } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", declineAcceptedOrderId)
+    .single();
+
+  assert.strictEqual(cancelledAcceptedOrder?.status, "cancelled");
+  console.log("✓ Test 7: Decline accepted order transitions status to 'cancelled'");
+
+  await supabase.from("orders").delete().eq("id", declineAcceptedOrderId);
 
   console.log("==================================================");
   console.log("   ALL DT-541 ACCEPTANCE CRITERIA VERIFIED!       ");

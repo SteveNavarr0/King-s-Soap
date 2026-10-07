@@ -145,11 +145,6 @@ export const handleStripeWebhook = async (req, res) => {
             ? session.payment_intent
             : session.payment_intent?.id || null;
 
-        const shippingAddress =
-          session.shipping_details?.address ||
-          session.customer_details?.address ||
-          (fulfillmentType === "pickup" ? { type: "local_pickup" } : null);
-
         const customerEmail =
           session.customer_details?.email ||
           session.customer_email ||
@@ -159,12 +154,12 @@ export const handleStripeWebhook = async (req, res) => {
           ? Number((session.amount_total / 100).toFixed(2))
           : undefined;
 
-        // 2. Update public.orders: status = 'on_hold', stripe_payment_intent_id, shipping_address
+        // 2. Update public.orders: status = 'on_hold', stripe_payment_intent_id
         const updatePayload = {
           status: "on_hold",
           stripe_payment_intent_id: paymentIntentId,
           ...(finalTotal !== undefined ? { total_amount: finalTotal } : {}),
-          ...(shippingAddress ? { shipping_address: shippingAddress } : {}),
+          ...(fulfillmentType ? { fulfillment_type: fulfillmentType } : {}),
           ...(customerEmail ? { customer_email: customerEmail } : {}),
         };
 
