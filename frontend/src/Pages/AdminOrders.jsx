@@ -13,7 +13,7 @@ function AdminOrders() {
 
       const { data, error } = await supabase
         .from("active_orders")
-        .select("order_id, status, total, customer_email, tracking_number, order_date, items")
+        .select("order_id, status, total, customer_email, shipping_address, tracking_number, order_date, items")
         .order("order_date", { ascending: true });
         if (error){
           console.error("Error fetching orders:", error);
