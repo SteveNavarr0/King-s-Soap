@@ -16,15 +16,14 @@ function HomeImage() {
             <img src={HomePageImage} alt="HomePageImage" className="home-page-image mx-auto w-full" />        
         {/*Text Over the Image*/} 
         <div className="absolute inset-0 flex flex-col items-center pt-6 text-white text-center pt-18">
-            <h1 className="text-4xl md:text-5xl font-serif font-semibold">
+            <h1 className="text-4xl md:text-5xl font-serif">
             King’s Soap
             </h1>
 
-            <p className="mt-4 text-base md:text-xl font-medium leading-relaxed">
+            <p className="mt-4 text-base md:text-xl font-serif font-medium leading-relaxed">
             Enjoying the art of soap-making since 2016.
             </p>
-            <p className="text-xl md:text-xl font-semibold">Hand-Made</p>
-            <p className="text-xl md:text-xl font-semibold">Family-Owned</p>
+            <p className="text-xl md:text-xl font-serif">Hand-Made | Family-Owned</p>
         </div>
         {/*
         <div className="absolute inset-0 flex items-center justify-center">

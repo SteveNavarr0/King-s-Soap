@@ -42,7 +42,7 @@ const Home = () => {
       <HomeImage />
       {/* Section title for best sellers */}
       <div className="w-full flex justify-center pt-8">
-        <h2 className="text-4xl md:text-5xl font-serif font-semibold text-white">Our Best Sellers</h2>
+        <h2 className="text-2xl md:text-4xl font-serif text-white">Our Best Sellers</h2>
       </div>
       {/* Product grid that displays the products fetched from supabase in a carousel format */}
       <div className="w-full flex justify-center pt-6">

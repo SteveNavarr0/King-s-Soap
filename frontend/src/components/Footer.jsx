@@ -15,7 +15,7 @@ function Footer() {
         Contact Us
       </h2>
 
-      <div className="flex justify-center gap-8 text-2xl">
+      <div className="flex justify-center gap-12 text-2xl">
         <a href="https://maps.google.com/maps?q=Sacramento+CA" target="_blank" rel="noopener noreferrer">
           <FaMapMarkerAlt />
         </a>
@@ -28,10 +28,6 @@ function Footer() {
         >
           <FaEnvelope />
         </button>
-
-        <a href="tel:19168569659">
-          <FaPhoneAlt />
-        </a>
 
         <a href="https://instagram.com/kingssoap" target="_blank" rel="noopener noreferrer">
           <FaInstagram />

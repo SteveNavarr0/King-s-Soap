@@ -46,7 +46,8 @@ function AdminNav() {
             Products
           </NavLink>
 
-          <NavLink to="/admin/shipping" className={({ isActive }) =>
+
+          <NavLink to="/adminShipping" className={({ isActive }) =>
             `inline-block transition duration-200 hover:scale-105 ${
               isActive ? "text-[#8B6B4A]" : ""
             }`

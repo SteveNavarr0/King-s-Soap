@@ -24,8 +24,6 @@ import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
 import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
-import AdminCreateProduct from "./Pages/AdminCreateProduct";
-import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminDiscounts from "./Pages/AdminDiscounts";
@@ -97,14 +95,8 @@ function App() {
             />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/admin" element={<Admin />} />
-            <Route
-              path="/adminCreateProduct"
-              element={<AdminCreateProduct />}
-            />
-            <Route
-              path="/adminUpdateProduct/:id"
-              element={<AdminUpdateProduct />}
-            />
+            
+            
             <Route path="/adminInbox" element = {<AdminInbox/>}/>
             <Route path="/adminProducts" element={<AdminProducts />} />
             <Route

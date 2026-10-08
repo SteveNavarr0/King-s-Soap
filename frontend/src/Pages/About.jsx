@@ -58,10 +58,6 @@ const About = () => {
         Email
       </button>
 
-      <a href="tel:19168569659" className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
-        Mobile
-      </a>
-
       <a href="https://instagram.com/kingssoap" target="_blank" rel="noopener noreferrer" className="mx-8 text-xl text-black font-[Inria_Serif] w-52 h-15 bg-white px-4 py-2 rounded cursor-pointer flex items-center justify-center">
         Instagram
       </a>
