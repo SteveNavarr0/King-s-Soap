@@ -84,7 +84,7 @@ useEffect(() => {
 
 
  return (
-  <div className="relative w-40 md:w-60 h-8 md:h-10">
+  <div className="relative w-50 md:w-60 h-8 md:h-10">
     <input
       type="text"
       value={searchTerm}
@@ -100,7 +100,7 @@ useEffect(() => {
     </div>
 
     {searchTerm.trim() && results.length > 0 && (
-      <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg bg-white shadow-lg overflow-hidden">
+      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
         {results.map((product) => {
           const firstImage =
             product.product_images?.[0]?.image_url || "";

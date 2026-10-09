@@ -13,17 +13,21 @@ function HomeImage() {
         <div className = "relative flex justify-between items-center home-image">
             
         {/*Home Page Image*/}
-            <img src={HomePageImage} alt="HomePageImage" className="home-page-image mx-auto w-full" />        
-        {/*Text Over the Image*/} 
+        <img src={HomePageImage} alt="HomePageImage" className="home-page-image mx-auto w-full" />
+
+        {/*Darken the image behind the text on mobile*/}
+        <div className="absolute inset-0 bg-black/20 md:bg-transparent" aria-hidden="true" />
+
+        {/*Text Over the Image*/}
         <div className="absolute inset-0 flex flex-col items-center pt-6 text-white text-center pt-18">
-            <h1 className="text-4xl md:text-5xl font-serif">
+            <h1 className="text-2xl md:text-5xl font-serif">
             King’s Soap
             </h1>
 
-            <p className="mt-4 text-base md:text-xl font-serif font-medium leading-relaxed">
+            <p className="md:mt-4 text-sm md:text-xl font-serif font-medium leading-relaxed">
             Enjoying the art of soap-making since 2016.
             </p>
-            <p className="text-xl md:text-xl font-serif">Hand-Made | Family-Owned</p>
+            <p className="text-sm md:text-xl font-serif">Hand-Made | Family-Owned</p>
         </div>
         {/*
         <div className="absolute inset-0 flex items-center justify-center">

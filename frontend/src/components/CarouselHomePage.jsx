@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
+function CarouselHomePage({ images , buttonLabel, price, buttonTo, }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   
@@ -27,9 +27,9 @@ function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
   return (
     <Link
       to={buttonTo}
-      className="flex flex-col items-center gap-3 cursor-pointer transition duration-200 hover:scale-102">
-        <div className="relative w-[500px] h-[300px] overflow-hidden rounded-lg">
-          {images.map((image, index) => ( 
+      className="flex w-full max-w-[500px] min-w-0 flex-col items-center cursor-pointer transition duration-200 hover:scale-102">
+        <div className="relative w-full aspect-[5/3] overflow-hidden rounded-t-md md:h-[300px] md:aspect-auto">
+          {images.map((image, index) => (
           <img
                   key={index}
                   src={image}
@@ -41,8 +41,11 @@ function CarouselHomePage({ images , buttonLabel, buttonTo, }) {
               ))}  
           </div>
   
-      <div className="w-[500px] h-[70px] flex items-center justify-center border border-white text-[#FFFFFF] text-lg font-[Inria_Serif] leading-none rounded">
-        {buttonLabel}
+      <div className="flex h-20 w-full items-center justify-center rounded-b-md border border-white/30 bg-white/15 px-2 py-6 md:py-15 text-center font-serif text-sm leading-snug text-white md:h-[70px] md:text-lg">
+        <div className="flex flex-col items-center">
+          <span>{buttonLabel}</span>
+          <span>${Number(price).toFixed(2)}</span>
+        </div>
       </div>
     </Link>
   );

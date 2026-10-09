@@ -125,11 +125,11 @@ export default function AdminPostageQueue() {
                     </span>
 
                     {isPrinted ? (
-                      <span className="hidden md:inline-flex px-3 py-1 rounded-full border border-amber-400/30 bg-amber-500/20 font-serif text-sm text-amber-200">
+                      <span className="hidden xl:inline-flex px-3 py-1 rounded-full border border-amber-400/30 bg-amber-500/20 font-serif text-sm text-amber-200">
                         Printed
                       </span>
                     ) : (
-                      <span className="hidden md:inline-flex px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/25 font-serif text-sm text-emerald-200">
+                      <span className="hidden xl:inline-flex px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/25 font-serif text-sm text-emerald-200">
                         Ready
                       </span>
                     )}
@@ -167,8 +167,8 @@ export default function AdminPostageQueue() {
                   </div>
                 )}
 
-                {/* Mobile status field; desktop status remains beside the Order ID */}
-                <div className="md:hidden">
+                 {/* Labeled status below desktop width; desktop status remains beside the Order ID */}
+                <div className="xl:hidden">
                   <span className="block mb-2 font-sans text-xs uppercase tracking-wide text-white/90">
                     Status
                   </span>

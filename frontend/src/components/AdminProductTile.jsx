@@ -6,7 +6,7 @@ const AdminProductTile = ({ product, onClick }) => {
 
       //Runs selection function for popup
       onClick={onClick}
-      className="mb-4 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex items-center justify-between text-left cursor-pointer"
+      className="mb-4 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex items-center justify-between text-left hover:scale-[1.02] transition duration-200 cursor-pointer"
     >
         
         {/* Product Image / Placeholder */}

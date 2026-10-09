@@ -45,6 +45,21 @@ function AppContent({ children }) {
   return isAdminPage ? null : children;
 }
 
+function CartRouteLayer({ children }) {
+  const location = useLocation();
+  const backgroundLocation = location.state?.backgroundLocation;
+
+  return (
+    <>
+      <div className={backgroundLocation ? "hidden md:block" : ""}>
+        {children(backgroundLocation || location)}
+      </div>
+
+      {backgroundLocation && <Cart />}
+    </>
+  );
+}
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -62,63 +77,67 @@ function App() {
         <Navbar />
       </AppContent>
 
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route
-              path="/userAccount"
-              element={
-                <ProtectedRoute>
-                  <UserAccount />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userChangePassword"
-              element={<UserChangePassword />}
-            />
-            <Route
-              path="/userChangeAddress"
-              element={<UserChangeAddress />}
-            />
-            <Route path="/verifyaccount" element={<VerifyAccount />} />
-            <Route path="/createaccount" element={<CreateAccount />} />
-            <Route path="/emailToPWReset" element={<EmailToPWReset />} />
-            <Route
-              path="/paymentSuccessful"
-              element={<PaymentSuccessful />}
-            />
-            <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/admin" element={<Admin />} />
-            
-            
-            <Route path="/adminInbox" element = {<AdminInbox/>}/>
-            <Route path="/adminProducts" element={<AdminProducts />} />
-            <Route
-              path="/OldUIAdminDeleteProduct"
-              element={<OldUIAdminDeleteProduct />}
-            />
-            <Route
-              path="/adminDiscounts"
-              element={< AdminDiscounts />}
-            />
-             <Route path="/coconutOilShop" element={<CoconutOilShop />} />
-            <Route path="/organicShop" element={<OrganicShop/>} />
-            <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
-            <Route path="/lipBalmShop" element={<LipBalmShop/>} />
-            <Route path="/soapDishShop" element={<SoapDishShop/>} />
-            <Route path="/adminOrders" element={<AdminOrders/>} />
-            <Route path="/admin/shipping" element={<AdminPostagePage />} />
-            <Route path="/adminShipping" element={<AdminPostagePage />} />
-            <Route path="/AdminShipping" element={<AdminPostagePage />} />
-            <Route path="/AdminPostage" element={<AdminPostagePage />} />
-            <Route path="/adminPostage" element={<AdminPostagePage />} />
-            </Routes>
+      <div className="relative flex flex-col min-h-screen">
+         <div className="flex-grow">
+          <CartRouteLayer>
+            {(routeLocation) => (
+              <Routes location={routeLocation}>
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route
+                  path="/userAccount"
+                  element={
+                    <ProtectedRoute>
+                      <UserAccount />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/userChangePassword"
+                  element={<UserChangePassword />}
+                />
+                <Route
+                  path="/userChangeAddress"
+                  element={<UserChangeAddress />}
+                />
+                <Route path="/verifyaccount" element={<VerifyAccount />} />
+                <Route path="/createaccount" element={<CreateAccount />} />
+                <Route path="/emailToPWReset" element={<EmailToPWReset />} />
+                <Route
+                  path="/paymentSuccessful"
+                  element={<PaymentSuccessful />}
+                />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/admin" element={<Admin />} />
+                
+                
+                <Route path="/adminInbox" element = {<AdminInbox/>}/>
+                <Route path="/adminProducts" element={<AdminProducts />} />
+                <Route
+                  path="/OldUIAdminDeleteProduct"
+                  element={<OldUIAdminDeleteProduct />}
+                />
+                <Route
+                  path="/adminDiscounts"
+                  element={< AdminDiscounts />}
+                />
+                <Route path="/coconutOilShop" element={<CoconutOilShop />} />
+                <Route path="/organicShop" element={<OrganicShop/>} />
+                <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
+                <Route path="/lipBalmShop" element={<LipBalmShop/>} />
+                <Route path="/soapDishShop" element={<SoapDishShop/>} />
+                <Route path="/adminOrders" element={<AdminOrders/>} />
+                <Route path="/admin/shipping" element={<AdminPostagePage />} />
+                <Route path="/adminShipping" element={<AdminPostagePage />} />
+                <Route path="/AdminShipping" element={<AdminPostagePage />} />
+                <Route path="/AdminPostage" element={<AdminPostagePage />} />
+                <Route path="/adminPostage" element={<AdminPostagePage />} />
+              </Routes>
+            )}
+          </CartRouteLayer>
         </div>
 
         <AppContent>

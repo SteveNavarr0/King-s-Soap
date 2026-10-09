@@ -1,223 +1,227 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-
-
 import supabase from "../supabaseClient";
-const getImageUrl =  (imagePath) => {
-    const { data } = supabase.storage
-      .from("Product Images")
-      .getPublicUrl(imagePath);
-      return data.publicUrl;
+
+const getImageUrl = (imagePath) => {
+  const { data } = supabase.storage
+    .from("Product Images")
+    .getPublicUrl(imagePath);
+
+  return data.publicUrl;
+};
+
+function CreateAccountElement() {
+  const backgroundImage = getImageUrl("images/login-background-image.png");
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleCreateAccount = async (event) => {
+    event.preventDefault();
+    setErrorMessage("");
+
+    if (!name.trim()) {
+      setErrorMessage("Please enter your name.");
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    const hasLetter = /[A-Za-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+
+    if (password.length < 8 || !hasLetter || !hasNumber) {
+      setErrorMessage(
+        "Password must be at least 8 characters and include at least 1 letter and 1 number."
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const { error } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password,
+      options: {
+        data: {
+          first_name: name.trim(),
+        },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    navigate("/verifyaccount", {
+      state: {
+        email: trimmedEmail,
+      },
+    });
   };
 
+  return (
+    <div className="relative flex min-h-screen items-center justify-center bg-white px-4 py-24 md:py-8">
+      <img
+        src={backgroundImage}
+        alt=""
+        className="absolute inset-0 z-0 h-full w-full object-cover"
+      />
+      <div
+        className="absolute inset-0 z-0 bg-black/25"
+        aria-hidden="true"
+      />
 
-
-function CreateAccount() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [confirmPassword, setConfirmPassword] = useState("");
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-
-    const [errorMessage, setErrorMessage] = useState("");
-
-    const navigate = useNavigate();
-
-    const handleCreateAccount = async (event) => {
-        event.preventDefault();
-
-        setErrorMessage("");
-
-        if (!name.trim()) {
-            setErrorMessage("Please enter your name.");
-            return;
-        }
-
-        const trimmedEmail = email.trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-        if (!emailRegex.test(trimmedEmail)) {
-        setErrorMessage("Please enter a valid email address.");
-        return;
-        }
-
-        const hasLetter = /[A-Za-z]/.test(password);
-        const hasNumber = /\d/.test(password);
-
-        if (password.length < 8 || !hasLetter || !hasNumber) {
-        setErrorMessage(
-            "Password must be at least 8 characters and include at least 1 letter and 1 number."
-        );
-        return;
-        }
-
-        if (password !== confirmPassword) {
-            setErrorMessage("Passwords do not match.");
-            return;
-        }
-        
-        setIsSubmitting(true);
-
-
-        const { data, error } = await supabase.auth.signUp({
-            email: trimmedEmail,
-            password: password,
-            options: {
-                data: {
-                    first_name: name.trim(),
-                },
-                emailRedirectTo: `${window.location.origin}/login`,
-            },
-        });
-console.log("SIGNUP DATA:", data);
-console.log("SIGNUP ERROR:", error);
-        setIsSubmitting(false);
-
-
-        if (error) {
-            setErrorMessage(error.message);
-            return;
-        } else {
-                setSuccessMessage("Account created. Check your email if verification is sent");
-
-        }
-
-        navigate("/verifyaccount", {
-            state: {
-                email: trimmedEmail,
-            },
-        });
-};
-    
-    const LoginBackgroundImage = getImageUrl("images/login-background-image.png");
-    return (
-
-        <div className="min-h-screen bg-white flex items-center justify-center">
-            {/* Background Image */}
-            <img
-                src={LoginBackgroundImage}
-                alt="Background"
-                className="absolute w-full h-full object-cover z-0"
+      <div className="relative z-20 w-full max-w-md rounded-lg bg-white px-4 py-8 shadow-lg md:px-6">
+        <form className="space-y-6" onSubmit={handleCreateAccount}>
+          <div>
+            <label
+              htmlFor="signup-name"
+              className="mb-2 block font-serif text-lg text-gray-800 md:text-xl"
+            >
+              First Name
+            </label>
+            <input
+              id="signup-name"
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+              autoComplete="given-name"
+              placeholder="Name"
+              className="h-12 w-full rounded-lg border border-gray-300 px-4 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
             />
-            {/*Create Account Form*/}
-            <div className="w-full max-w-md px-6 py-8 bg-white rounded-2xl shadow-lg -mt-20 z-20">
-                <form className="space-y-6" onSubmit={handleCreateAccount}>
-                
-                
-                <div>
-                    <label className="block text-2xl font-medium text-gray-800 mb-2">
-                    First Name
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        required
-                        autoComplete="given-name"
-                        placeholder="name"
-                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
-                        />
-                </div>
-                
-                
-                <div>
-                    <label className="block text-2xl font-medium text-gray-800 mb-2">
-                    Email
-                    </label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        required
-                        pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
-                        autoComplete="email"
-                        placeholder="user@example.com"
-                        className="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
-                        />
-                </div>
+          </div>
 
-                <div>
-                    <label className="block text-2xl font-medium text-gray-800 mb-2">
-                    Password
-                    </label>
+          <div>
+            <label
+              htmlFor="signup-email"
+              className="mb-2 block font-serif text-lg text-gray-800 md:text-xl"
+            >
+              Email
+            </label>
+            <input
+              id="signup-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+              placeholder="user@example.com"
+              className="h-12 w-full rounded-lg border border-gray-300 px-4 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+            />
+          </div>
 
-                    <div className="relative">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        required
-                        minLength={8}
-                        autoComplete="new-password"
-                        placeholder="********"
-                        className="w-full h-12 pr-12 pl-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label = {showPassword ? "Hide password" : "Show password"}
-                            className="absolute inset-y-0 right-0 px-4 py-2 text-gray-700 cursor-pointer"
-                        >
-                            {showPassword ? <FiEyeOff /> : <FiEye />}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-2xl font-medium text-gray-800 mb-2">
-                    Re-enter password
-                    </label>
-
-                    <div className="relative">
-                    <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
-                        required
-                        placeholder="********"
-                        className="w-full h-12 pr-12 pl-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label = {showConfirmPassword ? "Hide password" : "Show password"}
-                            className="absolute inset-y-0 right-0 px-4 py-2 text-gray-700 cursor-pointer">
-                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                        </button>
-                    </div>
-                </div>
-
-                {errorMessage && (
-                    <p className="text-sm font-medium text-red-600">
-                        {errorMessage}
-                    </p>
-                )}
-                <button
-                    disabled={isSubmitting}
-                    type="submit"
-                    className="w-full h-12 rounded-xl bg-zinc-800 text-white text-xl font-medium cursor-pointer"
-                >
-                    {isSubmitting ? "Creating account..." : "Create Account"}
-                </button>
-               
-
-                <div className="space-y-5 pt-2">
-                    <Link to="/login" className="inline-block text-2xl text-gray-800 underline underline-offset-4">
-                    Login
-                    
-                    </Link>
-
-                </div>
-                </form>
+          <div>
+            <label
+              htmlFor="signup-password"
+              className="mb-2 block font-serif text-lg text-gray-800 md:text-xl"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="signup-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Password"
+                className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-12 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((shown) => !shown)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 cursor-pointer px-4 text-gray-700"
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
             </div>
-        </div>
-    
-    );
+          </div>
+
+          <div>
+            <label
+              htmlFor="signup-confirm-password"
+              className="mb-2 block font-serif text-lg text-gray-800 md:text-xl"
+            >
+              Retype Password
+            </label>
+            <div className="relative">
+              <input
+                id="signup-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                autoComplete="new-password"
+                placeholder="Retype password"
+                className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-12 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((shown) => !shown)}
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirmation password"
+                    : "Show confirmation password"
+                }
+                className="absolute inset-y-0 right-0 cursor-pointer px-4 text-gray-700"
+              >
+                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+          </div>
+
+          {errorMessage && (
+            <p className="font-sans text-base text-red-600">
+              {errorMessage}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-12 w-full cursor-pointer rounded-lg border border-white/30 bg-[#8B6B4A] font-sans text-base text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 md:text-xl"
+          >
+            {isSubmitting ? "Creating account..." : "Create Account"}
+          </button>
+
+          <Link
+            to="/login"
+            className="block text-center font-sans text-base text-gray-800 underline decoration-gray-800/30 underline-offset-4 transition hover:scale-101 md:text-lg"
+          >
+            Log In
+          </Link>
+        </form>
+      </div>
+    </div>
+  );
 }
 
-export default CreateAccount;
+export default CreateAccountElement;

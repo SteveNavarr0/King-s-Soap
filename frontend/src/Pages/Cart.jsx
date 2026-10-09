@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import CartElement from "../components/CartElement";
 import { useAuth } from "../context/AuthContext";
 
 const Cart = () => {
   const [total, setTotal] = useState(0);
   const { session, user } = useAuth();
+  const location = useLocation();
+  const isOverlay = Boolean(location.state?.backgroundLocation);
   const [searchParams] = useSearchParams();
   const isCanceled = searchParams.get("canceled") === "true";
   const [submittingType, setSubmittingType] = useState(null); // 'shipping' | 'pickup'
@@ -60,36 +62,47 @@ const Cart = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row w-full min-h-screen">
-      {/* White cart section */}
-      <div className="flex-1 bg-white px-8 py-8 overflow-x-auto">
+    <div className={`flex flex-col w-full min-h-screen pt-24 md:fixed md:inset-y-0 md:right-0 md:z-[60] md:w-[480px] md:overflow-y-auto md:pt-0 bg-[#C5AE98] ${
+      isOverlay
+        ? "md:shadow-[0_0_0_100vmax_rgba(0,0,0,0.5)]"
+        : ""
+    }`}>
+      {isOverlay && (
+        <button
+          type="button"
+          aria-label="Close cart"
+          onClick={() => window.history.back()}
+          className="absolute right-4 top-7 z-10 hidden h-10 w-10 cursor-pointer items-center justify-center text-2xl text-white hover:scale-105 md:flex"
+        >
+          ×
+        </button>
+      )}
+
+      <h1 className="px-8 pt-8 font-serif text-3xl text-white">
+        Your Cart
+      </h1>
+
+      {/* Cart section */}
+      <div className="flex-1 px-8 pt-6 overflow-x-auto">
         {isCanceled && (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-300 text-amber-800 rounded-md">
             Your checkout was cancelled. Your items are still saved in your cart.
           </div>
         )}
 
-        <div className="min-w-[700px]">
-          {/* Cart headings */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-x-8 items-center pb-4 text-sm text-gray-500">
-            <span>Product</span>
-            <span className="text-center">Price</span>
-            <span className="text-center">Qty</span>
-            <span className="text-right">Total</span>
-          </div>
-
+        <div className="w-full">
           {/* Cart product rows */}
           <CartElement onTotalChange={setTotal} />
         </div>
       </div>
 
-      {/* Brown checkout section */}
-      <div className="w-full lg:w-1/4 lg:min-h-screen shrink-0 bg-[#cbb49d] px-6 py-8">
-        <div className="flex w-full flex-col items-start">
-          {/* Black line */}
-          <div className="h-1 bg-black w-5/6" />
+      {/* Checkout section */}
+      <div className="w-full shrink-0 px-8 pb-8">
+        <div className="flex w-full flex-col items-center">
+          {/* Checkout divider */}
+          <div className="h-px w-full bg-white/70" />
 
-          <h2 className="mt-6 font-bold text-base sm:text-lg md:text-xl text-black">
+              <h2 className="mt-6 font-serif text-xl text-white">
             Estimated Total: ${total.toFixed(2)}
           </h2>
 
@@ -103,10 +116,10 @@ const Cart = () => {
           )}
 
           {/* Shipping Checkout Button */}
-          <button 
+          <button
             onClick={() => handleCheckout("shipping")}
             disabled={isSubmitting || total <= 0}
-            className="mt-6 py-2.5 bg-black hover:bg-neutral-800 text-center text-white border border-black w-5/6 rounded flex justify-center items-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-6 flex w-5/6 items-center justify-center rounded-lg border border-white/30 bg-white/30 py-2 text-center font-sans text-sm text-gray-800 transition duration-200 cursor-pointer hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 md:text-base"
           >
             {submittingType === "shipping" ? (
               <>
@@ -125,7 +138,7 @@ const Cart = () => {
           <button 
             onClick={() => handleCheckout("pickup")}
             disabled={isSubmitting || total <= 0}
-            className="mt-3 py-2.5 bg-white hover:bg-neutral-100 text-center text-black border border-black w-5/6 rounded flex justify-center items-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="mt-6 flex w-5/6 items-center justify-center rounded-lg border border-white/30 bg-white py-2 text-center font-sans text-sm text-gray-800 transition duration-200 cursor-pointer hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 md:text-base"
           >
             {submittingType === "pickup" ? (
               <>
