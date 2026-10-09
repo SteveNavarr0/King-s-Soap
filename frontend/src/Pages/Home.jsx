@@ -17,7 +17,8 @@ const Home = () => {
           *,
           product_images (
             id,
-            image_url
+            image_url,
+            display_order
           )
         `)
         // INSERT POPULAR ITEMS TO DISPLAY HERE, INPUT ID from supabase products table
@@ -42,17 +43,20 @@ const Home = () => {
       <HomeImage />
       {/* Section title for best sellers */}
       <div className="w-full flex justify-center pt-8">
-        <h2 className="text-4xl md:text-5xl font-serif font-semibold text-white">Our Best Sellers</h2>
+        <h2 className="text-2xl md:text-4xl font-serif text-white">Our Best Sellers</h2>
       </div>
       {/* Product grid that displays the products fetched from supabase in a carousel format */}
-      <div className="w-full flex justify-center pt-6">
-        <div className="grid grid-cols-2 gap-6">
+      <div className="w-full flex justify-center px-4 pt-6">
+        <div className="grid w-full max-w-[1024px] grid-cols-2 justify-items-center gap-4 md:gap-6">
           {products.map((product) => (
-            <CarouselHomePage
+             <CarouselHomePage
               key={product.id}
-              images={product.product_images?.map((img) => img.image_url) || []}
+              images={[...(product.product_images ?? [])]
+                .sort((a, b) => a.display_order - b.display_order)
+                .map((img) => img.image_url)}
               buttonLabel={product.name}
-              buttonTo={`/product/${product.id}`} 
+              price={product.price}
+              buttonTo={`/product/${product.id}`}
             />
           ))}
         </div>

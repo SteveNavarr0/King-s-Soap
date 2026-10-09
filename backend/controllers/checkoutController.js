@@ -230,8 +230,7 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
-        shipping_address: isPickup ? { type: "local_pickup" } : null,
-     
+        fulfillment_type: isPickup ? "pickup" : "shipping",     
       })
       .select()
       .single();

@@ -1,119 +1,129 @@
-import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.png";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import supabase from "../supabaseClient";
-import { useState, useEffect } from "react";
+
+const getImageUrl = (imagePath) => {
+  const { data } = supabase.storage
+    .from("Product Images")
+    .getPublicUrl(imagePath);
+
+  return data.publicUrl;
+};
 
 function EmailToPWReset() {
-  
-    const [email, setEmail] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [errorMsg, setErrorMsg] = useState("");
+  const backgroundImage = getImageUrl("images/login-background-image.png");
 
-  //tracking if email was sent and cooldown timer
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [isSent, setIsSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
     let timer;
+
     if (cooldown > 0) {
       timer = setInterval(() => {
         setCooldown((prev) => prev - 1);
       }, 1000);
     }
+
     return () => clearInterval(timer);
   }, [cooldown]);
 
-    const handleResetPassword = async (e) => {
-e.preventDefault();
-setLoading(true); //form is processing
-setMessage("");
-setErrorMsg("");
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setErrorMsg("");
 
-    //calls supabase to send the reset password email
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email,{
-        redirectTo: "http://localhost:5173/UserChangePassword", 
-        //redirects user to this page after clicking the link in the email
-      });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "http://localhost:5173/UserChangePassword",
+    });
 
     if (error) {
       setErrorMsg(error.message);
     } else {
       setMessage(
-    isSent ? "Reset email resent. Check your email inbox." : "Reset email sent. Check your email inbox."
+        isSent
+          ? "Reset email resent. Check your email inbox."
+          : "Reset email sent. Check your email inbox."
       );
-
-    setIsSent(true);
-    setCooldown(30); //start 30-second cooldown
+      setIsSent(true);
+      setCooldown(30);
     }
-      setLoading(false); //form is no longer processing
+
+    setLoading(false);
   };
 
-    //page elements
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      {/* Background Image */}
+    <div className="relative flex min-h-screen items-center justify-center bg-white px-4">
       <img
-        src={LoginBackgroundImage}
-        alt="Background"
-        className="absolute h-full w-full object-cover z-0"
+        src={backgroundImage}
+        alt=""
+        className="absolute inset-0 z-0 h-full w-full object-cover"
+      />
+      <div
+        className="absolute inset-0 z-0 bg-black/25"
+        aria-hidden="true"
       />
 
-      {/*Email Entry to initiate Password Reset*/}
-      <div className="z-20 w-full max-w-md rounded-2xl bg-white px-6 py-8 shadow-lg -mt-40">
-        <div className="space-y-6">
+      <div className="relative z-20 w-full max-w-md rounded-lg bg-white px-4 py-8 shadow-lg md:px-6">
+        <form className="space-y-6" onSubmit={handleResetPassword}>
+          <h1 className="text-center font-serif text-2xl text-gray-800 md:text-3xl">
+            Reset Your Password
+          </h1>
 
-          <form class="space-y-6" onSubmit={handleResetPassword}>
-                <div>
-                    <label class="block text-2xl font-medium text-gray-800 mb-2">
-                    Email
-                    </label>
-                    <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    class="w-full h-12 px-4 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
-                    />
-                </div>
-
-            
-            {/*success / error messages */}
-            {message && <p className="text-green-500 text-sm">{message}</p>}
-            {errorMsg && <p className="text-red-500">{errorMsg}</p>}
-
-            {/* Change button type to this when we end up handling button */}
-            {/* <button type="button" onClick={handleResendEmail}> */}
-          <div className="flex gap-4">
-            
-            <NavLink to="/Login"
-              className={({ isActive }) =>
-                'flex-1 h-12 rounded-xl border border-zinc-800 text-xl font-medium text-zinc-800 cursor-pointer bg-transparent flex items-center justify-center hover:scale-101 hover:text-[#8B6B4A]'
-              }
-              >
-              Cancel
-            </NavLink>
-
-            <button
-              type="submit"
-              disabled={loading || cooldown > 0}
-              className="flex-1 h-12 rounded-xl bg-zinc-800 text-xl font-medium text-white cursor-pointer"
+          <div>
+            <label
+              htmlFor="reset-email"
+              className="mb-2 block font-serif text-lg text-gray-800 md:text-xl"
             >
-          {loading
-                  ? "Sending..."
-                  : cooldown > 0
-                  ? `Resend in ${cooldown}s`
-                  : isSent
-                  ? "Resend Email"
-                  : "Reset Password"}            
-              </button>
+              Email
+            </label>
+            <input
+              id="reset-email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 w-full rounded-lg border border-gray-300 px-4 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
+            />
           </div>
-          </form>
-        </div>
+
+          {message && (
+            <p className="font-sans text-base text-green-600">{message}</p>
+          )}
+          {errorMsg && (
+            <p className="font-sans text-base text-red-600">{errorMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || cooldown > 0}
+            className="h-12 w-full cursor-pointer rounded-lg border border-white/30 bg-[#8B6B4A] font-sans text-base text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 md:text-xl"
+          >
+            {loading
+              ? "Sending..."
+              : cooldown > 0
+                ? `Resend in ${cooldown}s`
+                : isSent
+                  ? "Resend Email"
+                  : "Reset Password"}
+          </button>
+
+          <NavLink
+            to="/login"
+            className="block text-center font-sans text-base text-gray-800 underline decoration-gray-800/30 underline-offset-4 transition hover:scale-101 md:text-lg"
+          >
+            Cancel
+          </NavLink>
+        </form>
       </div>
     </div>
   );
-  }
+}
 
 export default EmailToPWReset;

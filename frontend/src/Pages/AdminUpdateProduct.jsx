@@ -1,7 +1,4 @@
-import {useParams, useNavigate} from "react-router-dom";
 import {useEffect, useState } from "react";
-import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import { FiEdit2 } from "react-icons/fi";
 import AdminImageManager from "../components/AdminImageManager";
@@ -15,9 +12,13 @@ const categoryOptions = [
 
 
 //Pulled from AdminCreateProduct.jsx
-const AdminUpdateProduct = () => {
-  const {id} = useParams(); // Get the product ID from the URL parameters
-  const navigate = useNavigate(); //Used to navigate back to AdminProducts after a soft delete
+const AdminUpdateProduct = ({
+  productId,
+  onClose,
+  onProductChanged,
+}) => {
+  
+  const id = productId; // Get the product ID from the page that opened popup
 
   const [productName, setProductName] = useState("");
   const [price, setPrice] = useState("");
@@ -193,6 +194,10 @@ const AdminUpdateProduct = () => {
 
 
     setSuccess("Product updated successfully.");
+
+    //Tell page to retrieve updated product info
+    onProductChanged(); 
+
     setTimeout(() => {
       setSuccess("");
     }, 3000);
@@ -324,8 +329,12 @@ const deleteProduct = async () => {
     // Soft delete succeeded
     setSuccess("Product deleted successfully.");
 
-    // Go back to AdminProducts
-    navigate("/adminProducts");
+    //Tells page to retrieve its updated product list
+    onProductChanged();
+
+    onClose();
+
+
 
   } catch (error) {
     console.error("Error deleting product:", error);
@@ -342,33 +351,38 @@ const deleteProduct = async () => {
 
       //Admin Update Product container
       return (
-        <div className="min-h-screen pb-16">
-          
-         
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60">
+            <div className="min-h-full flex justify-center pt-16 pb-8 md:pt-12 md:pb-12">
+              <div className="w-full max-w-lg h-fit rounded-lg bg-[#C5AE98] p-8">          
+                
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="float-right text-2xl text-white cursor-pointer"
+                >
+                  ×
+                </button>
 
-           <AdminHeader />
-      
-      <div className="flex flex-col justify-left mt-4 md:mt-8 ml-8 md:ml-13 text-white">
-
-        <h1 className="text-3xl md:text-5xl font-serif">
+        <h2 className="text-4xl md:text-4xl text-center font-serif text-white">
           {productName}
-        </h1>
-      </div>
+        </h2>
+
+
+
 
         {/* Update a Product container*/}
-        <div className="w-full max-w-md mx-auto p-6 pb-12 rounded-2xl md:border md:border-white/30 md:shadow-lg bg-[#C5AE98]/20 backdrop-blur-lg mt-2 md:mt-12 md:mb-24">
-            
+        <div className="w-full max-w-md mx-auto p-6 pb-12 rounded-2xl md:border md:border-white/30 md:shadow-lg bg-[#C5AE98]/20 backdrop-blur-lg md:mt-8 md:mb-8">            
           <div className="space-y-4">
 
             <div>
-                <label className="block text-md md:text-xl text-white mb-2">Product Name</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Product Name</label>
                 
                 <div className="relative">
 
                   {/*Read only unless pencil has been clicked. Lock when clicking outside the box*/}
                   <textarea
                   placeholder="Value"
-                  className="w-full bg-white rounded-lg px-3 py-2 pr-10 text-gray-800 placeholder-gray-400 outline-none outline-none resize-none overflow-hidden [field-sizing:content]"
+                  className="w-full bg-white rounded-lg px-3 py-2 pr-10 font-sans text-gray-800 placeholder-gray-400 outline-none outline-none resize-none overflow-hidden [field-sizing:content]"
                   value = {productName} onChange = {(e) => setProductName(e.target.value)}
                   readOnly = {editingField !== "name"} 
                   onBlur={() => setEditingField(null)}
@@ -394,12 +408,12 @@ const deleteProduct = async () => {
 
 
             <div>
-                <label className="block text-md md:text-xl text-white mb-2">Price</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Price</label>
                 
                  <div className="relative">
                 <input
                 placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 outline-none"
+                className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-800 placeholder-gray-400 outline-none"
                 value = {price} onChange = {(e) => setPrice(e.target.value)}
                 readOnly = {editingField !== "price"}
                 onBlur={() => setEditingField(null)} 
@@ -424,12 +438,12 @@ const deleteProduct = async () => {
 
 
             <div>
-                <label className="block text-md md:text-xl text-white mb-2">Description</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Description</label>
                 
                 <div className="relative">
                 <textarea
                 placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 outline-none outline-none resize-none overflow-hidden [field-sizing:content]"
+                className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-800 placeholder-gray-400 outline-none outline-none resize-none overflow-hidden [field-sizing:content]"
                 value = {description} onChange = {(e) => setDescription(e.target.value)}
                 readOnly = {editingField !== "description"} 
                 onBlur={() => setEditingField(null)}
@@ -453,12 +467,12 @@ const deleteProduct = async () => {
 
 
             <div>
-                <label className="block text-md md:text-xl text-white mb-2">Inventory</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Inventory</label>
                 
                 <div className="relative">
                 <input
                 placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 outline-none"
+                className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-800 placeholder-gray-400 outline-none"
                 value = {stock} onChange = {(e) => setStock(e.target.value)}
                 readOnly = {editingField !== "stock"} 
                 onBlur={() => setEditingField(null)}
@@ -483,12 +497,12 @@ const deleteProduct = async () => {
 
 
              <div>
-                <label className="block text-md md:text-xl text-white mb-2">Weight</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Weight</label>
                 
                 <div className="relative">
                 <input
                 placeholder="Value"
-                className="w-full bg-white rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 outline-none"
+                className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-800 placeholder-gray-400 outline-none"
                 value = {weight} onChange = {(e) => setWeight(e.target.value)}
                 readOnly = {editingField !== "weight"}
                 onBlur={() => setEditingField(null)} 
@@ -513,9 +527,9 @@ const deleteProduct = async () => {
 
 
             <div>
-                <label className="block text-md md:text-xl text-white mb-2">Category tag</label>
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">Category tag</label>
             <details className="relative">
-            <summary className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 cursor-pointer list-none">
+            <summary className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 cursor-pointer list-none">
             {category.length > 0 ? category.join(", ") : "Select"} {/*Checks whether or not any categories have been selected, displays them */}
             </summary>
             <div className="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg overflow-hidden">
@@ -541,7 +555,7 @@ const deleteProduct = async () => {
 
              {/*Give component newly selected and existing images to update selection*/}
              <div>
-                <label className="block text-md md:text-xl text-white mb-2">
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">
                   Images
                 </label>
 
@@ -571,7 +585,7 @@ const deleteProduct = async () => {
             {/*Run updateProduct function on click*/}
             <button onClick ={updateProduct}
               disabled={loading}
-              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] backdrop-blur-lg border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
                 loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
               }`}
               >
@@ -584,7 +598,7 @@ const deleteProduct = async () => {
             {/*Delete product functionality goes here*/}
             <button onClick ={deleteProduct}
               disabled={loading}
-              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
                 loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
               }`}
               >
@@ -595,13 +609,12 @@ const deleteProduct = async () => {
 
 
 
-            </div>
+               </div>
+          </div>
         </div>
-
-      <AdminNav />
-
       </div>
-      );
+    </div>
+  );
     
   
 };

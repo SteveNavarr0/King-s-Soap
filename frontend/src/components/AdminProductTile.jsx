@@ -1,12 +1,14 @@
-import { Link } from "react-router-dom";
 
-const AdminProductTile = ({ product }) => {
+const AdminProductTile = ({ product, onClick }) => {
   return (
-    <Link
-      to={`/AdminUpdateProduct/${product.id}`}
-      className="block hover:scale-[1.02] transition duration-200"
+   <button
+      type="button"
+
+      //Runs selection function for popup
+      onClick={onClick}
+      className="mb-4 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex items-center justify-between text-left hover:scale-[1.02] transition duration-200 cursor-pointer"
     >
-      <div className="mb-6 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white flex items-center justify-between cursor-pointer">
+        
         {/* Product Image / Placeholder */}
         {product.product_images && product.product_images.length > 0 ? (
           <img
@@ -21,16 +23,15 @@ const AdminProductTile = ({ product }) => {
         )}
 
         {/* Product Name */}
-        <span className="text-md md:text-2xl font-medium truncate flex-1 mr-4">
+        <span className="text-base md:text-2xl font-serif font-medium truncate flex-1 mr-4">
           {product.name}
         </span>
 
         {/* Sales Stats */}
-        <span className="text-md md:text-2xl whitespace-nowrap">
+        <span className="text-base md:text-2xl whitespace-nowrap">
           Sales: {product.sales ?? 0}
         </span>
-      </div>
-    </Link>
+      </button>
   );
 };
 

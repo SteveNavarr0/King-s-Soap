@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import supabase from "../supabaseClient";
 
 const CartElement = ({ onTotalChange }) => {
@@ -41,7 +42,8 @@ const CartElement = ({ onTotalChange }) => {
             stock,
             product_images (
               id,
-              image_url
+              image_url,
+              display_order
             )
           )
         `)
@@ -114,7 +116,7 @@ const CartElement = ({ onTotalChange }) => {
   }
 
   if (cartItems.length === 0) {
-    return <p className="py-10 text-center text-gray-500">Your cart is empty.</p>;
+    return <p className="border-t border-white/70 py-10 text-center font-sans text-base text-gray-500">Your cart is empty.</p>;
   }
 
   return (
@@ -123,68 +125,80 @@ const CartElement = ({ onTotalChange }) => {
         const product = item.product;
         if (!product) return null;
 
-        const imageUrl = product.product_images?.[0]?.image_url;
-        const itemTotal = Number(product.price) * item.quantity;
-
+        const imageUrl = [...(product.product_images ?? [])]
+          .sort((a, b) => a.display_order - b.display_order)[0]?.image_url;
         return (
           <div
             key={item.id}
-            className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-x-8 items-center py-6 border-t border-gray-100"
+            className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-t border-white/70 py-6"
           >
-            <div className="flex flex-col items-start">
-              <div className="w-16 h-16 overflow-hidden rounded-lg bg-gray-100">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex w-full h-full items-center justify-center text-xs text-gray-400">
-                    No image
-                  </div>
-                )}
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="flex w-16 shrink-0 flex-col items-start">
+                <div className="h-16 w-16 overflow-hidden rounded-lg bg-gray-100">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleRemove(item.id)}
+                  className="mt-2 cursor-pointer font-sans text-sm text-white/70 hover:scale-[1.02] hover:text-white"
+                >
+                  Remove
+                </button>
               </div>
 
-              <p className="mt-3 font-semibold text-sm text-black">{product.name}</p>
-              <div className="mt-2 h-0.5 w-36 bg-black" />
+              <div className="min-w-0">
+                <Link
+                  to={`/product/${product.id}`}
+                  className="block break-words font-serif text-base text-white transition hover:opacity-70"
+                >
+                  {product.name}
+                </Link>
 
-              <button
-                type="button"
-                onClick={() => handleRemove(item.id)}
-                className="mt-2 text-xs text-gray-400 hover:text-red-600"
-              >
-                Remove
-              </button>
+                <div className="mt-2 flex items-center gap-2 text-white">
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                    disabled={item.quantity <= 1}
+                    aria-label={`Decrease quantity of ${product.name}`}
+                    className="flex h-8 w-8 items-center justify-center rounded hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    −
+                  </button>
+
+                  <span className="w-5 text-center font-medium">
+                    {item.quantity}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                    disabled={item.quantity >= product.stock}
+                    aria-label={`Increase quantity of ${product.name}`}
+                    className="flex h-8 w-8 items-center justify-center rounded hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <p className="text-center font-semibold text-black">
-              ${Number(product.price).toFixed(2)}
-            </p>
-
-            <div className="flex items-center justify-center gap-5 text-black">
-              <button
-                type="button"
-                onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                disabled={item.quantity <= 1}
-                className="flex h-8 w-8 items-center justify-center rounded hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                −
-              </button>
-
-              <span className="w-5 text-center font-medium">{item.quantity}</span>
-
-              <button
-                type="button"
-                onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                disabled={item.quantity >= product.stock}
-                className="flex h-8 w-8 items-center justify-center rounded hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                +
-              </button>
+            <div className="text-right text-white">
+              <p className="text-sm text-white/70">Price</p>
+              <p className= "mt-4">
+                ${Number(product.price).toFixed(2)}
+              </p>
             </div>
-
-            <p className="text-right font-semibold text-black">${itemTotal.toFixed(2)}</p>
           </div>
         );
       })}
