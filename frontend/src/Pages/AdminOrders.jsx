@@ -161,22 +161,34 @@ function AdminOrders() {
           </span>
 
           {order.status === "cancel_requested" ? (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 animate-pulse [animation-duration:2s] [@keyframes_pulse{0%,100%{opacity:1}50%{opacity:0.1}}]">
-              Cancellation Requested
-            </span>
-          ) : order.status === "on_hold" ? (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/40">
-              On Hold
-            </span>
-          ) : order.status === "accepted" ? (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
-              Accepted
-            </span>
-          ) : order.status === "paid" ? (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/40">
-              Paid
-            </span>
-          ) : (
+              <span className="inline-flex items-center rounded-full border border-red-300 bg-red-700 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Cancellation Requested
+              </span>
+            ) : order.status === "on_hold" ? (
+              <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">
+                On Hold
+              </span>
+            ) : order.status === "accepted" ? (
+              <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Accepted
+              </span>
+            ) : order.status === "postage_ready" ? (
+              <span className="inline-flex items-center rounded-full border border-[#8B6B4A] bg-[#5C4033]/70 px-3 py-1 text-xs font-semibold text-amber-100">
+                Postage Ready
+              </span>
+            ) : order.status === "ready_to_ship" ? (
+              <span className= "inline-flex items-center rounded-full border border-blue-300 bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Ready to Ship
+              </span>
+            ) : order.status === "ready_for_pickup" ? (
+              <span className="inline-flex items-center rounded-full border border-blue-300 bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Ready for Pickup
+              </span>
+            ) : order.status === "paid" ? (
+              <span className="inline-flex items-center rounded-full border border-blue-400/40 bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-200">
+                Paid
+              </span>
+            ) : (
             <span className="capitalize">{order.status}</span>
           )}
         </div>

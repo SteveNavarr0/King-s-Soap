@@ -11,7 +11,7 @@ export default function AdminPostageQueue() {
     const { data, error } = await supabase
       .from("orders")
       .select("id, created_at, customer_email, total_amount, tracking_number, label_url, label_printed, status")
-      .in("status", ["paid", "accepted"])
+      .in("status", ["postage_ready","ready_to_ship"])
       .not("label_url", "is", null)
       .order("label_printed", { ascending: true })
       .order("created_at", { ascending: true });
