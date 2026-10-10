@@ -1,7 +1,6 @@
 import AdminHeader from "../components/AdminHeader";
 import AdminNav from "../components/AdminNav";
-import SearchAddProduct from "../components/AdminSearchAddProduct";
-import AdminSearchArchive from "../components/AdminSearchArchive"
+import AdminSearchArchive from "../components/AdminSearchArchive";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
 import AdminProductTile from "../components/AdminProductTile"; 
@@ -79,7 +78,7 @@ useEffect(() => {
           Your Archived Products
         </h1>
          <div className="text-black">
-          <AdminSearchArchive /> {/* Search bar and add product button */}
+          <AdminSearchArchive onProductSelect={(productId) => setSelectedProductId(productId)} />
         </div>
 
         {fetchError && (
@@ -88,7 +87,7 @@ useEffect(() => {
           </p>
         )}
         {/* Product list section */}
-        <div className= "flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15"></div>
+        <div className="flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15">
           {sortedProducts.map((product) => (
             <AdminProductTile
               key={product.id}
@@ -96,6 +95,7 @@ useEffect(() => {
               onClick={() => setSelectedProductId(product.id)}
             />
           ))}
+        </div>
 
 
       </div>

@@ -2,6 +2,7 @@ import assert from "node:assert";
 import {
   validateUserCart,
   validateAndFormatCartItems,
+  sanitizeImageUrl,
 } from "../controllers/checkoutController.js";
 
 async function runTests() {
@@ -82,7 +83,7 @@ async function runTests() {
         stock: 10,
         Availability: true,
         product_images: [
-          { image_url: "https://example.com/images/gardenia1.png" },
+          { image_url: "https://example.com/images/gardenia1.png\n" }, // Trailing newline sanitized
           { image_url: "https://example.com/images/gardenia2.png" },
         ],
       },
@@ -97,7 +98,7 @@ async function runTests() {
         price: 3.5,
         stock: 5,
         Availability: true,
-        product_images: [],
+        product_images: [{ image_url: "not a valid url" }], // Malformed URL omitted safely
       },
     },
   ];
@@ -119,20 +120,23 @@ async function runTests() {
   // Check item 2 formatting (Lip Balm: $3.50 * 3 = $10.50 -> 350 cents)
   const lineItem2 = validRes.lineItems[1];
   assert.strictEqual(lineItem2.price_data.currency, "usd");
-  assert.strictEqual(lineItem2.price_data.unit_amount, 350); // 3.50 * 100
-  assert.strictEqual(
-    lineItem2.price_data.product_data.name,
-    "All Natural Lip Balm"
-  );
-  assert.strictEqual(lineItem2.price_data.product_data.images, undefined);
+  assert.strictEqual(lineItem2.price_data.unit_amount, 350);
+  assert.strictEqual(lineItem2.price_data.product_data.name, "All Natural Lip Balm");
+  assert.strictEqual(lineItem2.price_data.product_data.images, undefined); // Invalid image omitted
   assert.strictEqual(lineItem2.quantity, 3);
 
   // Check totals ($8.00 + $10.50 = $18.50)
   assert.strictEqual(validRes.totalAmount, 18.5);
   assert.strictEqual(validRes.totalAmountCents, 1850);
   assert.strictEqual(validRes.itemCount, 5);
-
   console.log("✓ Test 5: Dynamic Stripe price_data compiled properly into cents and names");
+
+  // 6. Test sanitizeImageUrl directly
+  assert.strictEqual(sanitizeImageUrl(" https://test.com/img.jpg \n"), "https://test.com/img.jpg");
+  assert.strictEqual(sanitizeImageUrl("invalid-url"), null);
+  assert.strictEqual(sanitizeImageUrl(null), null);
+  assert.strictEqual(sanitizeImageUrl(""), null);
+  console.log("✓ Test 6: Image URL sanitization handles whitespace, newlines, and invalid URLs");
 
   console.log("==================================================");
   console.log("   ALL TASK 2 ACCEPTANCE CRITERIA VERIFIED!        ");

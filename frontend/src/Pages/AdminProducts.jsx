@@ -103,7 +103,7 @@ function AdminProducts() {
           </p>
         )}
         {/* Product list section */}
-        <div className= "flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15"></div>
+        <div className="flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15">
           {sortedProducts.map((product) => ( //Map through the products array and render each product 
             
             <AdminProductTile
@@ -113,6 +113,7 @@ function AdminProducts() {
             />
 
           ))}
+        </div>
 
 
       </div>
