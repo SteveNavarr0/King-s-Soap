@@ -348,10 +348,10 @@ const deleteProduct = async () => {
   }
 };
 
-//Used when product is_active is false
-const readdProduct = async () => {
+//Used when product is_active is false to restore/re-add it to the shop
+const handleRestoreProduct = async () => {
   const confirmed = window.confirm(
-    "Are you sure you want to re-add this product?"
+    "Are you sure you want to re-add this product to the shop?"
   );
 
   if (!confirmed) return;
@@ -361,15 +361,13 @@ const readdProduct = async () => {
   setSuccess("");
 
   try {
-    const { error: readdError } = await supabase
+    const { error: restoreError } = await supabase
       .from("products")
-      .update({
-        is_active: true,
-      })
+      .update({ is_active: true })
       .eq("id", id);
 
-    if (readdError) {
-      console.error("Error re-adding product:", readdError);
+    if (restoreError) {
+      console.error("Error restoring product:", restoreError);
       setError("Unable to re-add product.");
       return;
     }
@@ -377,37 +375,16 @@ const readdProduct = async () => {
     setIsActive(true);
     setSuccess("Product re-added successfully.");
 
-    navigate("/adminProducts");
-
-  } catch (error) {
-    console.error("Error re-adding product:", error);
-    setError("Unable to re-add product.");
-
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleRestoreProduct = async () => {
-  try {
-    const { error } = await supabase
-      .from("products")
-      .update({ is_active: true })
-      .eq("id", productId);
-
-    if (error) {
-      console.error("Error restoring product:", error);
-      return;
-    }
-
-    // Refresh archived products
+    // Refresh products on parent page
     await onProductChanged?.();
 
     // Close popup
     onClose();
-
-  } catch (error) {
-    console.error("Unexpected error restoring product:", error);
+  } catch (err) {
+    console.error("Unexpected error restoring product:", err);
+    setError("Unable to re-add product.");
+  } finally {
+    setLoading(false);
   }
 };
 

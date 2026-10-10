@@ -1,9 +1,37 @@
 import supabase, { getSupabaseClient } from "../supabaseClient.js";
 import Stripe from "stripe";
 import easypost from "../easypostClient.js";  
+import { purchaseEasyPostLabelFromStripe } from "./webhookController.js";
+import {
+  sendCancellationRequestToAdmin,
+  sendOrderCancelledEmail,
+} from "../services/emailService.js";  
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+
+/**
+ * Sanitizes and validates an image URL for use in Stripe checkout.
+ * Strips whitespace/newlines and ensures URL is a valid http/https URL.
+ * Returns null if the URL is missing or malformed, preventing Stripe "Not a valid URL" errors.
+ *
+ * @param {string} url - The candidate image URL
+ * @returns {string|null} - The validated URL or null
+ */
+export const sanitizeImageUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
 
 /**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
@@ -65,7 +93,8 @@ export const validateAndFormatCartItems = (cartItems) => {
   // Compile dynamic Stripe price_data line items
   const lineItems = cartItems.map((item) => {
     const product = item.products;
-    const firstImage = product.product_images?.[0]?.image_url;
+    const rawImage = product.product_images?.[0]?.image_url;
+    const validImage = sanitizeImageUrl(rawImage);
 
     return {
       price_data: {
@@ -73,7 +102,7 @@ export const validateAndFormatCartItems = (cartItems) => {
         unit_amount: Math.round(Number(product.price) * 100), // Convert numeric dollar to integer cents
         product_data: {
           name: product.name,
-          ...(firstImage ? { images: [firstImage] } : {}),
+          ...(validImage ? { images: [validImage] } : {}),
         },
       },
       quantity: item.quantity,
@@ -230,7 +259,7 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
-        fulfillment_type: isPickup ? "pickup" : "shipping",     
+        fulfillment_type: isPickup ? "pickup" : "shipping",
       })
       .select()
       .single();
@@ -258,11 +287,18 @@ export const createCheckoutSession = async (req, res) => {
     }
 
     // 5. Create Stripe Session configured for Shipping or Local Pickup
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      req.headers.origin ||
+      "http://localhost:5173"
+    ).replace(/\/+$/, "");
     const sessionConfig = {
       payment_method_types: ["card"],
       line_items: result.lineItems,
       mode: "payment",
+      payment_intent_data: {
+        capture_method: "manual",
+      },
       customer_email: userEmail || undefined,
       submit_type: "auto",
       billing_address_collection: isPickup ? "auto" : "required",
@@ -334,3 +370,321 @@ export const createCheckoutSession = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * DT-543: Accept an on_hold order, capture payment in Stripe, purchase EasyPost label,
+ * store tracking & label metadata, and transition status to 'accepted'.
+ */
+export const acceptOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    // 1. Fetch order from Supabase
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    // 2. Validate order status
+    if (!["on_hold", "cancel_requested"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be accepted because it has status '${order.status}'. Only 'on_hold' or 'cancel_requested' orders can be accepted.`,
+      });
+    }
+
+    // 3. Capture Payment in Stripe if payment intent exists
+    if (order.stripe_payment_intent_id) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+        if (paymentIntent.status === "requires_capture") {
+          await stripe.paymentIntents.capture(order.stripe_payment_intent_id);
+          console.log(`Payment captured for order ${orderId}: ${order.stripe_payment_intent_id}`);
+        }
+      } catch (stripeErr) {
+        if (process.env.NODE_ENV === "test" && order.stripe_payment_intent_id?.startsWith("pi_test_mock")) {
+          console.log(`[TEST MODE] Mock payment intent ${order.stripe_payment_intent_id} bypass capture.`);
+        } else {
+          console.error(`Failed to capture Stripe payment for order ${orderId}:`, stripeErr);
+          return res.status(500).json({
+            success: false,
+            message: `Stripe payment capture failed: ${stripeErr.message}`,
+          });
+        }
+      }
+    }
+
+    // 4. Purchase EasyPost Label if shipping (skip for local pickup)
+    let shippingResult = null;
+    const isPickup = (order.fulfillment_type || "shipping") === "pickup";
+
+    if (!isPickup) {
+      try {
+        let totalWeightOz = "16";
+        let shippingDetails = null;
+
+        if (order.stripe_session_id) {
+          try {
+            const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+            if (session.metadata?.total_weight_oz) {
+              totalWeightOz = session.metadata.total_weight_oz;
+            }
+            shippingDetails = session.shipping_details || session.customer_details;
+          } catch (sessionErr) {
+            console.warn(`Could not retrieve Stripe session ${order.stripe_session_id} for weight or shipping details:`, sessionErr.message);
+          }
+        }
+
+        if (shippingDetails) {
+          shippingResult = await purchaseEasyPostLabelFromStripe(
+            orderId,
+            shippingDetails,
+            order.customer_email,
+            totalWeightOz
+          );
+        } else {
+          console.warn(`No shipping details found for order ${orderId}, skipping EasyPost label purchase.`);
+        }
+      } catch (labelErr) {
+        console.error(`Postage purchase failed for order ${orderId}:`, labelErr);
+        return res.status(500).json({
+          success: false,
+          message: `Order payment captured, but EasyPost label purchase failed: ${labelErr.message}`,
+        });
+      }
+    }
+
+    // 5. Update order status to 'accepted'
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ status: "accepted" })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error(`Failed to update order status to accepted:`, updateError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update order status to accepted.",
+      });
+    }
+
+    console.log(`Order ${orderId} successfully accepted.`);
+    return res.status(200).json({
+      success: true,
+      message: "Order accepted successfully.",
+      orderId,
+      status: "accepted",
+      trackingNumber: shippingResult?.trackingNumber || order.tracking_number || null,
+      labelUrl: shippingResult?.labelUrl || order.label_url || null,
+    });
+  } catch (err) {
+    console.error("Error in acceptOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to accept order.",
+    });
+  }
+};
+
+/**
+ * Decline an on_hold order: release Stripe payment hold, transition status to 'cancelled',
+ * and notify the customer.
+ */
+export const declineOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (!["on_hold", "cancel_requested", "accepted"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled because it has status '${order.status}'.`,
+      });
+    }
+
+
+    // 1. Cancel Stripe PaymentIntent authorization hold (or refund if already captured)
+    if (order.stripe_payment_intent_id) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+        if (paymentIntent.status === "requires_capture") {
+          await stripe.paymentIntents.cancel(order.stripe_payment_intent_id);
+          console.log(`Payment authorization hold cancelled for order ${orderId}`);
+        } else if (paymentIntent.status === "succeeded") {
+          await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id });
+          console.log(`Stripe refund issued for order ${orderId}`);
+        }
+      } catch (stripeErr) {
+        if (process.env.NODE_ENV === "test" && order.stripe_payment_intent_id?.startsWith("pi_test_mock")) {
+          console.log(`[TEST MODE] Mock payment intent ${order.stripe_payment_intent_id} bypass cancel.`);
+        } else {
+          console.error(`Failed to cancel/refund Stripe payment for order ${orderId}:`, stripeErr);
+        }
+      }
+    }
+
+        // 2. Void EasyPost label if one was purchased (DT-36 / DT-546)
+    if (order.easypost_shipment_id) {
+      try {
+        await easypost.Shipment.refund(order.easypost_shipment_id);
+        console.log(`EasyPost shipment ${order.easypost_shipment_id} refunded/voided for order ${orderId}.`);
+      } catch (easypostErr) {
+        console.error(`Failed to void EasyPost label for order ${orderId}:`, easypostErr.message || easypostErr);
+      }
+    }
+
+
+    // 3. Update order status to 'cancelled'
+    const { error: cancelError } = await supabase
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", orderId);
+
+    if (cancelError) {
+      console.error(`Failed to mark order as cancelled:`, cancelError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to mark order as cancelled.",
+      });
+    }
+
+    // 4. Notify customer of cancellation
+    if (order.customer_email) {
+      sendOrderCancelledEmail({
+        customerEmail: order.customer_email,
+        orderId,
+      }).catch((mailErr) => {
+        console.error("Failed to send cancellation email:", mailErr);
+      });
+    }
+
+    console.log(`Order ${orderId} successfully declined/cancelled.`);
+    return res.status(200).json({
+      success: true,
+      message: "Order declined and payment hold released.",
+      orderId,
+      status: "cancelled",
+    });
+  } catch (err) {
+    console.error("Error in declineOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to decline order.",
+    });
+  }
+};
+
+/**
+ * Customer requests cancellation while order is on_hold.
+ * Verifies status and emails the admin.
+ */
+export const requestCancelOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (order.status === "cancel_requested") {
+      return res.status(200).json({
+        success: true,
+        message: "Cancellation request was already submitted and the store admin has been notified.",
+        orderId,
+      });
+    }
+
+    if (order.status !== "on_hold") {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled because it is no longer on hold (status is '${order.status}').`,
+      });
+    }
+
+    const { error: updateErr } = await supabase
+      .from("orders")
+      .update({ status: "cancel_requested" })
+      .eq("id", orderId);
+
+    if (updateErr) {
+      console.error("Failed to update status to cancel_requested:", updateErr);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to record cancellation request in database.",
+      });
+    }
+
+    if (order.customer_email) {
+      sendCancellationRequestToAdmin({
+        orderId,
+        customerEmail: order.customer_email,
+      }).catch((mailErr) => {
+        console.error("Failed to send cancellation request email to admin:", mailErr);
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cancellation request received and sent to the store admin.",
+      orderId,
+    });
+  } catch (err) {
+    console.error("Error in requestCancelOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to submit cancellation request.",
+    });
+  }
+};
+

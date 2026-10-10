@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import supabase from "../supabaseClient.js";
 import easypost from "../easypostClient.js";
+import { sendOrderConfirmationEmail } from "../services/emailService.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -17,18 +18,18 @@ const SENDER_ADDRESS = {
 /**
  * Creates and purchases postage using the shipping address returned by Stripe.
  */
-const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, customerEmail, totalWeightOz) => {
+export const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, customerEmail, totalWeightOz) => {
   try {
-    const address = shippingDetails.address;
+    const address = shippingDetails?.address || shippingDetails || {};
 
     // 1. Build EasyPost to_address from Stripe payload
     const toAddress = {
-      name: shippingDetails.name || "Customer",
-      street1: address.line1,
-      street2: address.line2 || "",
+      name: shippingDetails?.name || "Customer",
+      street1: address.line1 || address.street1,
+      street2: address.line2 || address.street2 || "",
       city: address.city,
       state: address.state,
-      zip: address.postal_code,
+      zip: address.postal_code || address.zip || address.postalCode,
       country: address.country || "US",
       email: customerEmail || undefined,
     };
@@ -76,6 +77,16 @@ const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, custome
     } else {
       console.log(`EasyPost label purchased and saved for order ${orderId}: tracking=${boughtShipment.tracking_code}, label=${boughtShipment.postage_label?.label_url}`);
     }
+
+    return {
+      success: true,
+      shipment: boughtShipment,
+      trackingNumber: boughtShipment.tracking_code,
+      labelUrl: boughtShipment.postage_label?.label_url || null,
+      carrier: selectedRate.carrier,
+      service: selectedRate.service,
+      rate: selectedRate.rate,
+    };
   } catch (shippingErr) {
     console.error(`EasyPost creation/purchase failed for order ${orderId}:`, shippingErr.message || shippingErr);
     if (shippingErr.errors) {
@@ -85,6 +96,7 @@ const purchaseEasyPostLabelFromStripe = async (orderId, shippingDetails, custome
       .from("orders")
       .update({ status: "payment_cleared_label_failed" })
       .eq("id", orderId);
+    throw shippingErr;
   }
 };
 
@@ -133,11 +145,6 @@ export const handleStripeWebhook = async (req, res) => {
             ? session.payment_intent
             : session.payment_intent?.id || null;
 
-        const shippingAddress =
-          session.shipping_details?.address ||
-          session.customer_details?.address ||
-          (fulfillmentType === "pickup" ? { type: "local_pickup" } : null);
-
         const customerEmail =
           session.customer_details?.email ||
           session.customer_email ||
@@ -147,12 +154,12 @@ export const handleStripeWebhook = async (req, res) => {
           ? Number((session.amount_total / 100).toFixed(2))
           : undefined;
 
-        // 2. Update public.orders: status = 'paid', stripe_payment_intent_id, shipping_address
+        // 2. Update public.orders: status = 'on_hold', stripe_payment_intent_id
         const updatePayload = {
-          status: "paid",
+          status: "on_hold",
           stripe_payment_intent_id: paymentIntentId,
           ...(finalTotal !== undefined ? { total_amount: finalTotal } : {}),
-          ...(shippingAddress ? { shipping_address: shippingAddress } : {}),
+          ...(fulfillmentType ? { fulfillment_type: fulfillmentType } : {}),
           ...(customerEmail ? { customer_email: customerEmail } : {}),
         };
 
@@ -167,22 +174,11 @@ export const handleStripeWebhook = async (req, res) => {
         if (orderUpdateError) {
           console.error("Failed to update order status in Supabase:", orderUpdateError);
         } else {
-          console.log(`Order ${orderId || session.id} marked as paid.`);
+          console.log(`Order ${orderId || session.id} placed on hold pending admin approval.`);
         }
 
-        // 3. Purchase EasyPost Label using Stripe-provided shipping details  
-        const shippingDetails = session.shipping_details || session.customer_details;
-        if (fulfillmentType !== "pickup" && shippingDetails?.address && orderId) {
-          const totalWeightOz = session.metadata?.total_weight_oz || "16";
-          await purchaseEasyPostLabelFromStripe(
-            orderId,
-            shippingDetails,
-            customerEmail,
-            totalWeightOz
-          );
-        } else if (fulfillmentType !== "pickup") {
-          console.warn(`EasyPost label skipped for order ${orderId}: missing shipping details or address in session. session.shipping_details=${JSON.stringify(session.shipping_details)}`);
-        }
+        // 3. EasyPost label purchase is decoupled here (DT-542).
+        // Label will be purchased when an admin explicitly accepts the order (DT-543).
 
 
         // 4. Update public.products: decrement stock, increment lifetime sales, update Availability
@@ -247,6 +243,24 @@ export const handleStripeWebhook = async (req, res) => {
           } else {
             console.log(`Cart cleared for user ${userId}.`);
           }
+        }
+
+        // 6. Send order confirmation email with cancellation request option
+        if (customerEmail && orderId) {
+          const customerName =
+            session.customer_details?.name ||
+            session.shipping_details?.name ||
+            "Customer";
+
+          sendOrderConfirmationEmail({
+            customerEmail,
+            customerName,
+            orderId,
+            totalAmount: finalTotal,
+            isPickup: fulfillmentType === "pickup",
+          }).catch((mailErr) => {
+            console.error("Failed to send order confirmation email:", mailErr);
+          });
         }
 
         break;

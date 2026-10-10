@@ -14,7 +14,7 @@ function AdminOrders() {
 
       const { data, error } = await supabase
         .from("active_orders")
-        .select("order_id, status, total, customer_email, tracking_number, order_date, items")
+        .select("order_id, status, total, customer_email, fulfillment_type, tracking_number, order_date, items")
         .order("order_date", { ascending: true });
         if (error){
           console.error("Error fetching orders:", error);
@@ -137,7 +137,7 @@ function AdminOrders() {
           </span>
 
           <p className="font-mono text-sm md:text-base">
-            {order.shipping_address?.type === "local_pickup"
+            {order.fulfillment_type === "pickup"
               ? "Local Pickup"
               : order.tracking_number ?? "Not available"}
           </p>
@@ -152,18 +152,34 @@ function AdminOrders() {
         <p className="font-sans text-sm md:text-base">
           {new Date(order.order_date).toLocaleDateString()}
         </p>
-      </div>
+        </div>
 
-      <div>
-        {/* Mobile label; desktop uses the column heading */}
-        <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
-          Status
-        </span>
+        <div>
+          {/* Mobile label; desktop uses the column heading */}
+          <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+            Status
+          </span>
 
-        <span className="inline-flex px-3 py-1 rounded-full border border-white/30 bg-[#8B6B4A]/30 font-serif text-sm text-white capitalize">
-          {order.status}
-        </span>
-      </div>
+          {order.status === "cancel_requested" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 animate-pulse [animation-duration:2s] [@keyframes_pulse{0%,100%{opacity:1}50%{opacity:0.1}}]">
+              Cancellation Requested
+            </span>
+          ) : order.status === "on_hold" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/40">
+              On Hold
+            </span>
+          ) : order.status === "accepted" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
+              Accepted
+            </span>
+          ) : order.status === "paid" ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/40">
+              Paid
+            </span>
+          ) : (
+            <span className="capitalize">{order.status}</span>
+          )}
+        </div>
 
       </Link>
     ))}

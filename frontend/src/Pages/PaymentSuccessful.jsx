@@ -69,8 +69,14 @@ const PaymentSuccessful = () => {
 
   if (error || !order) {
     return (
-      <div className="min-h-[600px] flex items-center justify-center text-white">
-        {error || "Order not found."}
+      <div className="min-h-[600px] flex flex-col items-center justify-center text-white gap-4">
+        <p className="text-lg">{error || "Order not found."}</p>
+        <Link
+          to="/"
+          className="bg-white/40 text-white px-4 py-2 rounded-md text-sm hover:bg-white/50 transition"
+        >
+          Return to Shop
+        </Link>
       </div>
     );
   }
