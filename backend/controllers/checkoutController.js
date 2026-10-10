@@ -186,11 +186,73 @@ export const validateCartHandler = async (req, res) => {
   }
 };
 
+
+
+// Validate a discount against the current cart and return a subtotal preview (specifically for apply button)
+export const previewDiscount = async (req, res) => {
+  try {
+    const code = req.body?.discountCode?.trim().toUpperCase();
+
+    if (!code) {
+      return res.status(400).json({ message: "Enter a discount code." });
+    }
+
+    const cart = await validateUserCart(req.user?.id, req.authToken);
+
+    if (!cart.isValid) {
+      return res.status(400).json({ message: cart.error });
+    }
+
+    const { data: discount, error } = await supabase
+      .from("discounts")
+      .select("type, value, starts_at, expires_at")
+      .eq("code", code)
+      .eq("is_active", true)
+      .eq("is_archived", false)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const now = Date.now();
+    if (
+      !discount ||
+      (discount.starts_at && new Date(discount.starts_at).getTime() > now) ||
+      (discount.expires_at && new Date(discount.expires_at).getTime() <= now)
+    ) {
+      return res.status(400).json({ message: "This discount code is not available." });
+    }
+
+    // Calculate in cents so the displayed amount matches currency rounding.
+    const subtotalCents = cart.totalAmountCents;
+    const discountCents = discount.type === "percentage"
+      ? Math.round(subtotalCents * Number(discount.value) / 100)
+      : Math.round(Number(discount.value) * 100);
+
+    return res.status(200).json({
+      code,
+      subtotal: subtotalCents / 100,
+      discountAmount: Math.min(discountCents, subtotalCents) / 100,
+      estimatedTotal: Math.max(0, subtotalCents - discountCents) / 100,
+    });
+  } catch (error) {
+    console.error("Could not preview discount:", error);
+    return res.status(500).json({ message: "Failed to check this discount code." });
+  }
+};
+
+
 export const createCheckoutSession = async (req, res) => {
   try {
     const userId = req.user?.id;
     const userEmail = req.user?.email || req.body?.email || null;
     const checkoutType = req.body?.checkoutType || "shipping";
+    
+    // Normalize an optional discount code before looking it up.
+    const discountCode =
+      typeof req.body?.discountCode === "string"
+        ? req.body.discountCode.trim().toUpperCase()
+        : "";
+    
     const isPickup = checkoutType === "pickup" || checkoutType === "local_pickup";
 
     if (!userId) {
@@ -209,8 +271,56 @@ export const createCheckoutSession = async (req, res) => {
         message: result.error,
       });
     }
+
+
+
+    //2. Look up an entered discount before creating an order or Stripe session.
+    let discount = null;
+
+    if (discountCode) {
+      const { data, error: discountError } = await supabase
+        .from("discounts")
+        .select("id, code, starts_at, expires_at, stripe_promotion_code_id")
+        .eq("code", discountCode)
+        .eq("is_active", true)
+        .eq("is_archived", false)
+        .maybeSingle();
+
+      if (discountError) {
+        console.error("Could not load checkout discount:", discountError);
+        return res.status(500).json({ message: "Could not validate discount code." });
+      }
+
+      if (!data) {
+        return res.status(400).json({ message: "Discount code is invalid or inactive." });
+      }
+
+      discount = data;
+    }
     
-  // 2. Calculate total parcel weight (in ounces)
+
+    // Reject codes outside their scheduled availability window.
+    if (discount) {
+      const now = Date.now();
+
+      if (discount.starts_at && now < new Date(discount.starts_at).getTime()) {
+        return res.status(400).json({ message: "This discount code is not active yet." });
+      }
+
+      if (discount.expires_at && now >= new Date(discount.expires_at).getTime()) {
+        return res.status(400).json({ message: "This discount code has expired." });
+      }
+    }
+
+
+    // A saved discount must have a Stripe promotion code to use at checkout.
+    if (discount && !discount.stripe_promotion_code_id) {
+      console.error("Checkout discount has no Stripe promotion code:", discount.id);
+      return res.status(500).json({ message: "This discount cannot be applied right now." });
+    }
+
+
+  // 3. Calculate total parcel weight (in ounces)
   let totalWeightOz = 0;
   result.cartItems.forEach((item) => {
    const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
@@ -219,7 +329,7 @@ export const createCheckoutSession = async (req, res) => {
   const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
 
 
-    // 3. Insert Pending Order into Supabase
+    // 4. Insert Pending Order into Supabase
     const shippingFee = isPickup ? 0 : 7.0;
     const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
 
@@ -240,7 +350,7 @@ export const createCheckoutSession = async (req, res) => {
       throw new Error(`Failed to create order: ${orderError?.message || "Unknown error"}`);
     }
 
-    // 4. Insert Order Items into Supabase
+    // 5. Insert Order Items into Supabase
     const orderItems = result.cartItems.map((item) => ({
       order_id: newOrder.id,
       product_id: item.product_ID,
@@ -257,11 +367,14 @@ export const createCheckoutSession = async (req, res) => {
       throw new Error(`Failed to save order items: ${itemsError.message}`);
     }
 
-    // 5. Create Stripe Session configured for Shipping or Local Pickup
+    // 6. Create Stripe Session configured for Shipping or Local Pickup
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
     const sessionConfig = {
       payment_method_types: ["card"],
       line_items: result.lineItems,
+      ...(discount && {
+        discounts: [{ promotion_code: discount.stripe_promotion_code_id }],
+      }),
       mode: "payment",
       customer_email: userEmail || undefined,
       submit_type: "auto",
@@ -308,23 +421,26 @@ export const createCheckoutSession = async (req, res) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    // 6. Update the Pending Order with the Stripe Session ID
+    // 7. Update the Pending Order with the Stripe Session ID
     const { error: updateError } = await supabase
       .from("orders")
-      .update({ stripe_session_id: session.id })
+      .update({
+        stripe_session_id: session.id,
+        total_amount: session.amount_total / 100, // Stripe returns the discounted total in cents
+      })
       .eq("id", newOrder.id);
 
     if (updateError) {
       console.error("Failed to update order with Stripe session ID:", updateError);
     }
 
-    // 7. Return the URL to the frontend
     return res.status(200).json({
       success: true,
       url: session.url,
       sessionId: session.id,
       orderId: newOrder.id,
       fulfillmentType: isPickup ? "pickup" : "shipping",
+    
     });
   } catch (error) {
     console.error("Checkout session error:", error);

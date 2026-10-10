@@ -143,7 +143,7 @@ export const handleStripeWebhook = async (req, res) => {
           session.customer_email ||
           null;
 
-        const finalTotal = session.amount_total
+        const finalTotal = session.amount_total != null
           ? Number((session.amount_total / 100).toFixed(2))
           : undefined;
 
@@ -152,7 +152,6 @@ export const handleStripeWebhook = async (req, res) => {
           status: "paid",
           stripe_payment_intent_id: paymentIntentId,
           ...(finalTotal !== undefined ? { total_amount: finalTotal } : {}),
-          ...(shippingAddress ? { shipping_address: shippingAddress } : {}),
           ...(customerEmail ? { customer_email: customerEmail } : {}),
         };
 

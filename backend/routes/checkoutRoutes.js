@@ -4,6 +4,7 @@ import {
   createCheckoutSession,
 } from "../controllers/checkoutController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import { previewDiscount } from "../controllers/checkoutController.js";
 
 const router = express.Router();
 
@@ -18,5 +19,8 @@ router.get("/validate", requireAuth, validateCartHandler);
  * Task 3 (DT-489): Create Stripe Checkout Session, insert pending order, and return session URL.
  */
 router.post("/create-session", requireAuth, createCheckoutSession);
+
+// Check a code against the signed-in customer's current cart.
+router.post("/preview-discount", requireAuth, previewDiscount);
 
 export default router;

@@ -9,6 +9,9 @@ import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import checkoutRoutes from "./routes/checkoutRoutes.js";
 import { handleStripeWebhook } from "./controllers/webhookController.js";
+import discountRoutes from "./routes/discountRoutes.js";
+
+
 
 dotenv.config(); // Use port from .env file if available, otherwise use default port 3000
 
@@ -32,7 +35,7 @@ app.use("/api/products", productRoutes);//Connects request from the frontend to 
 app.use("/api/users", userRoutes);//Connects request from the frontend to the backend routes in productRoutes.js
 app.use("/api/products", productRoutes); // Connects request from the frontend to the backend routes in productRoutes.js
 app.use("/api/checkout", checkoutRoutes); // Checkout endpoints: validation, sessions, orders
-
+app.use("/api/discounts", discountRoutes); //Require a signed in user for discount requests
 app.use("/api/messages", messageRoutes);
 
 if (process.env.NODE_ENV !== "test") {

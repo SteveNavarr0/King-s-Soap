@@ -54,3 +54,39 @@ export const requireAuth = async (req, res, next) => {
     });
   }
 };
+
+
+
+
+//For discounts - requires a real Supabase session token for routes that manage discounts
+//Will eventually add admin check
+export const requireTokenAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader?.startsWith("Bearer ")) {
+            return res.status(401).json({
+                message: "Sign in to manage discounts.",
+            });
+        }
+
+        const token = authHeader.slice("Bearer ".length);
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+
+        if (error || !user) {
+            return res.status(401).json({
+                message: "Your session is invalid or has expired.",
+            });
+        }
+
+        //Make verified user available to later route handlers
+        req.user = user;
+        req.authToken = token;
+        return next();
+    } catch (error) {
+        console.error("Discount authentication error:", error);
+        return res.status(500).json({
+            message: "Could not verify your session.",
+        });
+    }
+};
