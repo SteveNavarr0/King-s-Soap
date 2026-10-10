@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FiRefreshCw } from "react-icons/fi";
 import supabase from "../supabaseClient";
 
 export default function AdminPostageQueue() {
@@ -64,27 +65,37 @@ export default function AdminPostageQueue() {
   return (
     <div className="w-full">
       {/* Queue Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
+      
+      <div className="mb-6">
+
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-2xl md:text-3xl font-serif italic text-white">
             Shipping Queue
           </h2>
-          <p className="text-sm md:text-base font-serif text-white/80 mt-0.5">
-            {unprintedCount} ready to print · {orders.length} total orders
-          </p>
-        </div>
 
-        <button
-          onClick={fetchQueue}
-          className="self-start sm:self-auto px-4 py-2 rounded-lg bg-[#8B6B4A] hover:bg-[#72573c] border border-white/30 text-white font-serif text-sm md:text-base shadow-sm hover:scale-105 cursor-pointer transition"
-        >
-          Refresh Queue
-        </button>
+          <button
+            type="button"
+            onClick={fetchQueue}
+            className="inline-flex shrink-0 items-center gap-0 sm:gap-3 whitespace-nowrap text-white font-serif italic text-sm md:text-base hover:scale-105 cursor-pointer transition"
+          >
+            <span className="hidden sm:inline">Refresh Queue</span>
+            <FiRefreshCw aria-hidden="true" />
+          </button>
+          
+        
       </div>
+
+      <p className="text-sm md:text-base font-serif text-white/80 mt-0.5">
+            {unprintedCount} ready to print · {orders.length} total orders
+      </p>
+    
+      </div>
+
+      
 
       {/* Orders List / Empty State */}
       {orders.length === 0 ? (
-        <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl border border-white/20 rounded-xl bg-black/10">
+        <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
           No orders waiting for postage printing.
         </div>
       ) : (
@@ -95,37 +106,51 @@ export default function AdminPostageQueue() {
             return (
               <div
                 key={order.id}
-                className={`p-4 md:p-5 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                className={`p-4 rounded-lg border shadow-sm flex flex-col gap-4 md:flex-row md:items-center md:justify-between transition-all duration-200 ${
                   isPrinted
                     ? "bg-black/25 border-white/10 opacity-75"
-                    : "bg-[#C5AE98]/20 border-white/30 shadow-md"
+                    : "border-white/30 shadow-sm"
                 }`}
               >
                 {/* Order Information */}
-                <div className="space-y-1.5">
+                <div className="space-y-4 md:space-y-2">
+                  {/* Mobile label; desktop keeps the compact queue layout */}
+                  <span className="block mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+                    Order ID
+                  </span>
+
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs md:text-sm text-white/90 font-semibold tracking-wider">
+                    <span className="font-mono text-xs md:text-sm text-white">
                       #{order.id}
                     </span>
 
                     {isPrinted ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-serif bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                      <span className="hidden xl:inline-flex px-3 py-1 rounded-full border border-amber-400/30 bg-amber-500/20 font-serif text-sm text-amber-200">
                         Printed
                       </span>
                     ) : (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-serif bg-emerald-500/25 text-emerald-200 border border-emerald-400/40">
-                        Ready to Print
+                      <span className="hidden xl:inline-flex px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/25 font-serif text-sm text-emerald-200">
+                        Ready
                       </span>
                     )}
                   </div>
 
-                  <p className="text-base md:text-lg font-serif text-white font-medium">
+                  <span className="block mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+                    Contact
+                  </span>
+                  <p className="font-serif text-base md:text-lg font-medium text-white">
                     {order.customer_email}
                   </p>
 
                   {order.tracking_number && (
-                    <p className="text-xs md:text-sm font-mono text-white/80">
-                      Tracking:{" "}
+                  <div>
+                    {/* Mobile label; desktop keeps the inline label */}
+                    <span className="block mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+                      Tracking
+                    </span>
+
+                    <p className="font-mono text-sm md:text-base text-white">
+
                       {order.tracking_url ? (
                         <a
                           href={order.tracking_url}
@@ -139,20 +164,35 @@ export default function AdminPostageQueue() {
                         order.tracking_number
                       )}
                     </p>
-                  )}
+                  </div>
+                )}
+
+                 {/* Labeled status below desktop width; desktop status remains beside the Order ID */}
+                <div className="xl:hidden">
+                  <span className="block mb-2 font-sans text-xs uppercase tracking-wide text-white/90">
+                    Status
+                  </span>
+                  {isPrinted ? (
+                      <span className="inline-flex px-3 py-1 rounded-full border border-amber-400/30 bg-amber-500/20 font-serif text-sm text-amber-200">
+                        Printed
+                      </span>
+                    ) : (
+                      <span className="inline-flex px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/25 font-serif text-sm text-emerald-200">
+                        Ready
+                      </span>
+                    )}
+                  </div>
+
                 </div>
 
                 {/* Print Trigger */}
-                <div className="flex items-center self-end md:self-center">
+                <div className="flex items-center md:self-end md:self-center">
                   <button
+                    type="button"
                     onClick={() => handlePrintClick(order)}
-                    className={`px-5 py-2 md:py-2.5 rounded-lg font-serif text-sm md:text-lg border shadow-sm hover:scale-105 cursor-pointer transition ${
-                      isPrinted
-                        ? "bg-white/15 hover:bg-white/25 text-white border-white/20"
-                        : "bg-[#8B6B4A] hover:bg-[#72573c] text-white border-white/30 font-medium"
-                    }`}
+                    className="w-40 md:w-50 h-8 md:h-10 rounded-full bg-white/15 border border-white/30 shadow-sm text-white text-sm md:text-lg flex items-center justify-center whitespace-nowrap hover:scale-105 cursor-pointer transition"
                   >
-                    {isPrinted ? "Re-print Label" : "Print Postage"}
+                    {isPrinted ? "Reprint Label" : "Print Postage"}
                   </button>
                 </div>
               </div>

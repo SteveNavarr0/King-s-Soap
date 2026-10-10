@@ -9,14 +9,19 @@ const getImageUrl = (imagePath) => {
 };
 
 function ShopPageImage() {
-  const shopImageUrl = getImageUrl("images/home-page-image.png");
+  const imageUrl = getImageUrl("images/home-page-image.png");
 
   return (
-    
-    //Shop Page Image
-    <div className = "relative flex justify-between items-center home-image">
-      <img src={shopImageUrl} alt="Shop page" className="shop-image mx-auto w-full" />
-
+    <div className="relative">
+      <img
+        src={imageUrl}
+        alt="Shop page"
+        className="w-full h-auto"
+      />
+      <div
+        className="absolute inset-0 bg-black/20 md:bg-transparent"
+        aria-hidden="true"
+      />
       {/* Text Over Image*/}
       <div className="absolute inset-0 flex flex-col items-center pt-6 text-white text-center pt-18">
             <h1 className="text-4xl md:text-5xl font-serif font-semibold">
@@ -24,7 +29,6 @@ function ShopPageImage() {
             </h1>
       </div>
     </div>
-
   );
 }
 

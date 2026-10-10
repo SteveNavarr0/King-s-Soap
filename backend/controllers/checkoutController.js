@@ -224,16 +224,16 @@ export const createCheckoutSession = async (req, res) => {
     const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
 
     const { data: newOrder, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      user_id: userId,
-      status: "pending",
-      total_amount: initialTotal,
-      customer_email: userEmail,
-      fulfillment_type: isPickup ? "pickup" : "shipping",
-    })
-    .select()
-    .single();
+      .from("orders")
+      .insert({
+        user_id: userId,
+        status: "pending",
+        total_amount: initialTotal,
+        customer_email: userEmail,
+        fulfillment_type: isPickup ? "pickup" : "shipping",     
+      })
+      .select()
+      .single();
 
     if (orderError || !newOrder) {
       console.error("Order creation error:", orderError);
