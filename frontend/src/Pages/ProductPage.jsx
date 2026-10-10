@@ -20,7 +20,7 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
 
   // stores how many items the user wants to buy
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
 
   // scroll to the top whenever a product page opens.
   useEffect(() => {
@@ -66,7 +66,7 @@ const ProductPage = () => {
       // set the first image as the main displayed image
       setSelectedImage(urls[0] || "");
 
-      setQuantity(1);
+      setQuantity(0);
 
       setLoading(false);
     };
@@ -76,7 +76,7 @@ const ProductPage = () => {
 
   // lowers quantity, but never below 1
   const decreaseQuantity = () => {
-    setQuantity((prev) => Math.max(1, prev - 1));
+    setQuantity((prev) => Math.max(0, prev - 1));
   };
 
   // raises quantity, but never above available stock
@@ -86,17 +86,14 @@ const ProductPage = () => {
 
   //  cart handler
   const handleAddToCart = async() => {
-    if (!product || product.stock <=0) return;
+    if (!product || product.stock <=0 || quantity <= 0) return;
     //check the session 
     const {
       data: { user },
        error: userError,
       }  = await supabase.auth.getUser();
 
-   const selectedQuantity = Math.max(
-      1,
-      Math.min(quantity, product.stock)
-    );
+   const selectedQuantity =  Math.min(quantity, product.stock);
 
       //guest user not logged in
       if (!user) {
@@ -268,7 +265,7 @@ const ProductPage = () => {
                 {/* minus button */}
                 <button
                   onClick={decreaseQuantity}
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 0}
                   className="px-4 py-2 text-lg border-r disabled:opacity-40"
                 >
                   -
@@ -293,7 +290,7 @@ const ProductPage = () => {
             {/* add to cart button */}
             <button
   onClick={handleAddToCart}
-  disabled={product.stock <= 0}
+  disabled={product.stock <= 0 || quantity <= 0}
   className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
 >
   <span>Add {quantity} to Cart</span>

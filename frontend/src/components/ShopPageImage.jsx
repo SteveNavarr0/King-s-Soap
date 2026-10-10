@@ -9,14 +9,22 @@ const getImageUrl = (imagePath) => {
 };
 
 function ShopPageImage() {
-  const imageUrl = getImageUrl("images/home-page-image.png");
+  const shopImageUrl = getImageUrl("images/home-page-image.png");
 
   return (
-    <img
-      src={imageUrl}
-      alt="Shop page"
-      className="w-full h-auto"
-    />
+    
+    //Shop Page Image
+    <div className = "relative flex justify-between items-center home-image">
+      <img src={shopImageUrl} alt="Shop page" className="shop-image mx-auto w-full" />
+
+      {/* Text Over Image*/}
+      <div className="absolute inset-0 flex flex-col items-center pt-6 text-white text-center pt-18">
+            <h1 className="text-4xl md:text-5xl font-serif font-semibold">
+            Take a look at our products!
+            </h1>
+      </div>
+    </div>
+
   );
 }
 

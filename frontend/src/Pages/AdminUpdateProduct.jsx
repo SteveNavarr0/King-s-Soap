@@ -28,6 +28,7 @@ const AdminUpdateProduct = () => {
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImageOrders, setNewImageOrders] = useState([]);
+  const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,7 @@ const AdminUpdateProduct = () => {
 
       const {data, error: fetchError} = await supabase
         .from("products")
-        .select("name, price, description, stock, weight, category, product_images(id, image_url, display_order)")
+        .select("name, price, description, stock, weight, category, is_active, product_images(id, image_url, display_order)")
         .eq("id", id) //Based on matching id
         .single(); //Retun one instead of the whole array
       
@@ -70,6 +71,7 @@ const AdminUpdateProduct = () => {
       setStock(data.stock ?? "");
       setWeight(data.weight ?? "");
       setCategory(data.category ? data.category.split(",").map((item) => item.trim()): []);
+      setIsActive(data.is_active)
       //Arrange from Main to last
       setExistingImages(
         [...(data.product_images || [])].sort( //Copy array > ...
@@ -293,7 +295,7 @@ const AdminUpdateProduct = () => {
 };
 
 
-
+//Used when prodict is_active is true
 const deleteProduct = async () => {
   const confirmed = window.confirm(
     "Are you sure you want to delete this product?"
@@ -330,6 +332,46 @@ const deleteProduct = async () => {
   } catch (error) {
     console.error("Error deleting product:", error);
     setError("Unable to delete product.");
+
+  } finally {
+    setLoading(false);
+  }
+};
+
+//Used when product is_active is false
+const readdProduct = async () => {
+  const confirmed = window.confirm(
+    "Are you sure you want to re-add this product?"
+  );
+
+  if (!confirmed) return;
+
+  setLoading(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    const { error: readdError } = await supabase
+      .from("products")
+      .update({
+        is_active: true,
+      })
+      .eq("id", id);
+
+    if (readdError) {
+      console.error("Error re-adding product:", readdError);
+      setError("Unable to re-add product.");
+      return;
+    }
+
+    setIsActive(true);
+    setSuccess("Product re-added successfully.");
+
+    navigate("/adminProducts");
+
+  } catch (error) {
+    console.error("Error re-adding product:", error);
+    setError("Unable to re-add product.");
 
   } finally {
     setLoading(false);
@@ -581,14 +623,17 @@ const deleteProduct = async () => {
             </button>
 
 
-            {/*Delete product functionality goes here*/}
-            <button onClick ={deleteProduct}
+            {/*Delete product and readd functionality goes here*/}
+            {/*When is_active is true, it is delete product, when false it is readd product*/}
+            <button onClick ={isActive ? deleteProduct : readdProduct}
               disabled={loading}
               className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
                 loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
               }`}
               >
-                {loading ? "Deleting Product..." : "Delete Product"
+              {loading
+                ? (isActive ? "Deleting Product..." : "Re-adding Product...")
+                : (isActive ? "Delete Product" : "Re-add Product")
               }
         
             </button>
