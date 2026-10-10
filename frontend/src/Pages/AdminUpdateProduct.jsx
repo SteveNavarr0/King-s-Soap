@@ -14,6 +14,7 @@ const categoryOptions = [
 //Pulled from AdminCreateProduct.jsx
 const AdminUpdateProduct = ({
   productId,
+  isArchived = false,
   onClose,
   onProductChanged,
 }) => {
@@ -387,6 +388,29 @@ const readdProduct = async () => {
   }
 };
 
+const handleRestoreProduct = async () => {
+  try {
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: true })
+      .eq("id", productId);
+
+    if (error) {
+      console.error("Error restoring product:", error);
+      return;
+    }
+
+    // Refresh archived products
+    await onProductChanged?.();
+
+    // Close popup
+    onClose();
+
+  } catch (error) {
+    console.error("Unexpected error restoring product:", error);
+  }
+};
+
 
 
 
@@ -639,7 +663,7 @@ const readdProduct = async () => {
 
             {/*Delete product and readd functionality goes here*/}
             {/*When is_active is true, it is delete product, when false it is readd product*/}
-            <button onClick ={isActive ? deleteProduct : readdProduct}
+            <button onClick ={isActive ? deleteProduct : handleRestoreProduct}
               disabled={loading}
               className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
                 loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"

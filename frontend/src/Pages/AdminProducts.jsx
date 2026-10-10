@@ -6,8 +6,11 @@ import {useEffect, useState} from "react";
 import AdminProductTile from "../components/AdminProductTile"; 
 import AdminUpdateProduct from "../Pages/AdminUpdateProduct";
 import AdminCreateProduct from "../Pages/AdminCreateProduct";
+import { useNavigate } from "react-router-dom";
 
 function AdminProducts() {
+
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]); //Products is current list, setProducts is function to update the list
   
@@ -89,6 +92,7 @@ function AdminProducts() {
          <div className="text-black">
           <SearchAddProduct // Search bar and add product button 
             onAddProductClick={() => setIsAddProductOpen(true)}
+            onArchiveClick={() => navigate("/adminArchive")}
             onProductSelect={(productId) => setSelectedProductId(productId)}
           />
         </div>
