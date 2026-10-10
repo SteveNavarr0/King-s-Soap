@@ -15,10 +15,10 @@ const searchProducts = async (searchTerm) => {
     return;
   }
 
-  const { data, error } = await supabase
+   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price, description, product_images(image_url)"
+      "id, name, price, description, product_images(image_url, display_order)"
     )
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
@@ -75,26 +75,27 @@ useEffect(() => {
 
 
   return (
-  <div className="relative w-40">
+  <div className="relative w-full lg:w-60">
     <input
       type="text"
       value={searchTerm}
       onChange={(event) =>
         setSearchTerm(event.target.value)
       }
-      className="w-full rounded-full bg-white px-4 py-1 pr-10 outline-none"
+      className="w-full rounded-full bg-white px-4 py-1 pr-10 text-black outline-none"
       placeholder="Search"
     />
 
     <div className="absolute right-3 top-1/2 -translate-y-1/2">
       <SearchIcon />
     </div>
-
     {searchTerm.trim() && results.length > 0 && (
-      <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg bg-white shadow-lg overflow-hidden">
-        {results.map((product) => {
+      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
+         {results.map((product) => {
           const firstImage =
-            product.product_images?.[0]?.image_url || "";
+            [...(product.product_images ?? [])]
+              .sort((a, b) => a.display_order - b.display_order)[0]
+              ?.image_url || "";
 
           return (
             <Link

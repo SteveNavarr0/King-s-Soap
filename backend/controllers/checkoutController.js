@@ -235,6 +235,7 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
+        fulfillment_type: isPickup ? "pickup" : "shipping",     
         fulfillment_type: isPickup ? "pickup" : "shipping",
       })
       .select()

@@ -4,16 +4,26 @@ import SearchAddProduct from "../components/AdminSearchAddProduct";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
 import AdminProductTile from "../components/AdminProductTile"; 
+import AdminUpdateProduct from "../Pages/AdminUpdateProduct";
+import AdminCreateProduct from "../Pages/AdminCreateProduct";
+import { useNavigate } from "react-router-dom";
 
 function AdminProducts() {
+
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]); //Products is current list, setProducts is function to update the list
   
   //Stores an error message if the products can't be fetched
   const [fetchError, setFetchError] = useState("");
 
+  //Stores ID of product open in popup
+  const [selectedProductId, setSelectedProductId] = useState(null);
+
+  //Is add product popup open
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+
   //Taken from Shop.jsx, this useEffect fetches the products from the database
-  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setFetchError("");
@@ -48,6 +58,8 @@ function AdminProducts() {
     }
   };
 
+  //Fetches products
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -72,8 +84,17 @@ function AdminProducts() {
         <h1 className="text-3xl md:text-5xl font-serif">
           Your Products
         </h1>
+
+        <p className="text-base font-serif md:text-xl leading-relaxed">
+          Add, update, and manage your products
+        </p>
+
          <div className="text-black">
-          <SearchAddProduct /> {/* Search bar and add product button */}
+          <SearchAddProduct // Search bar and add product button 
+            onAddProductClick={() => setIsAddProductOpen(true)}
+            onArchiveClick={() => navigate("/adminArchive")}
+            onProductSelect={(productId) => setSelectedProductId(productId)}
+          />
         </div>
 
         {fetchError && (
@@ -88,6 +109,7 @@ function AdminProducts() {
             <AdminProductTile
               key={product.id} //Unique key for each product
               product={product} //Pass the product object as a prop to the AdminProductTile component
+              onClick={() => setSelectedProductId(product.id)} //Stores ID when tile is clicked
             />
 
           ))}
@@ -95,9 +117,27 @@ function AdminProducts() {
 
       </div>
 
+      {/*Open add product popup */}
+      {isAddProductOpen && (
+        <AdminCreateProduct
+          productId={selectedProductId}
+          onClose={() => setIsAddProductOpen(false)}
+          onProductCreated={fetchProducts}
+        />
+      )}
 
-      <AdminNav /> {/*Navigation bar/footer*/}
-      
+
+
+      {/*Open selected product update popup */}
+      {selectedProductId && (
+        <AdminUpdateProduct
+          productId={selectedProductId}
+          onClose={() => setSelectedProductId(null)}
+          onProductChanged={fetchProducts}
+        />
+      )}
+
+      {!selectedProductId && !isAddProductOpen && <AdminNav />}      
     </div>
   );
 }

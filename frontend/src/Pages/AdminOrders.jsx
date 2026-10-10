@@ -51,58 +51,109 @@ function AdminOrders() {
       </p>
 
       {/* Orders section */}
-      <div className="mt-4 md:mt-8 bg-white/10 rounded-xl p-4 md:p-6">
-        <h2 className="text-2xl md:text-3xl font-serif italic mb-6">
+      <div className="mt-4 md:mt-8 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
+        {/* Orders header */}
+      <div className="mb-6">
+        <h2 className="text-2xl md:text-3xl font-serif italic">
           Orders
         </h2>
 
-        <div className="overflow-x-auto">
-        <div className="min-w-[1100px]">
+        <p className="text-sm md:text-base font-serif text-white/80 mt-0.5">
+          {orders.length} active orders
+        </p>
+      </div>
 
-    {/* Column headings */}
-    <div className="grid grid-cols-7 gap-5 px-4 py-3 font-semibold">
-      <div>Contact</div>
-      <div>Items</div>
-      <div>Total</div>
-      {/*<div>Shipping Address</div>*/}
-      <div className="col-span-2">Tracking</div>
-      <div>Date</div>
-      <div>Status</div>
-    </div>
-
-    {/* One grid row per order */}
-    <div className="space-y-4">
-    {orders.map((order) => (
-      <div
-        key={order.order_id}
-        className="grid grid-cols-7 gap-4 border-b border-white/20 px-4 py-4 items-start"
-      >
-        <div className="break-words">
-          {order.customer_email}
-        </div>
-          <div>
-          {order.items?.map((item) => (
-            <div key={item.order_item_id}>
-              Product {item.product_name} × {item.quantity}
-            </div>
-          ))}
+      <div className="overflow-x-auto">
+        {/* Full width on mobile; preserves the wide table layout on desktop */}
+        <div className="w-full md:min-w-[1100px]">
+          {/* Column headings */}
+          {/* Column headings — only shown in the desktop table layout */}
+          <div className="hidden md:grid md:grid-cols-[minmax(220px,1.5fr)_minmax(260px,2fr)_minmax(100px,0.7fr)_minmax(210px,1.4fr)_minmax(90px,0.6fr)_minmax(110px,0.7fr)] gap-4 px-4 py-3 font-semibold">
+            {/*<div>Shipping Address</div>*/}
+            <div>Contact</div>
+            <div>Items</div>
+            <div className="md:pl-6">Total</div>
+            <div>Tracking</div>
+            <div>Date</div>
+            <div>Status</div>
           </div>
-        <div>
-          ${Number(order.total).toFixed(2)}
+ 
+      {/* One grid row per order */}
+      <div className="space-y-4">
+      {orders.map((order) => (
+        <div
+          key={order.order_id}
+          className="flex flex-col gap-4 p-4 rounded-lg md:grid md:grid-cols-[minmax(220px,1.5fr)_minmax(260px,2fr)_minmax(100px,0.7fr)_minmax(210px,1.4fr)_minmax(90px,0.6fr)_minmax(110px,0.7fr)] border border-white/30 shadow-sm md:items-start"      >
+          <div className="break-words">
+            {/* Mobile label; desktop uses the column heading */}
+            <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+              Contact
+            </span>
+            <p className="font-serif text-base text-white md:text-lg font-medium">
+              {order.customer_email}
+            </p>
+          </div>
+
+          <div>
+            {/* Mobile label; desktop uses the column heading */}
+            <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+              Items
+            </span>
+            <div className="space-y-1 font-sans text-sm md:text-base">
+              {order.items?.map((item) => (
+                <div key={item.order_item_id}>
+                  Product {item.product_name} × {item.quantity}
+                </div>
+              ))}
+            </div>
+
+
+          </div>
+
+
+        <div className="md:pl-6">
+          {/* Mobile label; desktop uses the column heading */}
+          <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+            Total
+          </span>
+
+          <p className="font-sans text-sm md:text-base">
+            ${Number(order.total).toFixed(2)}
+          </p>
         </div>
 
-        <div className="col-span-2 break-all">
-          {order.fulfillment_type === "pickup"
-          ? "Local Pickup"
-          : order.tracking_number ?? ""}
+        <div className="break-all">
+          {/* Mobile label; desktop uses the column heading */}
+          <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+            Tracking
+          </span>
+
+          <p className="font-mono text-sm md:text-base">
+            {order.fulfillment_type === "pickup"
+              ? "Local Pickup"
+              : order.tracking_number ?? "Not available"}
+          </p>
         </div>
 
         <div>
+        {/* Mobile label; desktop uses the column heading */}
+        <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+          Date
+        </span>
+
+        <p className="font-sans text-sm md:text-base">
           {new Date(order.order_date).toLocaleDateString()}
+        </p>
         </div>
+
         <div>
+          {/* Mobile label; desktop uses the column heading */}
+          <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+            Status
+          </span>
+
           {order.status === "cancel_requested" ? (
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 animate-pulse [animation-duration:2s] [@keyframes_pulse{0%,100%{opacity:1}50%{opacity:0.1}}]">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 animate-pulse [animation-duration:2s] [@keyframes_pulse{0%,100%{opacity:1}50%{opacity:0.1}}]">
               Cancellation Requested
             </span>
           ) : order.status === "on_hold" ? (
@@ -121,6 +172,7 @@ function AdminOrders() {
             <span className="capitalize">{order.status}</span>
           )}
         </div>
+
       </div>
     ))}
 

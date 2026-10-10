@@ -1,9 +1,9 @@
-import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import SearchIcon from "./SearchIcon";
 import supabase from "../supabaseClient";
 
-function AdminSearch() {
+
+function AdminSearch({onProductSelect}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
 
@@ -18,7 +18,7 @@ const searchProducts = async (searchTerm) => {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price, description, product_images(image_url)"
+      "id, name, price, description, product_images(image_url, display_order)"
     )
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
@@ -30,9 +30,18 @@ const searchProducts = async (searchTerm) => {
     return;
   }
 
+  //Sort each product's images from Main to last
+  const productsWithOrderedImages = (data || []).map((product) => ({
+    ...product,
+    product_images: [...(product.product_images || [])].sort(
+      (firstImage, secondImage) =>
+        firstImage.display_order - secondImage.display_order
+    ),
+  }));
+
   const lowercaseSearch = trimmedSearch.toLowerCase();
 
-  const rankedResults = [...(data ?? [])].sort(
+  const rankedResults = [...productsWithOrderedImages].sort(
     (firstProduct, secondProduct) => {
       const getNameScore = (product) => {
         const lowercaseName = product.name.toLowerCase();
@@ -74,15 +83,15 @@ useEffect(() => {
   }, [searchTerm]);
 
 
-  return (
-  <div className="relative w-40">
+ return (
+  <div className="relative w-50 md:w-60 h-8 md:h-10">
     <input
       type="text"
       value={searchTerm}
       onChange={(event) =>
         setSearchTerm(event.target.value)
       }
-      className="w-full h-full rounded-full bg-white px-5 py-1 pr-10 text-left text-black placeholder:text-gray-400 outline-none"
+      className="w-full h-full rounded-full bg-white px-5 py-1 pr-10 text-left text-black text-sm md:text-xl placeholder:text-gray-400 outline-none"
       placeholder="Search"
     />
 
@@ -91,20 +100,21 @@ useEffect(() => {
     </div>
 
     {searchTerm.trim() && results.length > 0 && (
-      <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg bg-white shadow-lg overflow-hidden">
+      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
         {results.map((product) => {
           const firstImage =
             product.product_images?.[0]?.image_url || "";
 
           return (
-            <Link
+            <button
                 key={product.id}
                 to={`/adminUpdateProduct/${product.id}`}
                 onClick={() => {
-                setSearchTerm("");
-                setResults([]);
+                  onProductSelect(product.id);
+                  setSearchTerm("");
+                  setResults([]);
             }}
-                className="flex items-center gap-3 border-b border-gray-200 px-3 py-2 text-black hover:bg-gray-100 last:border-b-0"
+                className="flex w-full items-center gap-3 border-b border-gray-200 px-3 py-2 text-left text-black hover:bg-gray-100 last:border-b-0"
             >
               {firstImage ? (
                 <img
@@ -121,7 +131,7 @@ useEffect(() => {
               <p className="font-medium">
                 {product.name}
               </p>
-            </Link>
+            </button>
           );
         })}
       </div>

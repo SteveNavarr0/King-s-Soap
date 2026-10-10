@@ -233,78 +233,99 @@ const archiveMessage = async () => {
 
 
   
+  //Format timestamp for display
+  const formatTimestamp = (createdAt) => {
+    if (!createdAt) {
+      return "Unknown date";
+    }
+
+    const messageDate = new Date(createdAt);
+
+    if (Number.isNaN(messageDate.getTime())) {
+      return "Invalid date";
+    }
+
+    return messageDate.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+
+
 
 
   return (
-    <div className="min-h-screen pb-16"> {/* Container for the AdminProducts page */}
+    <div className="min-h-screen pb-16"> {/* Container for the AdminInbox page */}
       
-      <AdminHeader /> {/*Logo and profile button*/}
+  <AdminHeader /> {/* Logo and profile button */}
       
-      <div className="flex flex-col justify-left mt-8 ml-8 md:ml-13 text-white mr-8 md:mr-13">
+  <div className="flex flex-col justify-left mt-8 ml-8 mr-8 md:ml-13 md:mr-13 text-white">
 
-        <h1 className="text-3xl md:text-5xl font-serif">
-          Your Messages
-        </h1>
+    <h1 className="text-3xl md:text-5xl font-serif">
+      Your Messages
+    </h1>
+    <p className="text-base font-serif md:text-xl leading-relaxed">
+          View and respond to new messages
+    </p>
 
+    {fetchError && (
+      <p className="mt-6 text-red-300">
+        {fetchError}
+      </p>
+    )}
 
-        {fetchError && (
-          <p className="mt-6 text-red-300">
-            {fetchError}
-          </p>
-        )}
+    {/* Message list section */}
+    <div className="flex flex-col justify-left mt-4 md:mt-8">
+      {messages.map((message) => (
+        
+        <div
+          key={message.id}
+          onClick={() => openMessage(message)}
+          className="block hover:scale-[1.02] transition duration-200"
+        >
+          <div className="mb-4 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex items-center justify-between cursor-pointer">
 
-
-
-        {/* Message list section */}
-        <div className= "flex flex-col justify-left mt-6">
-          {messages.map((message) => ( //Map through the messages array and render each message
-            
-            <div
-              key={message.id} //Unique key for each message
-              onClick={() => openMessage(message)}
-              className= "block hover:scale-[1.02] transition duration-200"
-            >
-
-              <div className="mb-6 w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white flex items-center justify-between cursor-pointer">
-
-
-            {/* Customer's inital*/}
-            <div className="w-16 h-14 md:w-20 md:h-20 bg-white/20 rounded-sm mr-4 flex items-center justify-center text-xl md:text-3xl">
+            {/* Customer's initial */}
+            <div className="w-16 h-14 md:w-20 md:h-20 shrink-0 bg-white/20 rounded-sm mr-4 flex items-center justify-center text-xl md:text-3xl">
               {message.customer_name?.[0]?.toUpperCase() || "?"}
             </div>
 
-
-            {/* Customer's name and subject*/}
+            {/* Customer's name and subject */}
             <div className="flex-1 min-w-0 mr-4">
-              <p className="text-lg md:text-3xl font-medium truncate">
+              <p className="text-base md:text-2xl font-serif font-medium truncate capitalize">
                 {message.customer_name}
               </p>
 
-              <p className="text-lg md:text-2xl text-white/70 truncate">
+              <p className="text-sm md:text-lg font-serif text-white/70 truncate capitalize">
                 {message.subject}
               </p>
             </div>
-           
 
-            {/* Status*/}
-            <span
-              className={`text-md md:text-xl whitespace-nowrap capitalize ${
-                message.status === "unread"
-                  ? "text-[#8B6B4A]"
-                  : "text-white"
-              }`}
-            >
-              
-              {message.status}
-            </span>
+            {/* Status and timestamp */}
+            <div className="flex flex-col items-end whitespace-nowrap">
+              <span
+                className={`text-base md:text-2xl font-medium truncate capitalize ${
+                  message.status === "unread"
+                    ? "text-[#8B6B4A]"
+                    : "text-white"
+                }`}
+              >
+                {message.status}
+              </span>
+
+              <span className="text-xs md:text-sm text-white/70 truncate">
+                {formatTimestamp(message.created_at)}
+              </span>
+            </div>
+
           </div>
         </div>
-
-
       ))}
-
     </div>
-
           
 
 
@@ -313,158 +334,145 @@ const archiveMessage = async () => {
 
  {/*Contact form popup */}
   {selectedMessage && (
-   <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60">
-      <div className="min-h-full flex justify-center pt-16 pb-8 md:pt-12 md:pb-12">
-        <div className="w-full max-w-lg h-fit rounded-lg bg-[#C5AE98] p-8">
-        <button
-          type="button"
-          onClick={() => setSelectedMessage(null)}
-          className="float-right text-2xl text-white cursor-pointer"
-        >
-          ×
-        </button>
-        
-          <h2 className="text-4xl md:text-4xl text-center font-serif text-white">
-            Respond to Customer
-          </h2>
-          
-          <div className="w-full max-w-md mx-auto px-6 py-4 pb-4 md:pb-12 rounded-2xl md:border md:border-white/30 md:shadow-lg bg-[#C5AE98]/20 backdrop-blur-lg md:mt-8 md:mb-8"> 
-            <div className="space-y-4">
+ <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60">
+  <div className="min-h-full flex justify-center pt-16 pb-8 md:pt-12 md:pb-12">
+    <div className="w-full max-w-lg h-fit rounded-lg bg-[#C5AE98] p-8">
+      <button
+        type="button"
+        onClick={() => setSelectedMessage(null)}
+        className="float-right text-2xl text-white cursor-pointer"
+      >
+        ×
+      </button>
 
-              <div>
+      <h2 className="text-4xl md:text-4xl text-center font-serif text-white">
+        Respond to Customer
+      </h2>
 
-                <label className="block text-lg md:text-xl text-white mb-2">
-                  Name
-                </label>
+      <div className="w-full max-w-md mx-auto px-6 py-4 pb-4 md:pb-12 rounded-2xl md:border md:border-white/30 md:shadow-lg bg-[#C5AE98]/20 backdrop-blur-lg md:mt-8 md:mb-8">
+        <div className="space-y-4">
 
-                <input
-                  placeholder="Value"
-                  className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
-                  value = {selectedMessage.customer_name} 
-                  readOnly
-                />
+          <div>
+            <label className="block text-lg md:text-xl font-serif text-white mb-2">
+              Name
+            </label>
 
-              </div>
-
-              <div>
-
-                <label className="block text-lg md:text-xl text-white mb-2">
-                  Email
-                </label>
-
-                <input
-                  placeholder="Value"
-                  className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
-                  value = {selectedMessage.customer_email} 
-                  readOnly               
-                  />
-
-              </div>
-
-              <div>
-
-                <label className="block text-lg md:text-xl text-white mb-2">
-                  Subject
-                </label>
-
-                <input
-                  placeholder="Value"
-                  className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none"
-                  value = {selectedMessage.subject} 
-                  readOnly                
-                  />
-
-              </div>
-
-              <div>
-
-                <label className="block text-lg md:text-xl text-white mb-2">
-                  Message
-                </label>
-
-                <textarea
-                  placeholder="Enter your message"
-                  rows="4"
-                  className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none resize-none"
-                  value = {selectedMessage.message} 
-                  readOnly                
-                  />
-
-              </div>
-
-              <div>
-
-                <label className="block text-lg md:text-xl text-white mb-2">
-                  Response
-                </label>
-
-                <textarea
-                  placeholder="Enter your response"
-                  rows="4"
-                  className="w-full bg-white rounded-lg px-3 py-2 text-gray-700 placeholder-gray-400 outline-none resize-none"
-                  value = {response} 
-                  onChange={(e) => setResponse(e.target.value)}  
-                  readOnly={Boolean(selectedMessage.admin_response)}             
-                />
-
-              </div>
-
-
-              
-              {/* Display success or error messages */}
-              {error && (
-                <p className="text-red-600 text-lg md:text-xl text-center">{error}</p>
-              )}
-
-              {success && (
-                <p className="text-green-600 text-lg md:text-xl text-center">{success}</p>
-              )}
-
-
-              {!selectedMessage.admin_response && (
-              <button onClick ={dBAddItem}
-                disabled={loading}
-                className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] backdrop-blur-lg border border-white/30 shadow-sm text-white text-lg md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
-                  loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
-                }`}
-                >
-                  {loading ? "Sending Response..." : "Send Response"
-                }
-          
-              </button>
-              )}
-
-
-              
-              {/*Delete product functionality goes here*/}
-              <button 
-                onClick ={archiveMessage}
-                disabled={archiveLoading}
-                className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-lg md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
-                  archiveLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
-                }`}
-                >
-                  {archiveLoading ? "Deleting Message..." : "Delete Message"
-                }
-          
-              </button>
-
-
-
-
-            </div>
-            </div>
+            <input
+              placeholder="Value"
+              className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 placeholder-gray-400 outline-none"
+              value={selectedMessage.customer_name}
+              readOnly
+            />
           </div>
+
+          <div>
+            <label className="block text-lg md:text-xl font-serif text-white mb-2">
+              Email
+            </label>
+
+            <input
+              placeholder="Value"
+              className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 placeholder-gray-400 outline-none"
+              value={selectedMessage.customer_email}
+              readOnly
+            />
+          </div>
+
+          <div>
+            <label className="block text-lg md:text-xl font-serif text-white mb-2">
+              Subject
+            </label>
+
+            <input
+              placeholder="Value"
+              className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 placeholder-gray-400 outline-none"
+              value={selectedMessage.subject}
+              readOnly
+            />
+          </div>
+
+          <div>
+            <label className="block text-lg md:text-xl font-serif text-white mb-2">
+              Message
+            </label>
+
+            <textarea
+              placeholder="Enter your message"
+              rows="4"
+              className="block w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 placeholder-gray-400 outline-none"
+              value={selectedMessage.message}
+              readOnly
+            />
+          </div>
+
+          <div>
+            <label className="block text-lg md:text-xl font-serif text-white mb-2">
+              Response
+            </label>
+
+            <textarea
+              placeholder="Enter your response"
+              rows="4"
+              className="w-full bg-white rounded-lg px-3 py-2 font-sans text-gray-700 placeholder-gray-400 outline-none resize-none"
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              readOnly={Boolean(selectedMessage.admin_response)}
+            />
+          </div>
+
+          {/* Display success or error messages */}
+          {error && (
+            <p className="text-red-600 text-lg md:text-xl text-center">
+              {error}
+            </p>
+          )}
+
+          {success && (
+            <p className="text-green-600 text-lg md:text-xl text-center">
+              {success}
+            </p>
+          )}
+
+          {!selectedMessage.admin_response && (
+            <button
+              onClick={dBAddItem}
+              disabled={loading}
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] backdrop-blur-lg border border-white/30 shadow-sm font-sans text-white text-lg md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
+                loading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:scale-105"
+              }`}
+            >
+              {loading ? "Sending Response..." : "Send Response"}
+            </button>
+          )}
+
+          {/* Delete message */}
+          <button
+            onClick={archiveMessage}
+            disabled={archiveLoading}
+            className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm font-sans text-white text-lg md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
+              archiveLoading
+                ? "opacity-50 cursor-not-allowed"
+                : "cursor-pointer hover:scale-105"
+            }`}
+          >
+            {archiveLoading ? "Deleting Message..." : "Delete Message"}
+          </button>
+
         </div>
       </div>
-    )}
-
+    </div>
   </div>
+</div>
+)}
+
+     </div>
 
 
       {!selectedMessage && <AdminNav />}
         
-  </div>
+    </div>
   );
 }
 
