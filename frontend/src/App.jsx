@@ -113,6 +113,18 @@ function App() {
                   element={<PaymentSuccessful />}
                 />
                 <Route
+                  path="/PaymentSuccessful"
+                  element={<PaymentSuccessful />}
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <UserAccount />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
               path="/request-cancellation"
               element={<RequestCancellation />}
             />
@@ -122,6 +134,7 @@ function App() {
                 
                 <Route path="/adminInbox" element = {<AdminInbox/>}/>
                 <Route path="/adminProducts" element={<AdminProducts />} />
+                <Route path="/AdminProducts" element={<AdminProducts />} />
                 <Route
                   path="/OldUIAdminDeleteProduct"
                   element={<OldUIAdminDeleteProduct />}
@@ -137,6 +150,7 @@ function App() {
                 <Route path="/soapDishShop" element={<SoapDishShop/>} />
                 <Route path="/adminOrders" element={<AdminOrders/>} />
                 <Route path="/adminArchive" element={<AdminArchive />}/>
+                <Route path="/AdminArchive" element={<AdminArchive />}/>
                 <Route path="/admin/shipping" element={<AdminPostagePage />} />
                 <Route path="/adminShipping" element={<AdminPostagePage />} />
                 <Route path="/AdminShipping" element={<AdminPostagePage />} />

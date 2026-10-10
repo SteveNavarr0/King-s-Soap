@@ -11,6 +11,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 
 /**
+ * Sanitizes and validates an image URL for use in Stripe checkout.
+ * Strips whitespace/newlines and ensures URL is a valid http/https URL.
+ * Returns null if the URL is missing or malformed, preventing Stripe "Not a valid URL" errors.
+ *
+ * @param {string} url - The candidate image URL
+ * @returns {string|null} - The validated URL or null
+ */
+export const sanitizeImageUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+/**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
  *
  * @param {Array} cartItems - Array of cart items joined with products and product_images.
@@ -70,7 +93,8 @@ export const validateAndFormatCartItems = (cartItems) => {
   // Compile dynamic Stripe price_data line items
   const lineItems = cartItems.map((item) => {
     const product = item.products;
-    const firstImage = product.product_images?.[0]?.image_url;
+    const rawImage = product.product_images?.[0]?.image_url;
+    const validImage = sanitizeImageUrl(rawImage);
 
     return {
       price_data: {
@@ -78,7 +102,7 @@ export const validateAndFormatCartItems = (cartItems) => {
         unit_amount: Math.round(Number(product.price) * 100), // Convert numeric dollar to integer cents
         product_data: {
           name: product.name,
-          ...(firstImage ? { images: [firstImage] } : {}),
+          ...(validImage ? { images: [validImage] } : {}),
         },
       },
       quantity: item.quantity,
@@ -235,7 +259,6 @@ export const createCheckoutSession = async (req, res) => {
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
-        fulfillment_type: isPickup ? "pickup" : "shipping",     
         fulfillment_type: isPickup ? "pickup" : "shipping",
       })
       .select()
@@ -264,7 +287,11 @@ export const createCheckoutSession = async (req, res) => {
     }
 
     // 5. Create Stripe Session configured for Shipping or Local Pickup
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      req.headers.origin ||
+      "http://localhost:5173"
+    ).replace(/\/+$/, "");
     const sessionConfig = {
       payment_method_types: ["card"],
       line_items: result.lineItems,

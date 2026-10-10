@@ -52,6 +52,8 @@ const Cart = () => {
       // Redirect to the Stripe hosted checkout page
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL was provided by the server.");
       }
     } catch (err) {
       console.error("Checkout error:", err);
