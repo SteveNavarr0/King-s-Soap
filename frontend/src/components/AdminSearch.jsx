@@ -110,7 +110,7 @@ useEffect(() => {
                 key={product.id}
                 to={`/adminUpdateProduct/${product.id}`}
                 onClick={() => {
-                  onProductSelect(product.id);
+                  onProductSelect?.(product.id);
                   setSearchTerm("");
                   setResults([]);
             }}

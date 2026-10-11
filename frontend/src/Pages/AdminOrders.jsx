@@ -1,6 +1,7 @@
 import AdminHeader from "../components/AdminHeader";
 import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
+import { Link } from "react-router-dom";
 import {useEffect, useState} from "react";  
 
 function AdminOrders() {
@@ -13,7 +14,7 @@ function AdminOrders() {
 
       const { data, error } = await supabase
         .from("active_orders")
-        .select("order_id, status, total, customer_email, shipping_address, tracking_number, order_date, items")
+        .select("order_id, status, total, customer_email, fulfillment_type, tracking_number, order_date, items")
         .order("order_date", { ascending: true });
         if (error){
           console.error("Error fetching orders:", error);
@@ -49,6 +50,12 @@ function AdminOrders() {
       <p className="text-base font-serif md:text-xl leading-relaxed">
         View and manage current customer orders
       </p>
+        <Link
+          to="/adminArchivedOrders"
+          className="w-fit rounded-full border border-white/60 bg-white/10 px-5 py-2 font-serif text-sm text-white transition hover:scale-105 hover:bg-white/20"
+        >
+          Order Archive
+        </Link>
 
       {/* Orders section */}
       <div className="mt-4 md:mt-8 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
@@ -81,9 +88,10 @@ function AdminOrders() {
       {/* One grid row per order */}
       <div className="space-y-4">
       {orders.map((order) => (
-        <div
+        <Link
           key={order.order_id}
-          className="flex flex-col gap-4 p-4 rounded-lg md:grid md:grid-cols-[minmax(220px,1.5fr)_minmax(260px,2fr)_minmax(100px,0.7fr)_minmax(210px,1.4fr)_minmax(90px,0.6fr)_minmax(110px,0.7fr)] border border-white/30 shadow-sm md:items-start"      >
+          to={`/adminOrders/${order.order_id}`}
+          className="flex flex-col gap-4 rounded-lg border border-white/30 p-4 shadow-sm transition hover:scale-[1.01] hover:bg-white/10 md:grid md:grid-cols-[minmax(220px,1.5fr)_minmax(260px,2fr)_minmax(100px,0.7fr)_minmax(210px,1.4fr)_minmax(90px,0.6fr)_minmax(110px,0.7fr)] md:items-start">
           <div className="break-words">
             {/* Mobile label; desktop uses the column heading */}
             <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
@@ -129,7 +137,7 @@ function AdminOrders() {
           </span>
 
           <p className="font-mono text-sm md:text-base">
-            {order.shipping_address?.type === "local_pickup"
+            {order.fulfillment_type === "pickup"
               ? "Local Pickup"
               : order.tracking_number ?? "Not available"}
           </p>
@@ -144,20 +152,48 @@ function AdminOrders() {
         <p className="font-sans text-sm md:text-base">
           {new Date(order.order_date).toLocaleDateString()}
         </p>
-      </div>
+        </div>
 
-      <div>
-        {/* Mobile label; desktop uses the column heading */}
-        <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
-          Status
-        </span>
+        <div>
+          {/* Mobile label; desktop uses the column heading */}
+          <span className="block md:hidden mb-1 font-sans text-xs uppercase tracking-wide text-white/90">
+            Status
+          </span>
 
-        <span className="inline-flex px-3 py-1 rounded-full border border-white/30 bg-[#8B6B4A]/30 font-serif text-sm text-white capitalize">
-          {order.status}
-        </span>
-      </div>
+          {order.status === "cancel_requested" ? (
+              <span className="inline-flex items-center rounded-full border border-red-300 bg-red-700 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                Cancellation Requested
+              </span>
+            ) : order.status === "on_hold" ? (
+              <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">
+                On Hold
+              </span>
+            ) : order.status === "accepted" ? (
+              <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Accepted
+              </span>
+            ) : order.status === "postage_ready" ? (
+              <span className="inline-flex items-center rounded-full border border-[#8B6B4A] bg-[#5C4033]/70 px-3 py-1 text-xs font-semibold text-amber-100">
+                Postage Ready
+              </span>
+            ) : order.status === "ready_to_ship" ? (
+              <span className= "inline-flex items-center rounded-full border border-blue-300 bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Ready to Ship
+              </span>
+            ) : order.status === "ready_for_pickup" ? (
+              <span className="inline-flex items-center rounded-full border border-blue-300 bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                Ready for Pickup
+              </span>
+            ) : order.status === "paid" ? (
+              <span className="inline-flex items-center rounded-full border border-blue-400/40 bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-200">
+                Paid
+              </span>
+            ) : (
+            <span className="capitalize">{order.status}</span>
+          )}
+        </div>
 
-      </div>
+      </Link>
     ))}
 
     {orders.length === 0 && (

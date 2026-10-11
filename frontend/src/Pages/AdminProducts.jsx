@@ -6,10 +6,20 @@ import {useEffect, useState} from "react";
 import AdminProductTile from "../components/AdminProductTile"; 
 import AdminUpdateProduct from "../Pages/AdminUpdateProduct";
 import AdminCreateProduct from "../Pages/AdminCreateProduct";
+import { useNavigate } from "react-router-dom";
 
 function AdminProducts() {
 
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]); //Products is current list, setProducts is function to update the list
+
+  const [salesSummary, setSalesSummary] = useState({
+    total_sales_last_month: 0,
+    total_sales_this_month: 0,
+    items_sold_this_month: 0,
+    previous_month: "",
+    current_month: "",});
   
   //Stores an error message if the products can't be fetched
   const [fetchError, setFetchError] = useState("");
@@ -60,6 +70,30 @@ function AdminProducts() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+  const fetchSalesSummary = async () => {
+    const { data, error } = await supabase
+      .from("monthly_sales_summary")
+      .select(`
+        total_sales_last_month,
+        total_sales_this_month,
+        items_sold_this_month,
+        previous_month,
+        current_month
+      `)
+      .single();
+
+    if (error) {
+      console.error("Error fetching sales summary:", error);
+      return;
+    }
+
+    setSalesSummary(data);
+  };
+
+  fetchSalesSummary();
+}, []);
+
   //sorting products by sales, highest to lowest, and then alphabetically if sales are equal
   const sortedProducts = [...products].sort((a, b) => {
     const salesA = a.sales ?? 0;
@@ -81,14 +115,67 @@ function AdminProducts() {
         <h1 className="text-3xl md:text-5xl font-serif">
           Your Products
         </h1>
-
-        <p className="text-base font-serif md:text-xl leading-relaxed">
+         <p className="text-base font-serif md:text-xl leading-relaxed">
           Add, update, and manage your products
-        </p>
+            </p>
+          {/* Monthly sales summary */}
+          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-white/60 bg-white/10 p-4 sm:p-6 md:grid-cols-3">
+            
+            {/* Last month's sales */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <p className="font-serif italic text-base md:text-lg">
+                Total sales
+              </p>
+
+              <p className="font-serif text-sm text-white/80">
+                {salesSummary.previous_month}
+              </p>
+
+              <p className="mt-2 font-serif text-lg md:text-xl">
+                ${Number(
+                  salesSummary.total_sales_last_month
+                ).toFixed(2)}
+              </p>
+            </div>
+
+            {/* Current month's sales */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <p className="font-serif italic text-base md:text-lg">
+                Total sales
+              </p>
+
+              <p className="font-serif text-sm text-white/80">
+                {salesSummary.current_month}
+              </p>
+
+              <p className="mt-2 font-serif text-lg md:text-xl">
+                ${Number(
+                  salesSummary.total_sales_this_month
+                ).toFixed(2)}
+              </p>
+            </div>
+
+            {/* Current month's items sold */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <p className="font-serif italic text-base md:text-lg">
+                Total items sold
+              </p>
+
+              <p className="font-serif text-sm text-white/80">
+                {salesSummary.current_month}
+              </p>
+
+              <p className="mt-2 font-serif text-lg md:text-xl">
+                {salesSummary.items_sold_this_month}
+              </p>
+            </div>
+
+          </div>      
 
          <div className="text-black">
           <SearchAddProduct // Search bar and add product button 
             onAddProductClick={() => setIsAddProductOpen(true)}
+            onArchiveClick={() => navigate("/adminArchive")}
             onProductSelect={(productId) => setSelectedProductId(productId)}
           />
         </div>
@@ -99,7 +186,7 @@ function AdminProducts() {
           </p>
         )}
         {/* Product list section */}
-        <div className= "flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15"></div>
+        <div className="flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15">
           {sortedProducts.map((product) => ( //Map through the products array and render each product 
             
             <AdminProductTile
@@ -109,6 +196,7 @@ function AdminProducts() {
             />
 
           ))}
+        </div>
 
 
       </div>

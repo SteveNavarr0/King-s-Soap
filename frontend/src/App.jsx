@@ -22,6 +22,7 @@ import UserAccount from "./Pages/UserAccount";
 import UserChangePassword from "./Pages/UserChangePassword";
 import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
+import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
 import AdminProducts from "./Pages/AdminProducts.jsx";
@@ -34,7 +35,10 @@ import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
 import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
 import AdminOrders from "./Pages/AdminOrders.jsx";
+import AdminArchivedOrders from "./Pages/AdminArchivedOrders.jsx";
 import AdminPostagePage from "./Pages/AdminShipping.jsx";
+import AdminArchive from "./Pages/AdminArchive.jsx";
+import AdminOrderDetails from "./Pages/AdminOrderDetails.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -110,12 +114,29 @@ function App() {
                   path="/paymentSuccessful"
                   element={<PaymentSuccessful />}
                 />
-                <Route path="/product/:id" element={<ProductPage />} />
+                <Route
+                  path="/PaymentSuccessful"
+                  element={<PaymentSuccessful />}
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <UserAccount />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+              path="/request-cancellation"
+              element={<RequestCancellation />}
+            />
+            <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/admin" element={<Admin />} />
                 
                 
                 <Route path="/adminInbox" element = {<AdminInbox/>}/>
                 <Route path="/adminProducts" element={<AdminProducts />} />
+                <Route path="/AdminProducts" element={<AdminProducts />} />
                 <Route
                   path="/OldUIAdminDeleteProduct"
                   element={<OldUIAdminDeleteProduct />}
@@ -130,11 +151,15 @@ function App() {
                 <Route path="/lipBalmShop" element={<LipBalmShop/>} />
                 <Route path="/soapDishShop" element={<SoapDishShop/>} />
                 <Route path="/adminOrders" element={<AdminOrders/>} />
+                <Route path="/adminArchivedOrders" element={<AdminArchivedOrders/>} />
+                <Route path="/adminArchive" element={<AdminArchive />}/>
+                <Route path="/AdminArchive" element={<AdminArchive />}/>
                 <Route path="/admin/shipping" element={<AdminPostagePage />} />
                 <Route path="/adminShipping" element={<AdminPostagePage />} />
                 <Route path="/AdminShipping" element={<AdminPostagePage />} />
                 <Route path="/AdminPostage" element={<AdminPostagePage />} />
                 <Route path="/adminPostage" element={<AdminPostagePage />} />
+                <Route path="/adminOrders/:id" element={<AdminOrderDetails />}/>
               </Routes>
             )}
           </CartRouteLayer>
