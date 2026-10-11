@@ -119,7 +119,7 @@ function AdminProducts() {
           Add, update, and manage your products
             </p>
           {/* Monthly sales summary */}
-          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-white/60 bg-white/10 p-4 sm:p-6 md:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl md:border md:border-white/30 bg-white/10 p-4 sm:p-6 md:grid-cols-3">
             
             {/* Last month's sales */}
             <div className="rounded-lg bg-white/5 p-4">
@@ -186,7 +186,7 @@ function AdminProducts() {
           </p>
         )}
         {/* Product list section */}
-        <div className="flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15">
+        <div className="flex flex-col justify-left gap-4 mt-6">
           {sortedProducts.map((product) => ( //Map through the products array and render each product 
             
             <AdminProductTile

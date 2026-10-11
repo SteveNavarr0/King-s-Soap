@@ -23,8 +23,8 @@ function Navbar() {
     <nav className="absolute inset-x-0 top-0 z-50 bg-transparent text-white p-2 text-center">
       <div className="flex justify-between items-center">
         <div>
-          <Link to="/" className="block outline-none">
-            <img src={logo} alt="Logo" className="h-20 md:h-32 w-auto block" />
+          <Link to="/" className="block -ml-2 outline-none">
+            <img src={logo} alt="Logo" className="h-25 md:h-32 w-auto block" />
           </Link>
         </div>
 
@@ -33,7 +33,7 @@ function Navbar() {
           aria-label="Toggle navigation menu"
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((open) => !open)}
-          className="relative z-[60] cursor-pointer mr-6 self-start mt-3 flex h-12 w-12 flex-col items-center justify-center gap-1.5 text-white md:hidden"
+          className="relative z-[60] cursor-pointer mr-1 self-start mt-6 flex h-12 w-12 flex-col items-center justify-center gap-1.5 text-white md:hidden"
         >
           <span className="h-0.5 w-7 bg-current" />
           <span className="h-0.5 w-7 bg-current" />

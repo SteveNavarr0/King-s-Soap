@@ -7,6 +7,7 @@ import {
   requestCancelOrder,
 } from "../controllers/checkoutController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import { previewDiscount } from "../controllers/checkoutController.js";
 
 const router = express.Router();
 
@@ -22,6 +23,9 @@ router.get("/validate", requireAuth, validateCartHandler);
  */
 router.post("/create-session", requireAuth, createCheckoutSession);
 
+// Check a code against the signed-in customer's current cart.
+router.post("/preview-discount", requireAuth, previewDiscount);
+
 /**
  * DT-543: Accept an order on hold, capture Stripe funds, purchase postage label, transition to 'accepted'.
  */
@@ -32,7 +36,6 @@ router.post("/orders/:id/accept", requireAuth, acceptOrder);
  */
 router.post("/orders/:id/decline", requireAuth, declineOrder);
 router.post("/orders/:id/cancel", requireAuth, declineOrder);
-
 
 /**
  * Customer cancellation request while order is on hold (notifies store admin).

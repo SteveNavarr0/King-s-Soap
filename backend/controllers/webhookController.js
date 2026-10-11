@@ -150,7 +150,7 @@ export const handleStripeWebhook = async (req, res) => {
           session.customer_email ||
           null;
 
-        const finalTotal = session.amount_total
+        const finalTotal = session.amount_total != null
           ? Number((session.amount_total / 100).toFixed(2))
           : undefined;
 

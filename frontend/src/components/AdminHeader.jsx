@@ -61,13 +61,13 @@ function AdminHeader() {
     return ( 
 
         /* Admin Header Component */
-        <header className="flex items-start justify-between">
+        <header className="flex items-start justify-between p-2">
 
             {/* Logo*/}
             <div className = "flex justify-left">
                 
                 <Link to="/Admin" className="block outline-none">
-                    <img src={logo} alt="King's Soap Logo" className= "w-auto md:w-auto h-32 md:h-52 block" />
+                    <img src={logo} alt="King's Soap Logo" className= "w-auto h-25 md:h-42 block" />
                  </Link>
             
             </div>
@@ -76,11 +76,11 @@ function AdminHeader() {
             {/* Profile button*/}
             <div 
                 ref={profileMenuRef}
-                className="relative mt-10 md:mt-15 mr-8 md:mr-13"> {/* Relative positioning allows the profile menu to be positioned relative to this container */}
+                className="relative mt-6 md:mt-10 mr-5 md:mr-11"> {/* Relative positioning allows the profile menu to be positioned relative to this container */}
 
                 <button type="button" 
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} /* When the button is clicked, the value of isProfileMenuOpen is toggled between true and false. If it was false (menu closed), it becomes true (menu open), and vice versa. */
-                className="w-15 md:w-25 h-15 md:h-25 rounded-full bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-xl md:text-3xl flex items-center justify-center hover:scale-105 cursor-pointer transition">
+                className="flex w-12 md:w-25 h-12 md:h-25 rounded-full bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-xl md:text-3xl flex items-center justify-center hover:scale-105 cursor-pointer transition">
                     {adminInitials}
                 </button>
 
