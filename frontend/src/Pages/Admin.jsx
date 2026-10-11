@@ -130,8 +130,9 @@ function Admin() {
 
 
 {/* Top 3 Products */}
-{topProducts.map((product) => (
+<div className="flex flex-col gap-4">
 
+{topProducts.map((product) => (
   <AdminProductTile 
     key={product.id}
     product={product}
@@ -139,6 +140,8 @@ function Admin() {
   />
   ))}
 </div>
+</div>
+
 </div>
 
   {/*Open selected product update popup */}
