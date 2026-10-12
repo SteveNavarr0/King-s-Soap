@@ -1,68 +1,71 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import supabase from "../supabaseClient";
+import { useAuth } from "../context/AuthContext";
 
 const CartElement = ({ onTotalChange }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const { user, loading: authLoading } = useAuth();
 
-  /* Fetch Cart (Handles both Anonymous Guests and Authenticated Users identically) */
+  /* Fetch Cart (Handles both Anonymous Guests and Authenticated Users) */
   useEffect(() => {
+    if (authLoading) return; // Wait until auth state is determined
+
     const fetchCart = async () => {
       setLoading(true);
       setErrorMessage("");
 
-      // 1. Get current session
-      let { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      // 2. If no user exists, quietly log them in anonymously to create a secure session
-      if (userError || !user) {
-        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-        if (anonError) {
-          console.error("Error creating guest session:", anonError);
-          setErrorMessage("Unable to initialize guest session.");
-          setLoading(false);
-          return;
-        }
-        user = anonData.user;
-      }
-
-      // 3. Query the database using the secure User ID (Works for both Guests & Real Users)
-      const { data, error } = await supabase
-        .from("cart")
-        .select(`
-          id,
-          quantity,
-          product_ID,
-          product:products (
+      if (user) {
+        // FIXED: Corrected Supabase relation syntax (removed stray fields outside product_images)
+        const { data, error } = await supabase
+          .from("cart")
+          .select(`
             id,
-            name,
-            price,
-            stock,
-            product_images (
+            quantity,
+            product_ID,
+            product:products (
               id,
-              image_url,
-              display_order
+              name,
+              price,
+              stock,
+              product_images (
+                id,
+                image_url,
+                display_order
+              )
             )
-          )
-        `)
-        .eq("user_ID", user.id)
-        .order("created_at", { ascending: true });
+          `)
+          .eq("user_ID", user.id);
 
-      if (error) {
-        console.error("Error fetching cart:", error);
-        setErrorMessage("Unable to load cart.");
-        setLoading(false);
-        return;
+        if (error) {
+          console.error("Error fetching cart:", error);
+          setErrorMessage("Unable to load cart.");
+        } else {
+          setCartItems(data || []);
+        }
+      } else {
+        // If the user is not logged in, fetch cart from localStorage
+        const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+        const formatLocalCart = localCart.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+          product: {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            stock: item.stock,
+            product_images: [{ image_url: item.image }],
+          },
+        }));
+        setCartItems(formatLocalCart);
       }
-
-      setCartItems(data || []);
       setLoading(false);
     };
 
     fetchCart();
-  }, []);
+  }, [user, authLoading]);
 
   /* Calculate Total */
   useEffect(() => {
@@ -78,16 +81,23 @@ const CartElement = ({ onTotalChange }) => {
   const handleQuantityChange = async (item, newQuantity) => {
     if (!item.product || newQuantity < 1 || newQuantity > item.product.stock) return;
 
-    const { error } = await supabase
-      .from("cart")
-      .update({ quantity: newQuantity })
-      .eq("id", item.id);
+    if (user) {
+      const { error } = await supabase
+        .from("cart")
+        .update({ quantity: newQuantity })
+        .eq("id", item.id);
 
-    if (error) {
-      console.error("Error updating quantity:", error);
-      return;
+      if (error) {
+        console.error("Error updating quantity:", error);
+        return;
+      }
+    } else {
+      const localCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      const updatedCart = localCart.map((cartItem) =>
+        cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
+      );
+      localStorage.setItem("guestCart", JSON.stringify(updatedCart));
     }
-
     setCartItems((currentItems) =>
       currentItems.map((cartItem) =>
         cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
@@ -96,14 +106,18 @@ const CartElement = ({ onTotalChange }) => {
   };
 
   /* Handle Item Removal */
-  const handleRemove = async (cartId) => {
-    const { error } = await supabase.from("cart").delete().eq("id", cartId);
-
-    if (error) {
-      console.error("Error removing cart item:", error);
-      return;
+  const handleRemove = async (cartId, productId) => {
+    if (user) {
+      const { error } = await supabase.from("cart").delete().eq("id", cartId);
+      if (error) {
+        console.error("Error removing cart item:", error);
+        return;
+      }
+    } else {
+      const localCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      const updatedCart = localCart.filter((item) => item.id !== productId);
+      localStorage.setItem("guestCart", JSON.stringify(updatedCart));
     }
-
     setCartItems((currentItems) => currentItems.filter((item) => item.id !== cartId));
   };
 
@@ -126,7 +140,8 @@ const CartElement = ({ onTotalChange }) => {
         if (!product) return null;
 
         const imageUrl = [...(product.product_images ?? [])]
-          .sort((a, b) => a.display_order - b.display_order)[0]?.image_url;
+          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]?.image_url;
+
         return (
           <div
             key={item.id}
@@ -150,7 +165,8 @@ const CartElement = ({ onTotalChange }) => {
 
                 <button
                   type="button"
-                  onClick={() => handleRemove(item.id)}
+                  // FIXED: Pass both item.id and product.id correctly
+                  onClick={() => handleRemove(item.id, product.id)}
                   className="mt-2 cursor-pointer font-sans text-sm text-white/70 hover:scale-[1.02] hover:text-white"
                 >
                   Remove
@@ -195,7 +211,7 @@ const CartElement = ({ onTotalChange }) => {
 
             <div className="text-right text-white">
               <p className="text-sm text-white/70">Price</p>
-              <p className= "mt-4">
+              <p className="mt-4">
                 ${Number(product.price).toFixed(2)}
               </p>
             </div>
