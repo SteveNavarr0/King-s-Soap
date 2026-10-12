@@ -50,44 +50,60 @@ function Navbar() {
   return (
     <nav className="bg-[#C5AE98] text-[#FFFFFF] p-2 text-center relative z-50">
       <div className="flex justify-between items-center">
-
+        {/* Logo */}
         <div>
           <Link to="/" className="block outline-none">
-            <img src={logo} alt="Logo" className="h-32 w-auto block" />
+            <img 
+              src={logo} 
+              alt="King's Soap Logo" 
+              className="w-auto h-25 md:h-42 block" 
+            />
           </Link>
         </div>
 
+        {/* Navigation Links */}
         <div className="space-x-8 pr-8 font-[Inter] text-lg flex items-center">
-          
-          <NavLink to="/" className={({ isActive }) =>
-            `inline-block transition duration-200 hover:scale-105 ${
-              isActive ? "text-[#8B6B4A]" : ""
-            }`
-          }>
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `inline-block transition duration-200 hover:scale-105 ${
+                isActive ? "text-[#8B6B4A]" : ""
+              }`
+            }
+          >
             Home
           </NavLink>
 
-          <NavLink to="/shop" className={({ isActive }) =>
-            `inline-block transition duration-200 hover:scale-105 ${
-              isActive ? "text-[#8B6B4A]" : ""
-            }`
-          }>
+          <NavLink
+            to="/shop"
+            className={({ isActive }) =>
+              `inline-block transition duration-200 hover:scale-105 ${
+                isActive ? "text-[#8B6B4A]" : ""
+              }`
+            }
+          >
             Shop
           </NavLink>
 
-          <NavLink to="/about" className={({ isActive }) =>
-            `inline-block transition duration-200 hover:scale-105 ${
-              isActive ? "text-[#8B6B4A]" : ""
-            }`
-          }>
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              `inline-block transition duration-200 hover:scale-105 ${
+                isActive ? "text-[#8B6B4A]" : ""
+              }`
+            }
+          >
             About
           </NavLink>
 
-          <NavLink to="/cart" className={({ isActive }) =>
-            `inline-block transition duration-200 hover:scale-105 ${
-              isActive ? "text-[#8B6B4A]" : ""
-            }`
-          }>
+          <NavLink
+            to="/cart"
+            className={({ isActive }) =>
+              `inline-block transition duration-200 hover:scale-105 ${
+                isActive ? "text-[#8B6B4A]" : ""
+              }`
+            }
+          >
             <BsBag className="text-2xl translate-y-[3px]" />
           </NavLink>
 
@@ -108,7 +124,6 @@ function Navbar() {
               {/* Profile dropdown menu */}
               {isProfileMenuOpen && (
                 <div className="absolute right-0 top-full z-50 mt-2 w-56 bg-[#D4C2AF] p-4 shadow-lg text-left">
-                  
                   <p className="text-sm md:text-md text-white pb-1 truncate">
                     {loading ? "Loading..." : user?.email}
                   </p>
@@ -140,7 +155,6 @@ function Navbar() {
                   >
                     Sign Out
                   </button>
-
                 </div>
               )}
             </div>
@@ -160,7 +174,6 @@ function Navbar() {
             </NavLink>
           )}
         </div>
-
       </div>
     </nav>
   );

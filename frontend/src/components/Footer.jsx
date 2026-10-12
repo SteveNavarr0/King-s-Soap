@@ -1,21 +1,25 @@
 import {FaMapMarkerAlt, FaEnvelope, FaPhoneAlt, FaInstagram} from "react-icons/fa";
 import ContactForm from "../components/ContactForm";
 import {useState} from "react";
-
+import {useLocation} from "react-router-dom";
 
 function Footer() {
-
   const[isContactFormOpen, setIsContactFormOpen] = useState(false);
-
+  const { pathname } = useLocation();
+  const hasPhotoBackground = [
+    "/login",
+    "/userchangepassword",
+    "/emailtopwreset",
+    "/createaccount",
+    "/verifyaccount",
+  ].includes(pathname.toLowerCase());
 
   return (
-    <footer className="bg-[#C5AE98] py-6 text-center text-[#FFFFFF]">
-      
-      <h2 className="text-2xl font-[Inter] mb-3">
+    <footer className={`${hasPhotoBackground ? "absolute bottom-0 left-0 w-full bg-transparent" : "bg-[#C5AE98]"} py-6 text-center text-white`}>
+      <h2 className="text-lg md:text-2xl font-[Inter] mb-2 md:mb-3">
         Contact Us
       </h2>
-
-      <div className="flex justify-center gap-8 text-2xl">
+      <div className="flex justify-center gap-10 md:gap-12 text-lg md:text-2xl">
         <a href="https://maps.google.com/maps?q=Sacramento+CA" target="_blank" rel="noopener noreferrer">
           <FaMapMarkerAlt />
         </a>
@@ -29,19 +33,12 @@ function Footer() {
           <FaEnvelope />
         </button>
 
-        <a href="tel:19168569659">
-          <FaPhoneAlt />
-        </a>
-
         <a href="https://instagram.com/kingssoap" target="_blank" rel="noopener noreferrer">
           <FaInstagram />
         </a>
       </div>
 
-      <p className="mt-3 mb-3 text-md font-[Inter]">
-        Sacramento, CA • kinganita25@gmail.com • (916) 856-9659 • @kingssoap
-      </p>
-
+      
 
       <ContactForm
         isOpen={isContactFormOpen}

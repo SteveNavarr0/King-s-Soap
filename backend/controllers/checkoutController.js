@@ -1,8 +1,36 @@
 import supabase, { getSupabaseClient } from "../supabaseClient.js";
 import Stripe from "stripe";
 import easypost from "../easypostClient.js";  
+import { purchaseEasyPostLabelFromStripe } from "./webhookController.js";
+import {
+  sendCancellationRequestToAdmin,
+  sendOrderCancelledEmail,
+} from "../services/emailService.js";  
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+/**
+ * Sanitizes and validates an image URL for use in Stripe checkout.
+ * Strips whitespace/newlines and ensures URL is a valid http/https URL.
+ * Returns null if the URL is missing or malformed, preventing Stripe "Not a valid URL" errors.
+ *
+ * @param {string} url - The candidate image URL
+ * @returns {string|null} - The validated URL or null
+ */
+export const sanitizeImageUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
 
 /**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
@@ -55,6 +83,8 @@ export const validateAndFormatCartItems = (cartItems) => {
   const lineItems = cartItems.map((item) => {
     const product = item.products || item.product || item;
     const firstImage = product.product_images?.[0]?.image_url || product.image;
+    const rawImage = product.product_images?.[0]?.image_url;
+    const validImage = sanitizeImageUrl(rawImage);
 
     return {
       price_data: {
@@ -62,7 +92,7 @@ export const validateAndFormatCartItems = (cartItems) => {
         unit_amount: Math.round(Number(product.price) * 100),
         product_data: {
           name: product.name,
-          ...(firstImage ? { images: [firstImage] } : {}),
+          ...(validImage ? { images: [validImage] } : {}),
         },
       },
       quantity: item.quantity,
@@ -178,6 +208,61 @@ export const validateCartHandler = async (req, res) => {
   }
 };
 
+
+
+// Validate a discount against the current cart and return a subtotal preview (specifically for apply button)
+export const previewDiscount = async (req, res) => {
+  try {
+    const code = req.body?.discountCode?.trim().toUpperCase();
+
+    if (!code) {
+      return res.status(400).json({ message: "Enter a discount code." });
+    }
+
+    const cart = await validateUserCart(req.user?.id, req.authToken);
+
+    if (!cart.isValid) {
+      return res.status(400).json({ message: cart.error });
+    }
+
+    const { data: discount, error } = await supabase
+      .from("discounts")
+      .select("type, value, starts_at, expires_at")
+      .eq("code", code)
+      .eq("is_active", true)
+      .eq("is_archived", false)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const now = Date.now();
+    if (
+      !discount ||
+      (discount.starts_at && new Date(discount.starts_at).getTime() > now) ||
+      (discount.expires_at && new Date(discount.expires_at).getTime() <= now)
+    ) {
+      return res.status(400).json({ message: "This discount code is not available." });
+    }
+
+    // Calculate in cents so the displayed amount matches currency rounding.
+    const subtotalCents = cart.totalAmountCents;
+    const discountCents = discount.type === "percentage"
+      ? Math.round(subtotalCents * Number(discount.value) / 100)
+      : Math.round(Number(discount.value) * 100);
+
+    return res.status(200).json({
+      code,
+      subtotal: subtotalCents / 100,
+      discountAmount: Math.min(discountCents, subtotalCents) / 100,
+      estimatedTotal: Math.max(0, subtotalCents - discountCents) / 100,
+    });
+  } catch (error) {
+    console.error("Could not preview discount:", error);
+    return res.status(500).json({ message: "Failed to check this discount code." });
+  }
+};
+
+
 export const createCheckoutSession = async (req, res) => {
   try {
     let userId = req.user?.id || null;
@@ -188,6 +273,13 @@ export const createCheckoutSession = async (req, res) => {
     const userEmail = req.user?.email || req.body?.email || null;
     const guestItems = req.body?.items || [];
     const checkoutType = req.body?.checkoutType || "shipping";
+    
+    // Normalize an optional discount code before looking it up.
+    const discountCode =
+      typeof req.body?.discountCode === "string"
+        ? req.body.discountCode.trim().toUpperCase()
+        : "";
+    
     const isPickup = checkoutType === "pickup" || checkoutType === "local_pickup";
 
     // Allow checkout if we have either a logged-in user ID OR guest items from localStorage
@@ -207,17 +299,65 @@ export const createCheckoutSession = async (req, res) => {
         message: result.error,
       });
     }
-    
-    // 2. Calculate total parcel weight (in ounces)
-    let totalWeightOz = 0;
-    result.cartItems.forEach((item) => {
-      const product = item.products || item.product || item;
-      const unitWeight = Number(product.weight) || 4; // fallback 4 oz
-      totalWeightOz += unitWeight * item.quantity;
-    });
-    const finalWeightOz = Math.max(totalWeightOz + 2, 1);
 
-    // 3. Insert Pending Order into Supabase (if userId is null, user_id can be left null for guests)
+
+
+    //2. Look up an entered discount before creating an order or Stripe session.
+    let discount = null;
+
+    if (discountCode) {
+      const { data, error: discountError } = await supabase
+        .from("discounts")
+        .select("id, code, starts_at, expires_at, stripe_promotion_code_id")
+        .eq("code", discountCode)
+        .eq("is_active", true)
+        .eq("is_archived", false)
+        .maybeSingle();
+
+      if (discountError) {
+        console.error("Could not load checkout discount:", discountError);
+        return res.status(500).json({ message: "Could not validate discount code." });
+      }
+
+      if (!data) {
+        return res.status(400).json({ message: "Discount code is invalid or inactive." });
+      }
+
+      discount = data;
+    }
+    
+
+    // Reject codes outside their scheduled availability window.
+    if (discount) {
+      const now = Date.now();
+
+      if (discount.starts_at && now < new Date(discount.starts_at).getTime()) {
+        return res.status(400).json({ message: "This discount code is not active yet." });
+      }
+
+      if (discount.expires_at && now >= new Date(discount.expires_at).getTime()) {
+        return res.status(400).json({ message: "This discount code has expired." });
+      }
+    }
+
+
+    // A saved discount must have a Stripe promotion code to use at checkout.
+    if (discount && !discount.stripe_promotion_code_id) {
+      console.error("Checkout discount has no Stripe promotion code:", discount.id);
+      return res.status(500).json({ message: "This discount cannot be applied right now." });
+    }
+
+
+  // 3. Calculate total parcel weight (in ounces)
+  let totalWeightOz = 0;
+  result.cartItems.forEach((item) => {
+   const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
+   totalWeightOz += unitWeight * item.quantity;
+  });
+  const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
+
+
+    // 4. Insert Pending Order into Supabase
     const shippingFee = isPickup ? 0 : 7.0;
     const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
 
@@ -257,13 +397,25 @@ export const createCheckoutSession = async (req, res) => {
       console.error("Order items creation error:", itemsError);
       throw new Error(`Failed to save order items: ${itemsError.message}`);
     }
+    
+    // 6. Create Stripe Session configured for Shipping or Local Pickup
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      req.headers.origin ||
+      "http://localhost:5173"
+    ).replace(/\/+$/, "");
 
-    // 5. Create Stripe Session configured for Shipping or Local Pickup
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+
     const sessionConfig = {
       payment_method_types: ["card"],
       line_items: result.lineItems,
+      ...(discount && {
+        discounts: [{ promotion_code: discount.stripe_promotion_code_id }],
+      }),
       mode: "payment",
+      payment_intent_data: {
+        capture_method: "manual",
+      },
       customer_email: userEmail || undefined,
       submit_type: "auto",
       billing_address_collection: isPickup ? "auto" : "required",
@@ -309,23 +461,26 @@ export const createCheckoutSession = async (req, res) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    // 6. Update the Pending Order with the Stripe Session ID
+    // 7. Update the Pending Order with the Stripe Session ID
     const { error: updateError } = await supabase
       .from("orders")
-      .update({ stripe_session_id: session.id })
+      .update({
+        stripe_session_id: session.id,
+        total_amount: session.amount_total / 100, // Stripe returns the discounted total in cents
+      })
       .eq("id", newOrder.id);
 
     if (updateError) {
       console.error("Failed to update order with Stripe session ID:", updateError);
     }
 
-    // 7. Return the URL to the frontend
     return res.status(200).json({
       success: true,
       url: session.url,
       sessionId: session.id,
       orderId: newOrder.id,
       fulfillmentType: isPickup ? "pickup" : "shipping",
+    
     });
   } catch (error) {
     console.error("Checkout session error:", error);
@@ -335,3 +490,321 @@ export const createCheckoutSession = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * DT-543: Accept an on_hold order, capture payment in Stripe, purchase EasyPost label,
+ * store tracking & label metadata, and transition status to 'accepted'.
+ */
+export const acceptOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    // 1. Fetch order from Supabase
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    // 2. Validate order status
+    if (!["on_hold", "cancel_requested"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be accepted because it has status '${order.status}'. Only 'on_hold' or 'cancel_requested' orders can be accepted.`,
+      });
+    }
+
+    // 3. Capture Payment in Stripe if payment intent exists
+    if (order.stripe_payment_intent_id) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+        if (paymentIntent.status === "requires_capture") {
+          await stripe.paymentIntents.capture(order.stripe_payment_intent_id);
+          console.log(`Payment captured for order ${orderId}: ${order.stripe_payment_intent_id}`);
+        }
+      } catch (stripeErr) {
+        if (process.env.NODE_ENV === "test" && order.stripe_payment_intent_id?.startsWith("pi_test_mock")) {
+          console.log(`[TEST MODE] Mock payment intent ${order.stripe_payment_intent_id} bypass capture.`);
+        } else {
+          console.error(`Failed to capture Stripe payment for order ${orderId}:`, stripeErr);
+          return res.status(500).json({
+            success: false,
+            message: `Stripe payment capture failed: ${stripeErr.message}`,
+          });
+        }
+      }
+    }
+
+    // 4. Purchase EasyPost Label if shipping (skip for local pickup)
+    let shippingResult = null;
+    const isPickup = (order.fulfillment_type || "shipping") === "pickup";
+
+    if (!isPickup) {
+      try {
+        let totalWeightOz = "16";
+        let shippingDetails = null;
+
+        if (order.stripe_session_id) {
+          try {
+            const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+            if (session.metadata?.total_weight_oz) {
+              totalWeightOz = session.metadata.total_weight_oz;
+            }
+            shippingDetails = session.shipping_details || session.customer_details;
+          } catch (sessionErr) {
+            console.warn(`Could not retrieve Stripe session ${order.stripe_session_id} for weight or shipping details:`, sessionErr.message);
+          }
+        }
+
+        if (shippingDetails) {
+          shippingResult = await purchaseEasyPostLabelFromStripe(
+            orderId,
+            shippingDetails,
+            order.customer_email,
+            totalWeightOz
+          );
+        } else {
+          console.warn(`No shipping details found for order ${orderId}, skipping EasyPost label purchase.`);
+        }
+      } catch (labelErr) {
+        console.error(`Postage purchase failed for order ${orderId}:`, labelErr);
+        return res.status(500).json({
+          success: false,
+          message: `Order payment captured, but EasyPost label purchase failed: ${labelErr.message}`,
+        });
+      }
+    }
+
+    // 5. Update order status to 'accepted'
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ status: "accepted" })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error(`Failed to update order status to accepted:`, updateError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update order status to accepted.",
+      });
+    }
+
+    console.log(`Order ${orderId} successfully accepted.`);
+    return res.status(200).json({
+      success: true,
+      message: "Order accepted successfully.",
+      orderId,
+      status: "accepted",
+      trackingNumber: shippingResult?.trackingNumber || order.tracking_number || null,
+      labelUrl: shippingResult?.labelUrl || order.label_url || null,
+    });
+  } catch (err) {
+    console.error("Error in acceptOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to accept order.",
+    });
+  }
+};
+
+/**
+ * Decline an on_hold order: release Stripe payment hold, transition status to 'cancelled',
+ * and notify the customer.
+ */
+export const declineOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (!["on_hold", "cancel_requested", "accepted"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled because it has status '${order.status}'.`,
+      });
+    }
+
+
+    // 1. Cancel Stripe PaymentIntent authorization hold (or refund if already captured)
+    if (order.stripe_payment_intent_id) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
+        if (paymentIntent.status === "requires_capture") {
+          await stripe.paymentIntents.cancel(order.stripe_payment_intent_id);
+          console.log(`Payment authorization hold cancelled for order ${orderId}`);
+        } else if (paymentIntent.status === "succeeded") {
+          await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id });
+          console.log(`Stripe refund issued for order ${orderId}`);
+        }
+      } catch (stripeErr) {
+        if (process.env.NODE_ENV === "test" && order.stripe_payment_intent_id?.startsWith("pi_test_mock")) {
+          console.log(`[TEST MODE] Mock payment intent ${order.stripe_payment_intent_id} bypass cancel.`);
+        } else {
+          console.error(`Failed to cancel/refund Stripe payment for order ${orderId}:`, stripeErr);
+        }
+      }
+    }
+
+        // 2. Void EasyPost label if one was purchased (DT-36 / DT-546)
+    if (order.easypost_shipment_id) {
+      try {
+        await easypost.Shipment.refund(order.easypost_shipment_id);
+        console.log(`EasyPost shipment ${order.easypost_shipment_id} refunded/voided for order ${orderId}.`);
+      } catch (easypostErr) {
+        console.error(`Failed to void EasyPost label for order ${orderId}:`, easypostErr.message || easypostErr);
+      }
+    }
+
+
+    // 3. Update order status to 'cancelled'
+    const { error: cancelError } = await supabase
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", orderId);
+
+    if (cancelError) {
+      console.error(`Failed to mark order as cancelled:`, cancelError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to mark order as cancelled.",
+      });
+    }
+
+    // 4. Notify customer of cancellation
+    if (order.customer_email) {
+      sendOrderCancelledEmail({
+        customerEmail: order.customer_email,
+        orderId,
+      }).catch((mailErr) => {
+        console.error("Failed to send cancellation email:", mailErr);
+      });
+    }
+
+    console.log(`Order ${orderId} successfully declined/cancelled.`);
+    return res.status(200).json({
+      success: true,
+      message: "Order declined and payment hold released.",
+      orderId,
+      status: "cancelled",
+    });
+  } catch (err) {
+    console.error("Error in declineOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to decline order.",
+    });
+  }
+};
+
+/**
+ * Customer requests cancellation while order is on_hold.
+ * Verifies status and emails the admin.
+ */
+export const requestCancelOrder = async (req, res) => {
+  try {
+    const { id: orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required.",
+      });
+    }
+
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (order.status === "cancel_requested") {
+      return res.status(200).json({
+        success: true,
+        message: "Cancellation request was already submitted and the store admin has been notified.",
+        orderId,
+      });
+    }
+
+    if (order.status !== "on_hold") {
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled because it is no longer on hold (status is '${order.status}').`,
+      });
+    }
+
+    const { error: updateErr } = await supabase
+      .from("orders")
+      .update({ status: "cancel_requested" })
+      .eq("id", orderId);
+
+    if (updateErr) {
+      console.error("Failed to update status to cancel_requested:", updateErr);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to record cancellation request in database.",
+      });
+    }
+
+    if (order.customer_email) {
+      sendCancellationRequestToAdmin({
+        orderId,
+        customerEmail: order.customer_email,
+      }).catch((mailErr) => {
+        console.error("Failed to send cancellation request email to admin:", mailErr);
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cancellation request received and sent to the store admin.",
+      orderId,
+    });
+  } catch (err) {
+    console.error("Error in requestCancelOrder:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to submit cancellation request.",
+    });
+  }
+};
+

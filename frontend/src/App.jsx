@@ -22,13 +22,12 @@ import UserAccount from "./Pages/UserAccount";
 import UserChangePassword from "./Pages/UserChangePassword";
 import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
+import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
-import AdminCreateProduct from "./Pages/AdminCreateProduct";
-import AdminUpdateProduct from "./Pages/AdminUpdateProduct";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
-import AdminUpdateWebsitePhoto from "./Pages/AdminUpdateWebsitePhoto";
+import AdminDiscounts from "./Pages/AdminDiscounts";
 import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
 import OrganicShop from "./Pages/OrganicShop.jsx";
@@ -36,8 +35,11 @@ import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
 import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
 import AdminOrders from "./Pages/AdminOrders.jsx";
+import AdminArchivedOrders from "./Pages/AdminArchivedOrders.jsx";
 import AdminPostagePage from "./Pages/AdminShipping.jsx";
 import OrderHistory from "./components/OrderHistory.jsx";
+import AdminArchive from "./Pages/AdminArchive.jsx";
+import AdminOrderDetails from "./Pages/AdminOrderDetails.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -46,6 +48,21 @@ function AppContent({ children }) {
     .startsWith("/admin");
 
   return isAdminPage ? null : children;
+}
+
+function CartRouteLayer({ children }) {
+  const location = useLocation();
+  const backgroundLocation = location.state?.backgroundLocation;
+
+  return (
+    <>
+      <div className={backgroundLocation ? "hidden md:block" : ""}>
+        {children(backgroundLocation || location)}
+      </div>
+
+      {backgroundLocation && <Cart />}
+    </>
+  );
 }
 
 function ProtectedRoute({ children }) {
@@ -65,70 +82,89 @@ function App() {
         <Navbar />
       </AppContent>
 
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/orderHistory" element={<OrderHistory />} />
-            <Route
-              path="/userAccount"
-              element={
-                <ProtectedRoute>
-                  <UserAccount />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/userChangePassword"
-              element={<UserChangePassword />}
-            />
-            <Route
-              path="/userChangeAddress"
-              element={<UserChangeAddress />}
-            />
-            <Route path="/verifyaccount" element={<VerifyAccount />} />
-            <Route path="/createaccount" element={<CreateAccount />} />
-            <Route path="/emailToPWReset" element={<EmailToPWReset />} />
-            <Route
-              path="/paymentSuccessful"
-              element={<PaymentSuccessful />}
+      <div className="relative flex flex-col min-h-screen">
+         <div className="flex-grow">
+          <CartRouteLayer>
+            {(routeLocation) => (
+              <Routes location={routeLocation}>
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/orderHistory" element={<OrderHistory />} />
+                <Route
+                  path="/userAccount"
+                  element={
+                    <ProtectedRoute>
+                      <UserAccount />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/userChangePassword"
+                  element={<UserChangePassword />}
+                />
+                <Route
+                  path="/userChangeAddress"
+                  element={<UserChangeAddress />}
+                />
+                <Route path="/verifyaccount" element={<VerifyAccount />} />
+                <Route path="/createaccount" element={<CreateAccount />} />
+                <Route path="/emailToPWReset" element={<EmailToPWReset />} />
+                <Route
+                  path="/paymentSuccessful"
+                  element={<PaymentSuccessful />}
+                />
+                <Route
+                  path="/PaymentSuccessful"
+                  element={<PaymentSuccessful />}
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <UserAccount />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+              path="/request-cancellation"
+              element={<RequestCancellation />}
             />
             <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route
-              path="/adminCreateProduct"
-              element={<AdminCreateProduct />}
-            />
-            <Route
-              path="/adminUpdateProduct/:id"
-              element={<AdminUpdateProduct />}
-            />
-            <Route path="/adminInbox" element = {<AdminInbox/>}/>
-            <Route path="/adminProducts" element={<AdminProducts />} />
-            <Route
-              path="/OldUIAdminDeleteProduct"
-              element={<OldUIAdminDeleteProduct />}
-            />
-            <Route
-              path="/adminUpdateWebsitePhoto"
-              element={<AdminUpdateWebsitePhoto />}
-            />
-             <Route path="/coconutOilShop" element={<CoconutOilShop />} />
-            <Route path="/organicShop" element={<OrganicShop/>} />
-            <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
-            <Route path="/lipBalmShop" element={<LipBalmShop/>} />
-            <Route path="/soapDishShop" element={<SoapDishShop/>} />
-            <Route path="/adminOrders" element={<AdminOrders/>} />
-            <Route path="/admin/shipping" element={<AdminPostagePage />} />
-            <Route path="/adminShipping" element={<AdminPostagePage />} />
-            <Route path="/AdminShipping" element={<AdminPostagePage />} />
-            <Route path="/AdminPostage" element={<AdminPostagePage />} />
-            <Route path="/adminPostage" element={<AdminPostagePage />} />
-            </Routes>
+                <Route path="/admin" element={<Admin />} />
+                
+                
+                <Route path="/adminInbox" element = {<AdminInbox/>}/>
+                <Route path="/adminProducts" element={<AdminProducts />} />
+                <Route path="/AdminProducts" element={<AdminProducts />} />
+                <Route
+                  path="/OldUIAdminDeleteProduct"
+                  element={<OldUIAdminDeleteProduct />}
+                />
+                <Route
+                  path="/adminDiscounts"
+                  element={< AdminDiscounts />}
+                />
+                <Route path="/coconutOilShop" element={<CoconutOilShop />} />
+                <Route path="/organicShop" element={<OrganicShop/>} />
+                <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
+                <Route path="/lipBalmShop" element={<LipBalmShop/>} />
+                <Route path="/soapDishShop" element={<SoapDishShop/>} />
+                <Route path="/adminOrders" element={<AdminOrders/>} />
+                <Route path="/adminArchivedOrders" element={<AdminArchivedOrders/>} />
+                <Route path="/adminArchive" element={<AdminArchive />}/>
+                <Route path="/AdminArchive" element={<AdminArchive />}/>
+                <Route path="/admin/shipping" element={<AdminPostagePage />} />
+                <Route path="/adminShipping" element={<AdminPostagePage />} />
+                <Route path="/AdminShipping" element={<AdminPostagePage />} />
+                <Route path="/AdminPostage" element={<AdminPostagePage />} />
+                <Route path="/adminPostage" element={<AdminPostagePage />} />
+                <Route path="/adminOrders/:id" element={<AdminOrderDetails />}/>
+              </Routes>
+            )}
+          </CartRouteLayer>
         </div>
 
         <AppContent>

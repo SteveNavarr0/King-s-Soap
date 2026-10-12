@@ -9,29 +9,26 @@ const CoconutOilShop = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-
       const { data, error } = await supabase
         .from("products")
         .select("id, name, price, product_images(image_url, display_order)")
         .ilike("category", "%coconut oil%");
 
-    if (error) {
+      if (error) {
         console.error("Error fetching products:", error);
         return;
       }
-       //Sort each product's iamges from Main to last
-        const productsWithOrderedImages = (data || []).map(
-          (product) => ({
-            ...product,
-            product_images: [...(product.product_images || [])].sort(
-              (firstImage, secondImage) =>
-                firstImage.display_order -
-              secondImage.display_order
-            ),
-          })
-        );
 
-      setProducts(productsWithOrderedImages); 
+      // Sort each product's images from main to last
+      const productsWithOrderedImages = (data || []).map((product) => ({
+        ...product,
+        product_images: [...(product.product_images || [])].sort(
+          (firstImage, secondImage) =>
+            firstImage.display_order - secondImage.display_order
+        ),
+      }));
+
+      setProducts(productsWithOrderedImages);
     };
 
     fetchProducts();
@@ -43,7 +40,7 @@ const CoconutOilShop = () => {
       <FilterBar />
 
       <div className="max-w-6xl mx-auto px-6 pt-14 py-10">
-        <div className="grid grid-cols-3 gap-x-10 gap-y-14">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-14">
           {products.map((product) => {
             const firstImage = product.product_images?.[0]?.image_url || "";
 
@@ -58,17 +55,19 @@ const CoconutOilShop = () => {
                     <img
                       src={firstImage}
                       alt={product.name}
-                      className="w-full h-72 object-cover rounded-lg mb-3"
+                      className="w-full aspect-[5/3] object-cover rounded-t-md"
                     />
                   ) : (
-                    <div className="w-full h-72 bg-gray-200 flex items-center justify-center rounded-lg mb-3">
+                    <div className="flex w-full aspect-[5/3] items-center justify-center rounded-t-md bg-gray-200">
                       No image available
                     </div>
                   )}
 
-                  <div className="text-center border border-white text-[#FFFFFF] font-[Inria_Serif] px-2 py-2 rounded">
-                    <h2 className="text-base">{product.name}</h2>
-                    <p className="text-base">${Number(product.price).toFixed(2)}</p>
+                  <div className="flex h-20 w-full flex-col items-center justify-center rounded-b-md bg-white/15 px-2 py-6 md:py-15 text-center font-serif text-white md:h-[70px]">
+                    <h2 className="text-sm md:text-lg">{product.name}</h2>
+                    <p className="text-sm md:text-lg">
+                      ${Number(product.price).toFixed(2)}
+                    </p>
                   </div>
                 </div>
               </Link>
