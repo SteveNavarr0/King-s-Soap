@@ -9,16 +9,11 @@ const getImageUrl =  (imagePath) => {
       return data.publicUrl;
   };
 
-
-
 function CreateAccount() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-
     const [errorMessage, setErrorMessage] = useState("");
 
     const navigate = useNavigate();
@@ -53,28 +48,28 @@ function CreateAccount() {
         
         setIsSubmitting(true);
 
-
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({ //sends verification email to user if email is valid
             email: trimmedEmail,
             password: password,
             options: {
-                emailRedirectTo: `${window.location.origin}/login`,
+                emailRedirectTo: `${window.location.origin}/login`, //sends user back to login once they click the verification link in their email
             },
         });
-console.log("SIGNUP DATA:", data);
-console.log("SIGNUP ERROR:", error);
-        setIsSubmitting(false);
 
+        setIsSubmitting(false);
 
         if (error) {
             setErrorMessage(error.message);
             return;
-        } else {
-                setSuccessMessage("Account created. Check your email if verification is sent");
+        } 
 
-        }
+        if (data?.user && data.user.identities && data.user.identities.length === 0) {
+            setErrorMessage("Email is already registered.");
+            setIsSubmitting(false);
+            return;
+        } //checks if user already exists in the database, if so tells user email exists already
 
-        navigate("/verifyaccount", {
+        navigate("/verifyaccount", { //if email is valid, user is navigated to verify account page 
             state: {
                 email: trimmedEmail,
             },

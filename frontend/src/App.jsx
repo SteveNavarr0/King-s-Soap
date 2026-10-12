@@ -37,6 +37,7 @@ import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
 import AdminOrders from "./Pages/AdminOrders.jsx";
 import AdminPostagePage from "./Pages/AdminShipping.jsx";
+import OrderHistory from "./components/OrderHistory.jsx";
 
 function AppContent({ children }) {
   const location = useLocation();
@@ -72,6 +73,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/orderHistory" element={<OrderHistory />} />
             <Route
               path="/userAccount"
               element={

@@ -1,67 +1,73 @@
 import { useEffect, useState } from "react";
 import supabase from "../supabaseClient";
+import { useAuth } from "../context/AuthContext";
 
 const CartElement = ({ onTotalChange }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const { user, loading: authLoading } = useAuth(); // Get the current user from AuthContext
 
   /* Fetch Cart (Handles both Anonymous Guests and Authenticated Users identically) */
   useEffect(() => {
+    if (authLoading) return; // Wait until auth state is determined
+
     const fetchCart = async () => {
       setLoading(true);
       setErrorMessage("");
 
-      // 1. Get current session
-      let { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      // 2. If no user exists, quietly log them in anonymously to create a secure session
-      if (userError || !user) {
-        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-        if (anonError) {
-          console.error("Error creating guest session:", anonError);
-          setErrorMessage("Unable to initialize guest session.");
-          setLoading(false);
-          return;
-        }
-        user = anonData.user;
-      }
-
-      // 3. Query the database using the secure User ID (Works for both Guests & Real Users)
-      const { data, error } = await supabase
-        .from("cart")
-        .select(`
-          id,
-          quantity,
-          product_ID,
-          product:products (
+      //if the user is logged in
+      if (user) {
+        const { data, error } = await supabase
+          .from("cart")
+          .select(`
             id,
-            name,
-            price,
-            stock,
-            product_images (
+            quantity,
+            product_ID,
+            product:products (
               id,
-              image_url
+              name,
+              price,
+              stock,
+              product_images (
+                id,
+                image_url
+              )
             )
-          )
-        `)
-        .eq("user_ID", user.id)
-        .order("created_at", { ascending: true });
+          `)
+          .eq("user_ID", user.id)
+          .order("created_at", { ascending: true });
 
       if (error) {
         console.error("Error fetching cart:", error);
         setErrorMessage("Unable to load cart.");
-        setLoading(false);
-        return;
+      } else {
+        setCartItems(data || []);
+     }
+    }
+  
+    else { //if the user is not logged in, fetch cart from localStorage
+      const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+      const formatLocalCart = localCart.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+      product: {
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        stock: item.stock,
+        product_images: [{image_url: item.image}]
       }
+      }));
+      setCartItems(formatLocalCart);
+    }
+    setLoading(false);
+  };
 
-      setCartItems(data || []);
-      setLoading(false);
-    };
+  fetchCart();
+}, []);
 
-    fetchCart();
-  }, []);
-
+     
   /* Calculate Total */
   useEffect(() => {
     const calculatedTotal = cartItems.reduce((sum, item) => {
@@ -76,6 +82,7 @@ const CartElement = ({ onTotalChange }) => {
   const handleQuantityChange = async (item, newQuantity) => {
     if (!item.product || newQuantity < 1 || newQuantity > item.product.stock) return;
 
+    if (user) { //update quantity in supabase for logged in users
     const { error } = await supabase
       .from("cart")
       .update({ quantity: newQuantity })
@@ -85,7 +92,13 @@ const CartElement = ({ onTotalChange }) => {
       console.error("Error updating quantity:", error);
       return;
     }
-
+  } else {
+    const localCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+    const updatedCart = localCart.map((cartItem) =>
+      cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
+    );
+    localStorage.setItem("guestCart", JSON.stringify(updatedCart));
+  }
     setCartItems((currentItems) =>
       currentItems.map((cartItem) =>
         cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
@@ -94,14 +107,18 @@ const CartElement = ({ onTotalChange }) => {
   };
 
   /* Handle Item Removal */
-  const handleRemove = async (cartId) => {
+  const handleRemove = async (cartId, productId) => {
+    if(user) { //remove item from supabase for logged in users
     const { error } = await supabase.from("cart").delete().eq("id", cartId);
-
     if (error) {
       console.error("Error removing cart item:", error);
       return;
     }
-
+  } else { //remove item from localStorage for guest users
+    const localCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+    const updatedCart = localCart.filter((item) => item.id !== productId);
+    localStorage.setItem("guestCart", JSON.stringify(updatedCart));
+  }
     setCartItems((currentItems) => currentItems.filter((item) => item.id !== cartId));
   };
 
@@ -151,7 +168,7 @@ const CartElement = ({ onTotalChange }) => {
 
               <button
                 type="button"
-                onClick={() => handleRemove(item.id)}
+                onClick={() => handleRemove(item.id, product.id)}
                 className="mt-2 text-xs text-gray-400 hover:text-red-600"
               >
                 Remove

@@ -12,12 +12,7 @@ const Cart = () => {
   const isSubmitting = Boolean(submittingType);
   const [error, setError] = useState(null);
 
-  const handleCheckout = async (checkoutType = "shipping") => {
-    // Prevent checkout if there is no active session token
-    if (!session?.access_token) {
-      setError("You must be logged in to check out.");
-      return;
-    }
+  const handleCheckout = async (checkoutType = "shipping") => {   
 
     if (total <= 0) {
       setError("Your cart is empty.");
@@ -28,16 +23,32 @@ const Cart = () => {
     setError(null);
 
     try {
+      //if the user is a guest, grab the items from localStorage and send them to the backend for processing
+      const guestCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      //include the auth token only if the user is logged in
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      let guestId = localStorage.getItem("guest_user_Id");
+      if (!guestId && !user) {
+        // Generate a unique guest ID and store it in localStorage
+        guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem("guest_user_Id", guestId);
+      }
+
       const response = await fetch("http://localhost:3000/api/checkout/create-session", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers,
         body: JSON.stringify({
-          userId: user?.id,
-          email: user?.email,
+          userId: user?.id || guestId,
+          email: user?.email || null,
           checkoutType,
+          items: guestCart, //pass the guest items to the backend for processing
         }),
       });
 

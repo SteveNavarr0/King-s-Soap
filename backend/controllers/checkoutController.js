@@ -4,20 +4,8 @@ import easypost from "../easypostClient.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-
 /**
  * Pure validator & compiler for cart items into dynamic Stripe price_data line items.
- *
- * @param {Array} cartItems - Array of cart items joined with products and product_images.
- * @returns {{
- *   isValid: boolean,
- *   error?: string,
- *   cartItems?: Array,
- *   lineItems?: Array,
- *   totalAmount?: number,
- *   totalAmountCents?: number,
- *   itemCount?: number
- * }}
  */
 export const validateAndFormatCartItems = (cartItems) => {
   if (!cartItems || cartItems.length === 0) {
@@ -26,7 +14,8 @@ export const validateAndFormatCartItems = (cartItems) => {
 
   // Validate stock, availability, and price for each item
   for (const item of cartItems) {
-    const product = item.products;
+    // Handle both Supabase structure (item.products) and localStorage structure (item.product or flat item properties)
+    const product = item.products || item.product || item;
 
     if (!product) {
       return {
@@ -35,7 +24,7 @@ export const validateAndFormatCartItems = (cartItems) => {
       };
     }
 
-    // 1. Availability check
+    // 1. Availability check (if property exists)
     if (product.Availability === false) {
       return {
         isValid: false,
@@ -44,7 +33,7 @@ export const validateAndFormatCartItems = (cartItems) => {
     }
 
     // 2. Stock check
-    const currentStock = product.stock ?? 0;
+    const currentStock = product.stock ?? 100; // fallback high stock for guests if stock isn't attached
     if (item.quantity > currentStock) {
       return {
         isValid: false,
@@ -64,13 +53,13 @@ export const validateAndFormatCartItems = (cartItems) => {
 
   // Compile dynamic Stripe price_data line items
   const lineItems = cartItems.map((item) => {
-    const product = item.products;
-    const firstImage = product.product_images?.[0]?.image_url;
+    const product = item.products || item.product || item;
+    const firstImage = product.product_images?.[0]?.image_url || product.image;
 
     return {
       price_data: {
         currency: "usd",
-        unit_amount: Math.round(Number(product.price) * 100), // Convert numeric dollar to integer cents
+        unit_amount: Math.round(Number(product.price) * 100),
         product_data: {
           name: product.name,
           ...(firstImage ? { images: [firstImage] } : {}),
@@ -82,7 +71,10 @@ export const validateAndFormatCartItems = (cartItems) => {
 
   // Calculate order totals
   const totalAmount = cartItems.reduce(
-    (sum, item) => sum + Number(item.products.price) * item.quantity,
+    (sum, item) => {
+      const product = item.products || item.product || item;
+      return sum + Number(product.price) * item.quantity;
+    },
     0
   );
   const totalAmountCents = Math.round(totalAmount * 100);
@@ -99,14 +91,15 @@ export const validateAndFormatCartItems = (cartItems) => {
 };
 
 /**
- * Fetches the user's cart in Supabase and runs validation & line-item formatting.
- *
- * @param {string} userId - The Supabase user UUID.
- * @param {string} [authToken] - Optional Supabase auth JWT token to query under authenticated RLS.
+ * Fetches the user's cart from Supabase OR parses guest items passed from localStorage.
  */
-export const validateUserCart = async (userId, authToken = null) => {
+export const validateUserCart = async (userId, authToken = null, guestItems = []) => {
+  // If no userId is present, validate the guest items passed from localStorage
   if (!userId) {
-    return { isValid: false, error: "User ID is required." };
+    if (!guestItems || guestItems.length === 0) {
+      return { isValid: false, error: "Your cart is empty." };
+    }
+    return validateAndFormatCartItems(guestItems);
   }
 
   // Use service-role client if configured, otherwise scoped client using user's auth token
@@ -142,13 +135,11 @@ export const validateUserCart = async (userId, authToken = null) => {
   return validateAndFormatCartItems(cartItems);
 };
 
-/**
- * Controller handler for validating cart and returning line items (Task 2 endpoint).
- */
 export const validateCartHandler = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const result = await validateUserCart(userId, req.authToken);
+    const guestItems = req.body?.items || [];
+    const result = await validateUserCart(userId, req.authToken, guestItems);
 
     if (!result.isValid) {
       return res.status(400).json({
@@ -164,17 +155,18 @@ export const validateCartHandler = async (req, res) => {
         totalAmount: result.totalAmount,
         totalAmountCents: result.totalAmountCents,
         itemCount: result.itemCount,
-        items: result.cartItems.map((item) => ({
-          cartId: item.id,
-          productId: item.product_ID,
-          name: item.products.name,
-          unitPrice: Number(item.products.price),
-          quantity: item.quantity,
-          subtotal: Number(
-            (Number(item.products.price) * item.quantity).toFixed(2)
-          ),
-          image: item.products.product_images?.[0]?.image_url || null,
-        })),
+        items: result.cartItems.map((item) => {
+          const product = item.products || item.product || item;
+          return {
+            cartId: item.id || product.id,
+            productId: item.product_ID || product.id,
+            name: product.name,
+            unitPrice: Number(product.price),
+            quantity: item.quantity,
+            subtotal: Number((Number(product.price) * item.quantity).toFixed(2)),
+            image: product.product_images?.[0]?.image_url || product.image || null,
+          };
+        }),
       },
     });
   } catch (error) {
@@ -188,20 +180,26 @@ export const validateCartHandler = async (req, res) => {
 
 export const createCheckoutSession = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    let userId = req.user?.id || null;
+    if (userId && userId.startsWith("guest_")) {
+      userId = null; // Treat guest users as null
+    }
+
     const userEmail = req.user?.email || req.body?.email || null;
+    const guestItems = req.body?.items || [];
     const checkoutType = req.body?.checkoutType || "shipping";
     const isPickup = checkoutType === "pickup" || checkoutType === "local_pickup";
 
-    if (!userId) {
+    // Allow checkout if we have either a logged-in user ID OR guest items from localStorage
+    if (!userId && (!guestItems || guestItems.length === 0)) {
       return res.status(400).json({
         success: false,
-        message: "User ID is required to create a checkout session.",
+        message: "Your cart is empty or authentication is required.",
       });
     }
 
-    // 1. Validate the cart
-    const result = await validateUserCart(userId, req.authToken);
+    // 1. Validate the cart (handles both database users and guests seamlessly)
+    const result = await validateUserCart(userId, req.authToken, guestItems);
 
     if (!result.isValid) {
       return res.status(400).json({
@@ -210,28 +208,27 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
     
-  // 2. Calculate total parcel weight (in ounces)
-  let totalWeightOz = 0;
-  result.cartItems.forEach((item) => {
-   const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
-   totalWeightOz += unitWeight * item.quantity;
-  });
-  const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
+    // 2. Calculate total parcel weight (in ounces)
+    let totalWeightOz = 0;
+    result.cartItems.forEach((item) => {
+      const product = item.products || item.product || item;
+      const unitWeight = Number(product.weight) || 4; // fallback 4 oz
+      totalWeightOz += unitWeight * item.quantity;
+    });
+    const finalWeightOz = Math.max(totalWeightOz + 2, 1);
 
-
-    // 3. Insert Pending Order into Supabase
+    // 3. Insert Pending Order into Supabase (if userId is null, user_id can be left null for guests)
     const shippingFee = isPickup ? 0 : 7.0;
     const initialTotal = Number((result.totalAmount + shippingFee).toFixed(2));
 
     const { data: newOrder, error: orderError } = await supabase
       .from("orders")
       .insert({
-        user_id: userId,
+        user_id: userId, // will be null for guest orders if column is nullable
         status: "pending",
         total_amount: initialTotal,
         customer_email: userEmail,
-        shipping_address: isPickup ? { type: "local_pickup" } : null,
-     
+        fulfillment_type: isPickup ? "pickup" : "shipping",
       })
       .select()
       .single();
@@ -242,12 +239,15 @@ export const createCheckoutSession = async (req, res) => {
     }
 
     // 4. Insert Order Items into Supabase
-    const orderItems = result.cartItems.map((item) => ({
-      order_id: newOrder.id,
-      product_id: item.product_ID,
-      quantity: item.quantity,
-      unit_price: Number(item.products.price),
-    }));
+    const orderItems = result.cartItems.map((item) => {
+      const product = item.products || item.product || item;
+      return {
+        order_id: newOrder.id,
+        product_id: item.product_ID || product.id,
+        quantity: item.quantity,
+        unit_price: Number(product.price),
+      };
+    });
 
     const { error: itemsError } = await supabase
       .from("order_items")
@@ -279,7 +279,7 @@ export const createCheckoutSession = async (req, res) => {
                 shipping_rate_data: {
                   type: "fixed_amount",
                   fixed_amount: {
-                    amount: 700, // $7.00 flat rate shipping in cents
+                    amount: 700,
                     currency: "usd",
                   },
                   display_name: "Standard Ground Shipping",
@@ -301,7 +301,7 @@ export const createCheckoutSession = async (req, res) => {
       cancel_url: `${clientUrl}/cart?canceled=true`,
       metadata: {
         order_id: newOrder.id,
-        user_id: userId,
+        user_id: userId || "guest",
         fulfillment_type: isPickup ? "pickup" : "shipping",
         total_weight_oz: String(totalWeightOz),
       },
