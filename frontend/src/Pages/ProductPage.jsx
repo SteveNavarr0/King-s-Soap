@@ -20,7 +20,7 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
 
   // stores how many items the user wants to buy
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
 
   // scroll to the top whenever a product page opens.
   useEffect(() => {
@@ -66,7 +66,7 @@ const ProductPage = () => {
       // set the first image as the main displayed image
       setSelectedImage(urls[0] || "");
 
-      setQuantity(1);
+      setQuantity(0);
 
       setLoading(false);
     };
@@ -76,7 +76,7 @@ const ProductPage = () => {
 
   // lowers quantity, but never below 1
   const decreaseQuantity = () => {
-    setQuantity((prev) => Math.max(1, prev - 1));
+    setQuantity((prev) => Math.max(0, prev - 1));
   };
 
   // raises quantity, but never above available stock
@@ -86,20 +86,40 @@ const ProductPage = () => {
 
   //  cart handler
   const handleAddToCart = async() => {
-    if (!product || product.stock <=0) return;
+    if (!product || product.stock <=0 || quantity <= 0) return;
     //check the session 
     const {
       data: { user },
        error: userError,
       }  = await supabase.auth.getUser();
 
-    if (userError || !user){
-      console.error("User not logged in or error fetching user:", userError);
-    }
-    const selectedQuantity = Math.max(
-      1,
-      Math.min(quantity, product.stock)
-    );
+   const selectedQuantity =  Math.min(quantity, product.stock);
+
+      //guest user not logged in
+      if (!user) {
+        const existingCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
+        const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
+
+        if (existingItemIndex > -1) {
+          const currentInCart = existingCart[existingItemIndex].quantity;
+          const newTotalQuantity = Math.min(currentInCart + quantity, Number(product.stock));
+          existingCart[existingItemIndex].quantity = newTotalQuantity;
+        } else {
+          existingCart.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: Math.min(quantity, Number(product.stock)),
+            image: selectedImage,
+            stock: Number(product.stock),
+          });
+        }
+
+        localStorage.setItem("guestCart", JSON.stringify(existingCart));
+        console.log(`Added ${quantity} of ${product.name} to guest cart.`);
+        return;
+        }
 
     const { data: existingItem, error: fecthError } = await supabase
       .from("cart")
@@ -147,40 +167,6 @@ const ProductPage = () => {
     }   
 
     console.log(`Added ${selectedQuantity} of ${product.name} to cart.`);
-
-    /*
-    //get current cart from session storage or initialize as empty array
-    const existingCart = JSON.parse(sessionStorage.getItem("cart") || "[]");
-
-    //checks to see if the product is already in the cart. If it is, it will update the quantity instead of adding a new item.
-    const existingItemIndex = existingCart.findIndex((item) => item.id === product.id);
-
-    if (existingItemIndex > -1) {
-      //gets the current quantity in the cart
-      const currentInCart = existingItemIndex > -1 ? existingCart[existingItemIndex].quantity : 0;
-      
-      //add new quantity to current quantity but never exceed the stock available
-      const newTotalQuantity = Math.min(currentInCart + quantity, Number(product.stock));
-
-      existingCart[existingItemIndex].quantity = newTotalQuantity;
-    } else {
-
-      //add new item to cart but capped at available stock
-      const initialQuantity = Math.min(quantity, Number(product.stock)); 
-
-      existingCart.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: initialQuantity,
-        image: selectedImage,
-        stock: Number(product.stock),
-      });
-    }
-
-    // save the updated cart back to session storage
-    sessionStorage.setItem("cart", JSON.stringify(existingCart));
-    */ //saving later for guest users to checkout securely. 
     
   };
   // loading screen
@@ -194,73 +180,86 @@ const ProductPage = () => {
   }
 
   return (
-    // full-page wrapper with white background
-    <div className="min-h-screen bg-white">
-      {/* centered content container */}
-      <div className="max-w-6xl mx-auto px-6 py-10">
+    // full-page wrapper with tan background
+    <div className="bg-[#C5AE98] px-4 pt-28 md:pt-32">
+
+      {/* centered white product box */}
+      <div className="mx-auto max-w-5xl rounded-lg bg-white px-10 py-10 md:max-w-[640px] lg:max-w-5xl">
         {/* top section: image area on left, product details on right */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           
           {/* LEFT COLUMN: main image + thumbnail images */}
-          <div>
-            {/* main product image */}
+          <div className="mx-auto w-full max-w-[600px] lg:mx-0 lg:max-w-none">
+             {/* main product image */}
             {selectedImage ? (
-              <div className="w-full mb-4">
+              <div className="mb-4 h-[250px] w-full overflow-hidden rounded-lg sm:h-[380px] md:h-[400px]">
                 <img
                   src={selectedImage}
                   alt={product.name}
-                  className="w-full rounded-lg object-cover"
+                  className="w-full h-full rounded-lg object-cover"
                 />
               </div>
             ) : (
               // shown if the product has no images
-              <div className="w-full h-80 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+              <div className="w-full h-60 bg-gray-200 font-sans rounded-lg flex items-center justify-center mb-4">
                 No image available
               </div>
             )}
 
             {/* thumbnail image row */}
-            <div className="flex gap-3 flex-wrap">
+            <div
+              className={`flex flex-wrap gap-3 ${
+                imageUrls.length >= 3 ? "justify-between" : "justify-start"
+              }`}
+            >
               {imageUrls.map((img, index) => (
                 <img
                   key={index}
                   src={img}
                   alt={`${product.name} ${index + 1}`}
                   onClick={() => setSelectedImage(img)}
-                  className="w-24 h-24 object-cover rounded cursor-pointer border"
+                  className="aspect-square w-[calc((100%-1.5rem)/3)] object-cover rounded-lg cursor-pointer md:aspect-auto md:w-35 md:h-35"
                 />
               ))}
             </div>
           </div>
 
           {/* RIGHT COLUMN: product title, price, description, etc. */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 md:gap-3">
             {/* product name */}
-            <h1 className="text-4xl font-bold">{product.name}</h1>
+            <h1 className="font-serif text-3xl md:text-5xl">{product.name}</h1>
 
             {/* product price */}
-            <p className="text-2xl font-semibold">
+            <p className="font-sans text-lg md:text-xl">
               ${Number(product.price).toFixed(2)}
             </p>
 
             {/* product description / ingredients */}
-            <p className="text-gray-700 whitespace-pre-line">
-                <span className="font-medium block mb-1">Ingredients</span>
-                {product.description}
+            <p className="whitespace-pre-line font-sans text-base leading-relaxed text-gray-800 md:text-lg">
+              <span className="mb-1 block font-serif text-lg md:text-xl">
+                Ingredients
+              </span>
+              {product.description}
             </p>
 
             {/* product weight */}
-            <p className="text-sm text-gray-500">
-              Weight: {product.weight} oz
+            <p className="whitespace-pre-line font-sans text-base leading-relaxed text-gray-800 md:text-lg">
+              <span className="mb-1 block font-serif text-lg md:mr-2 md:mb-0 md:inline md:text-xl">
+                Weight:
+              </span>
+              {product.weight} oz
             </p>
 
             {/* product category */}
-            <p className="text-sm text-gray-500">
-              Category: {product.category}
+            <p className="whitespace-pre-line font-sans text-base leading-relaxed text-gray-800 md:text-lg">
+              <span className="mb-1 block font-serif text-lg md:mr-2 md:mb-0 md:inline md:text-xl">
+                Category:
+              </span>
+              {product.category}
             </p>
 
             {/* stock display */}
-            <p className="text-sm">
+            <p className="font-sans text-sm md:text-base text-gray-800">
               {product.stock === 0
               ? "Out of Stock"
               : product.stock > 4
@@ -271,22 +270,24 @@ const ProductPage = () => {
 
 
 
-           {/* quantity selector */}
-           <div className="mt-2">
-              <p className="text-sm font-medium mb-2">Quantity</p>
+            {/* quantity selector */}
+            <div className="mt-2">
+              <p className="mb-2 font-serif text-lg text-gray-800 md:text-xl">
+                Quantity
+              </p>
 
-              <div className="inline-flex items-center border rounded-lg overflow-hidden">
+              <div className="inline-flex items-center overflow-hidden rounded-lg border border-gray-300 font-sans text-gray-800">
                 {/* minus button */}
                 <button
                   onClick={decreaseQuantity}
-                  disabled={quantity <= 1}
-                  className="px-4 py-2 text-lg border-r disabled:opacity-40"
+                  disabled={quantity <= 0}
+                  className="cursor-pointer border-r border-gray-300 px-4 py-2 text-lg transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  -
+                  −
                 </button>
 
                 {/* current quantity */}
-                <div className="px-5 py-2 min-w-[60px] text-center">
+                <div className="min-w-[60px] px-5 py-2 text-center">
                   {quantity}
                 </div>
 
@@ -294,22 +295,22 @@ const ProductPage = () => {
                 <button
                   onClick={increaseQuantity}
                   disabled={quantity >= product.stock}
-                  className="px-4 py-2 text-lg border-l disabled:opacity-40"
+                  className="cursor-pointer border-l border-gray-300 px-4 py-2 text-lg transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            {/* add to cart button */}
+             {/* add to cart button */}
             <button
-  onClick={handleAddToCart}
-  disabled={product.stock <= 0}
-  className="mt-4 self-start inline-flex items-center gap-2 whitespace-nowrap bg-black text-white px-4 py-2 rounded-lg text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
->
-  <span>Add {quantity} to Cart</span>
-  <BsBag className="text-lg shrink-0" />
-</button>
+              onClick={handleAddToCart}
+              disabled={product.stock <= 0 || quantity <= 0}
+              className="mt-4 inline-flex items-center gap-2 self-start whitespace-nowrap rounded-lg border border-white/30 bg-[#8B6B4A] px-4 py-2 font-sans text-base text-white cursor-pointer transition duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 md:text-lg"
+            >
+              <span>Add {quantity} to Cart</span>
+              <BsBag className="shrink-0 text-lg" />
+            </button>
           </div>
         </div>
       </div>

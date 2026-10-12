@@ -15,7 +15,7 @@ function SearchIcon() {
     <img
       src={imageUrl}
       alt="Search Icon"
-      className="w-5 h-5 object-contain"
+      className="w-5 h-5 md:w-6 md:h-6 object-contain"
     />
   );
 }

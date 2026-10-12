@@ -4,7 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "node tests/test_checkout_validation.js && node tests/test_fulfillment.js && node tests/test_http_endpoint.js",
+    "test": "node tests/test_checkout_validation.js && node tests/test_fulfillment.js && node tests/test_http_endpoint.js && node tests/test_dt541_hold_and_accept.js",
     "start": "node server.js"
   },
   "keywords": [],
@@ -12,7 +12,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
+    "@easypost/api": "^8.9.0",
+    "@supabase/supabase-js": "^2.117.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

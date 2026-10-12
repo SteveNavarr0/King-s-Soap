@@ -108,7 +108,7 @@ export const createProduct = async (req, res) => {
     //Create database row for every uploaded image
     const imageRows = publicUrls.map((publicUrl, index) => ({
         product_id: newProduct.id,
-        image_url: publicUrl,
+        image_url: publicUrl.trim(),
         display_order: index + 1,
     }));
 
@@ -277,7 +277,7 @@ const uploadedFilePaths = [];
 //Create one product_images row for every uploaded image URL
 const imageRows = publicUrls.map((publicUrl, index) => ({
     product_id: id,
-    image_url: publicUrl,
+    image_url: publicUrl.trim(),
     display_order: 
         displayOrders[index] ??
         highestExistingOrder + index + 1,

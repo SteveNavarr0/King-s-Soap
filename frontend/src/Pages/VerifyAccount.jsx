@@ -1,20 +1,31 @@
-import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.png";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { MdOutlineEmail } from "react-icons/md";
 import supabase from "../supabaseClient";
-import { useLocation } from "react-router-dom";
-import { useState } from "react";
+
+const getImageUrl = (imagePath) => {
+  const { data } = supabase.storage
+    .from("Product Images")
+    .getPublicUrl(imagePath);
+
+  return data.publicUrl;
+};
 
 function VerifyAccount() {
+  const backgroundImage = getImageUrl("images/login-background-image.png");
   const location = useLocation();
   const email = location.state?.email;
 
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   const handleResendEmail = async () => {
     setMessage("");
+    setIsError(false);
 
     if (!email) {
+      setIsError(true);
       setMessage("Email address not found. Please create your account again.");
       return;
     }
@@ -23,7 +34,7 @@ function VerifyAccount() {
 
     const { error } = await supabase.auth.resend({
       type: "signup",
-      email: email,
+      email,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -32,6 +43,7 @@ function VerifyAccount() {
     setIsSending(false);
 
     if (error) {
+      setIsError(true);
       setMessage(error.message);
       return;
     }
@@ -40,40 +52,50 @@ function VerifyAccount() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      {/* Background Image */}
+    <div className="relative flex min-h-screen items-center justify-center bg-white px-4">
       <img
-        src={LoginBackgroundImage}
-        alt="Background"
-        className="absolute h-full w-full object-cover z-0"
+        src={backgroundImage}
+        alt=""
+        className="absolute inset-0 z-0 h-full w-full object-cover"
+      />
+      <div
+        className="absolute inset-0 z-0 bg-black/25"
+        aria-hidden="true"
       />
 
-      {/*Account Verification Notifier*/}
-      <div className="z-20 w-full max-w-md rounded-2xl bg-white px-6 py-8 shadow-lg -mt-40">
-        <div className="space-y-6">
-          <div className="flex justify-center">
-            <MdOutlineEmail className="text-9xl text-zinc-800" />
-          </div>
+      <div className="relative z-20 w-full max-w-md rounded-lg bg-white px-4 py-8 shadow-lg md:px-6">
+        <div className="space-y-6 text-center">
+          <MdOutlineEmail
+            className="mx-auto text-6xl text-gray-700"
+            aria-hidden="true"
+          />
 
-          <div className="text-center">
-            <h1 className="text-2xl font-medium text-gray-800">
-              Verify your account
+          <div>
+            <h1 className="font-serif text-2xl text-gray-800 md:text-3xl">
+              Verify Your Account
             </h1>
-            <p className="mt-2 text-base text-gray-600">
-              If this email is eligible, verification instructions were sent to your inbox.
+            <p className="mt-3 font-sans text-base leading-relaxed text-gray-700">
+              If this email is eligible, verification instructions were sent
+              to your inbox.
             </p>
           </div>
 
           <button
             type="button"
-            className="w-full h-12 rounded-xl bg-zinc-800 text-xl font-medium text-white cursor-pointer"
             onClick={handleResendEmail}
             disabled={isSending}
+            className="h-12 w-full cursor-pointer rounded-lg border border-white/30 bg-[#8B6B4A] font-sans text-base text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 md:text-xl"
           >
             {isSending ? "Sending..." : "Resend Email"}
           </button>
+
           {message && (
-            <p className="text-center text-sm font-medium text-green-700">
+            <p
+              role="status"
+              className={`font-sans text-base ${
+                isError ? "text-red-600" : "text-green-600"
+              }`}
+            >
               {message}
             </p>
           )}

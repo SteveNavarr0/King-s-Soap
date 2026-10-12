@@ -28,6 +28,26 @@ const AdminImageManager = ({
     onDeleteExisting,
 }) => {
 
+    const [isMobile, setIsMobile] = useState(
+        window.matchMedia("(max-width: 767px)").matches
+    );
+
+    //Update isMobile whenever the browser crosses the md breakpoint
+    useEffect(() => {
+        const mobileMediaQuery = window.matchMedia("(max-width: 767px)");
+
+        const handleScreenChange = (event) => {
+            setIsMobile(event.matches);
+        };
+
+        mobileMediaQuery.addEventListener("change", handleScreenChange);
+
+        return () => {
+            mobileMediaQuery.removeEventListener("change", handleScreenChange);
+        };
+    }, []);
+        
+    
 
     //Store temp URLs use to preview newly selected images
     const [newImagePreviews, setNewImagePreviews] = useState([]);
@@ -367,7 +387,7 @@ const AdminImageManager = ({
 
                                     return (
                                         <option key = {position} value = {position}>
-                                            {getPositionLabel(position)}
+                                            {isMobile ? position : getPositionLabel(position)}
                                         </option>
                                     );
                                 }
@@ -408,7 +428,7 @@ const AdminImageManager = ({
 
 
             {/*Upload Images Button*/}
-            <label className = "w-full bg-white rounded-lg px-3 py-2 text-[#8B6B4A] cursor-pointer flex items-center justify-center text-center">
+            <label className = "mt-2 w-full py-2 md:h-10 rounded-lg bg-white text-[#8B6B4A] border border-white/30 shadow-sm text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition">
                 Upload Images
                 <input
                     type="file" //Open file picker

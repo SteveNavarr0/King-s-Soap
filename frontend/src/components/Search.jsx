@@ -39,10 +39,10 @@ const searchProducts = async (searchTerm) => {
     return;
   }
 
-  const { data, error } = await supabase
+   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price, description, product_images(image_url)"
+      "id, name, price, description, product_images(image_url, display_order)"
     )
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
@@ -122,7 +122,7 @@ useEffect(() => {
 
 
   return (
-  <div className="relative w-40">
+  <div className="relative w-full lg:w-60">
     <input
       type="text"
       value={searchTerm}

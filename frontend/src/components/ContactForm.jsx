@@ -118,11 +118,11 @@ function ContactForm({ isOpen, onClose}) {
             </h2>
             
             <div className="w-full max-w-md mx-auto px-6 py-4 pb-4 md:pb-12 rounded-2xl md:border md:border-white/30 md:shadow-lg bg-[#C5AE98]/20 backdrop-blur-lg md:mt-8 md:mb-8"> 
-            <div className="space-y-4">
+            <div className="space-y-4 font-sans">
 
                 <div>
 
-                <label className="block text-lg md:text-xl text-white mb-2">
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">
                     Name
                 </label>
 
@@ -136,7 +136,7 @@ function ContactForm({ isOpen, onClose}) {
 
                 <div>
 
-                <label className="block text-lg md:text-xl text-white mb-2">
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">
                     Email
                 </label>
 
@@ -150,7 +150,7 @@ function ContactForm({ isOpen, onClose}) {
 
                 <div>
 
-                <label className="block text-lg md:text-xl text-white mb-2">
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">
                     Subject
                 </label>
 
@@ -164,7 +164,7 @@ function ContactForm({ isOpen, onClose}) {
 
                 <div>
 
-                <label className="block text-lg md:text-xl text-white mb-2">
+                <label className="block text-lg md:text-xl font-serif text-white mb-2">
                     Message
                 </label>
 
@@ -179,16 +179,16 @@ function ContactForm({ isOpen, onClose}) {
                 
                 {/* Display success or error messages */}
                 {error && (
-                <p className="text-red-600 text-lg md:text-xl text-center">{error}</p>
+                <p className="text-red-600 text-base md:text-xl text-center">{error}</p>
                 )}
 
                 {success && (
-                <p className="text-green-600 text-lg md:text-xl text-center">{success}</p>
+                <p className="text-green-600 text-base md:text-xl text-center">{success}</p>
                 )}
 
                 <button onClick ={dBAddItem}
                 disabled={loading}
-                className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] backdrop-blur-lg border border-white/30 shadow-sm text-white text-lg md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
+                className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] backdrop-blur-lg border border-white/30 shadow-sm text-white text-base md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
                     loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
                 }`}
                 >
