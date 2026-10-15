@@ -84,7 +84,8 @@ useEffect(() => {
 
 
  return (
-  <div className="relative w-50 md:w-60 h-8 md:h-10">
+   // Full width above the buttons; fixed width when all controls share one row
+  <div className="relative w-full lg:w-60 h-8 md:h-10">
     <input
       type="text"
       value={searchTerm}
