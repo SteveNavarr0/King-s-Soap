@@ -149,7 +149,7 @@ const Shop = () => {
       <ShopPageImage />
       <FilterBar />
 
-       <div className="max-w-6xl mx-auto px-6 pt-14 py-10">
+       <div className="max-w-6xl mx-auto px-6 pt-8 md:pt-12 py-10">
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-14">
           {products.map((product) => {
             const firstImage = product.product_images?.[0]?.image_url || "";
