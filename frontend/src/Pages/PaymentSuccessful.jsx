@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { BsCheckCircle } from "react-icons/bs";
 import supabase from "../supabaseClient";
-
+import { useAuth } from "../context/AuthContext";
 
 const PaymentSuccessful = () => {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
+  
   const sessionId = searchParams.get("session_id");
 
   const [order, setOrder] = useState(null);
@@ -45,12 +47,21 @@ const PaymentSuccessful = () => {
         return;
       }
 
+
+      // 1. Immediately clean up guest cart (localStorage)
+      localStorage.removeItem("guestCart");
+
+      // 2. Immediately clean up logged-in user cart
+      if (user?.id) {
+        await supabase.from("cart").delete().eq("user_ID", user.id);
+      }
+
       setOrder(data);
       setLoading(false);
     };
 
     fetchOrder();
-  }, [sessionId]);
+  }, [sessionId, user]);
 
   // Add together the quantities of all products
   const totalQuantity =
