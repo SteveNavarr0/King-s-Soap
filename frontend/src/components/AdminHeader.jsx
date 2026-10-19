@@ -1,182 +1,120 @@
-import supabase from "../supabaseClient";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { BsBag } from "react-icons/bs";
-import { useAuth } from "../context/AuthContext";
-import { useState, useRef, useEffect } from "react";
+import {Link, useNavigate} from "react-router-dom";
+import supabase from "../supabaseClient";  
+import {useEffect, useRef, useState} from "react"; 
+import { useAuth } from "../context/AuthContext"
 
+
+/* Function to get the public URL of an image stored in Supabase storage. Variable used later */
 const getImageUrl = (imagePath) => {
-  const { data } = supabase.storage
-    .from("Product Images")
-    .getPublicUrl(imagePath);
-  return data.publicUrl;
+    const {data} = supabase.storage
+        .from("Product Images")
+        .getPublicUrl(imagePath);
+    return data.publicUrl
+
 };
 
-function Navbar() {
-  const { user, loading, signOutUser } = useAuth();
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const profileMenuRef = useRef(null);
-  const navigate = useNavigate();
+function AdminHeader() {
 
-  const logo = getImageUrl("images/logo.png");
+    const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target)
-      ) {
-        setIsProfileMenuOpen(false);
-      }
-    };
+    const {user, adminName, signOutUser, loading } = useAuth();
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+    const adminInitials = `${adminName.first?.[0] ?? ""}${adminName.last?.[0] ?? ""}`.toUpperCase();
 
-  const handleSignOut = async () => {
-    const { error } = await signOutUser();
 
-    if (error) {
-      console.error("Could not sign out:", error);
-      return;
+    const logo = getImageUrl("images/logo.png");
+
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false); /* isProfileMenuOpen stores whether the menu is open. setIsProfileMenuOpen is used to change the value of isProfileMenuOpen. useState(false) initializes state to false (not open) */
+
+    const profileMenuRef = useRef(null); /* This will be used to detect clicks outside the menu */
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileMenuRef.current && /* Check if the menu is open and if the click was outside the menu */
+                !profileMenuRef.current.contains(event.target) 
+            ) {
+                setIsProfileMenuOpen(false); /* If the click is outside the menu, close the menu */
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside); /* Add event listener to detect clicks outside the menu */
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside); /* Clean up the event listener when the component unmounts */
+        };
+    }, []);
+
+    
+
+    const handleSignOut = async () => {
+        const { error } = await signOutUser();
+
+        if (error) {
+            console.error("Could not sign out:", error);
+            return;
+        }
+
+        navigate("/login");
     }
 
-    navigate("/login");
-  };
 
-  return (
-    <nav className="bg-[#C5AE98] text-[#FFFFFF] p-2 text-center relative z-50">
-      <div className="flex justify-between items-center">
-        {/* Logo */}
-        <div>
-          <Link to="/" className="block outline-none">
-            <img 
-              src={logo} 
-              alt="King's Soap Logo" 
-              className="w-auto h-25 md:h-42 block" 
-            />
-          </Link>
-        </div>
+    return ( 
 
-        {/* Navigation Links */}
-        <div className="space-x-8 pr-8 font-[Inter] text-lg flex items-center">
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            Home
-          </NavLink>
+        /* Admin Header Component */
+        <header className="flex items-start justify-between p-2">
 
-          <NavLink
-            to="/shop"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            Shop
-          </NavLink>
-
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            About
-          </NavLink>
-
-          <NavLink
-            to="/cart"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            <BsBag className="text-2xl translate-y-[3px]" />
-          </NavLink>
-
-          {!loading && user ? (
-            <div ref={profileMenuRef} className="relative inline-block text-left">
-              <button
-                type="button"
-                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className={`inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 outline-none ${
-                  isProfileMenuOpen
-                    ? "text-[#8B6B4A] border-[#8B6B4A] bg-white/10"
-                    : "text-white border-white"
-                }`}
-              >
-                Account
-              </button>
-
-              {/* Profile dropdown menu */}
-              {isProfileMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-56 bg-[#D4C2AF] p-4 shadow-lg text-left">
-                  <p className="text-sm md:text-md text-white pb-1 truncate">
-                    {loading ? "Loading..." : user?.email}
-                  </p>
-
-                  <div className="w-full border-t-2 border-white/30 my-2"></div>
-
-                  <Link
-                    to="/userAccount"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
-                  >
-                    Account Dashboard
-                  </Link>
-
-                  <Link
-                    to="/changePassword"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
-                  >
-                    Change Password
-                  </Link>
-
-                  <div className="w-full border-t-2 border-white/30 my-2"></div>
-
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition w-full text-left"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
+            {/* Logo*/}
+            <div className = "flex justify-left">
+                
+                <Link to="/Admin" className="block outline-none">
+                    <img src={logo} alt="King's Soap Logo" className= "w-auto h-25 md:h-42 block" />
+                 </Link>
+            
             </div>
-          ) : (
-            <NavLink
-              to="/login"
-              end
-              className={({ isActive }) =>
-                `inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 ${
-                  isActive
-                    ? "text-[#8B6B4A] border-[#8B6B4A]"
-                    : "text-white border-white"
-                }`
-              }
-            >
-              Log in
-            </NavLink>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
+
+
+            {/* Profile button*/}
+            <div 
+                ref={profileMenuRef}
+                className="relative mt-6 md:mt-10 mr-5 md:mr-11"> {/* Relative positioning allows the profile menu to be positioned relative to this container */}
+
+                <button type="button" 
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} /* When the button is clicked, the value of isProfileMenuOpen is toggled between true and false. If it was false (menu closed), it becomes true (menu open), and vice versa. */
+                className="flex w-12 md:w-25 h-12 md:h-25 rounded-full bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-xl md:text-3xl flex items-center justify-center hover:scale-105 cursor-pointer transition">
+                    {adminInitials}
+                </button>
+
+
+                {/* Profile menu */}
+                {isProfileMenuOpen && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-48 bg-[#D4C2AF] p-4 shadow-lg">
+                        
+                        <p className="text-sm md:text-md text-white font-semibold pb-1">
+                            {adminName.first} {adminName.last}
+                        </p>
+
+                        <p className="text-sm md:text-md text-white pb-1">
+                            {loading ? "Loading..." : user?.email}
+                        </p>
+
+                        <div className="w-44 border-t-2 border-white/30"></div>
+
+                        <button
+                            type="button" 
+                            onClick={handleSignOut} //Actually sign out user rather than redirect
+                            className="text-sm md:text-md text-white hover:scale-105 cursor-pointer transition">
+                            
+                            Sign Out
+                        </button>
+
+                    </div>
+                )}
+
+            </div>
+
+
+        </header>
+    )
 }
 
-export default Navbar;
+export default AdminHeader;
