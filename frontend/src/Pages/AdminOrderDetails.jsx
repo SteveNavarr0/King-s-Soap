@@ -4,7 +4,6 @@ import {
   useParams,
 } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -477,7 +476,7 @@ function AdminOrderDetails() {
 
           <Link
             to="/adminOrders"
-            className="mt-4 inline-block underline"
+            className="mt-4 md:mt-8 mx-auto w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-full bg-white/15 border border-white/30 shadow-sm text-white font-sans text-sm md:text-2xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
           >
             Return to Orders
           </Link>
@@ -492,27 +491,27 @@ function AdminOrderDetails() {
 
       <main className="mx-8 mt-8 md:mx-13">
         {/* Page heading */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col">
           <div>
             <h1 className="font-serif text-3xl md:text-5xl">
               Order Details
             </h1>
 
-            <p className="mt-1 break-all font-serif text-base text-white/80 md:text-xl">
+            <p className="break-all font-serif text-base text-white/80 md:text-xl leading-relaxed">
               Order {order.order_id}
             </p>
           </div>
 
           <Link
             to="/adminOrders"
-            className="w-fit rounded-full border border-white/60 bg-white/10 px-5 py-2 font-serif text-sm transition hover:scale-105 hover:bg-white/20"
+            className="mt-4 md:mt-8 w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-full bg-white/15 border border-white/30 shadow-sm text-white font-sans text-sm md:text-2xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
           >
             Return to Orders
           </Link>
         </div>
 
         {/* Order information container */}
-        <section className="mt-8 rounded-xl border border-white/30 bg-white/10 p-4 md:p-8">
+        <section className="mt-6 rounded-xl border border-white/30 bg-white/10 p-4 md:p-8">
           {/* Current status */}
           <div className="mb-6">
             <p className="text-sm uppercase tracking-wide text-white/70">
@@ -796,7 +795,6 @@ function AdminOrderDetails() {
         </section>
       </main>
 
-      <AdminNav />
     </div>
   );
 }

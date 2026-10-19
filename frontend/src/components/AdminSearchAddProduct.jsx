@@ -4,7 +4,7 @@ function SearchAddProduct({onAddProductClick, onArchiveClick, onProductSelect}) 
   return (
     <div>
       {/* Stack the search above the buttons below the large-screen breakpoint */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mt-4 md:mt-8">        
+      <div className="flex flex-wrap items-center justify-between gap-4 mt-6">        
         <button
           type="button"
           // Open the add product popup.
