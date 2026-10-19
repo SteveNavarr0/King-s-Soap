@@ -13,6 +13,10 @@ const getImageUrl = (imagePath) => {
 
 function Navbar() {
   const { user, loading, signOutUser } = useAuth();
+
+  const userInitials =
+    user?.user_metadata?.first_name?.trim()?.[0]?.toUpperCase() || "";
+
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -118,6 +122,22 @@ function Navbar() {
             About
           </NavLink>
 
+
+
+           {!loading && user && (
+            <NavLink
+              to="/OrderHistory"
+              className={({ isActive }) =>
+                `inline-block transition duration-200 hover:scale-105 ${
+                  isActive ? "text-[#8B6B4A]" : ""
+                }`
+              }
+            >
+              Orders
+            </NavLink>
+          )}
+
+
           <NavLink
             to="/cart"
             state={{ backgroundLocation: location }}
@@ -130,18 +150,40 @@ function Navbar() {
             <BsBag className="text-2xl" />
           </NavLink>
 
+          {!loading && user && (
+            <div className="md:hidden w-full flex flex-col items-center gap-5 border-t border-white/30 pt-5 font-sans text-sm">
+              <p className="max-w-full truncate text-sm text-white">
+                {user.email}
+              </p>
+
+              <Link
+                to="/UserChangePassword"
+                onClick={() => setIsMenuOpen(false)}
+                className="transition duration-200 hover:scale-105"
+              >
+                Change Password
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="cursor-pointer transition duration-200 hover:scale-105"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+
           {!loading && user ? (
-            <div ref={profileMenuRef} className="relative inline-block text-left">
+            <div ref={profileMenuRef} className="relative hidden md:inline-block text-left">
               <button
                 type="button"
                 onClick={toggleDropdown}
-                className={`inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 outline-none cursor-pointer ${
-                  isProfileMenuOpen
-                    ? "text-[#8B6B4A] border-[#8B6B4A] bg-white/10"
-                    : "text-white border-white"
-                }`}
+                aria-label="Account menu"
+                aria-expanded={isProfileMenuOpen}
+                className="flex w-12 h-12 shrink-0 rounded-full bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm text-white text-xl items-center justify-center hover:scale-105 cursor-pointer transition outline-none"
               >
-                Account
+                {userInitials}
               </button>
 
               {/* Profile dropdown menu */}
@@ -153,28 +195,19 @@ function Navbar() {
 
                   <div className="w-full border-t-2 border-white/30 my-2"></div>
 
-                  <Link
-                    to="/OrderHistory"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
-                  >
-                    Order History
-                  </Link>
 
                   <Link
                     to="/UserChangePassword"
                     onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
+                    className="block text-sm md:text-md text-white hover:scale-102 cursor-pointer transition pb-2"
                   >
                     Change Password
                   </Link>
 
-                  <div className="w-full border-t-2 border-white/30 my-2"></div>
-
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition w-full text-left"
+                    className="block text-sm md:text-md text-white hover:scale-102 cursor-pointer transition w-full text-left"
                   >
                     Sign Out
                   </button>

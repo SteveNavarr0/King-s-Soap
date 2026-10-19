@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import AdminUpdateProduct from "./AdminUpdateProduct";
 
 function Admin() {
-  const { adminName } = useAuth();
+  const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
   const [activeOrderCount, setActiveOrderCount] = useState(0);
@@ -90,7 +90,9 @@ function Admin() {
       
       <div className="flex flex-col justify-left mt-8 md:mt-8 ml-8 mr-8 md:ml-13 md:mr-13 text-white">
         <h1 className="text-3xl md:text-5xl font-serif">
-          Welcome, {adminName.first}
+          Welcome{user?.user_metadata?.first_name
+            ? `, ${user.user_metadata.first_name}`
+            : ""}
         </h1>
 
         <p className="text-base font-serif md:text-xl leading-relaxed">

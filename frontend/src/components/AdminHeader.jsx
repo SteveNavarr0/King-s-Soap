@@ -17,10 +17,10 @@ function AdminHeader() {
 
     const navigate = useNavigate();
 
-    const {user, adminName, signOutUser, loading } = useAuth();
+    const {user, signOutUser, loading } = useAuth();
 
-    const adminInitials = `${adminName.first?.[0] ?? ""}${adminName.last?.[0] ?? ""}`.toUpperCase();
-
+    const adminInitials =
+        user?.user_metadata?.first_name?.trim()?.[0]?.toUpperCase() || "";
 
     const logo = getImageUrl("images/logo.png");
 
@@ -89,8 +89,8 @@ function AdminHeader() {
                 {isProfileMenuOpen && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-48 bg-[#D4C2AF] p-4 shadow-lg">
                         
-                        <p className="text-sm md:text-md text-white font-semibold pb-1">
-                            {adminName.first} {adminName.last}
+                         <p className="text-sm md:text-md text-white font-semibold pb-1">
+                            {user?.user_metadata?.first_name || ""}
                         </p>
 
                         <p className="text-sm md:text-md text-white pb-1">
