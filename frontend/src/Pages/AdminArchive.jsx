@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import AdminSearchArchive from "../components/AdminSearchArchive";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
@@ -111,8 +110,7 @@ useEffect(() => {
         />
       )}
 
-      {/* Only show navigation when popup is closed */}
-      {selectedProductId === null && <AdminNav />}
+   
       
     </div>
   );

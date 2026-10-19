@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
 
@@ -61,6 +60,9 @@ function AdminInbox() {
         setError("Could not mark this message as read.");
         return;
       }
+
+      // Refresh the header's unread message count
+      window.dispatchEvent(new Event("admin-inbox-updated"));
 
       //Create updated copy of the message
       const updatedMessage = {
@@ -476,7 +478,6 @@ const archiveMessage = async () => {
      </div>
 
 
-      {!selectedMessage && <AdminNav />}
         
     </div>
   );

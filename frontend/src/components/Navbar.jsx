@@ -21,11 +21,13 @@ function Navbar() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
   const profileMenuRef = useRef(null);
+  const navbarRef = useRef(null);
 
   const logo = getImageUrl("images/logo.png");
 
-  // Close profile dropdown when clicking outside
+   // Close menus when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -34,11 +36,19 @@ function Navbar() {
       ) {
         setIsProfileMenuOpen(false);
       }
+
+      if (
+        navbarRef.current &&
+        !navbarRef.current.contains(event.target)
+      ) {
+        setIsMenuOpen(false);
+      }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
     };
   }, []);
 
@@ -60,7 +70,10 @@ function Navbar() {
   };
 
   return (
-    <nav className="absolute inset-x-0 top-0 z-50 bg-transparent text-white p-2 text-center">
+    <nav
+      ref={navbarRef}
+      className="absolute inset-x-0 top-0 z-50 bg-transparent text-white p-2 text-center"
+    >
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div>
@@ -72,20 +85,26 @@ function Navbar() {
         {/* Mobile Hamburger Menu Button */}
         <button
           type="button"
-          aria-label="Toggle navigation menu"
+          aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((open) => !open)}
           className="relative z-[60] cursor-pointer mr-1 self-start mt-6 flex h-12 w-12 flex-col items-center justify-center gap-1.5 text-white md:hidden"
         >
-          <span className="h-0.5 w-7 bg-current" />
-          <span className="h-0.5 w-7 bg-current" />
-          <span className="h-0.5 w-7 bg-current" />
+          {isMenuOpen ? (
+            <span className="text-4xl">×</span>
+          ) : (
+            <>
+              <span className="h-0.5 w-7 bg-current" />
+              <span className="h-0.5 w-7 bg-current" />
+              <span className="h-0.5 w-7 bg-current" />
+            </>
+          )}
         </button>
 
         {/* Navigation Drawer / Links */}
         <div
           onClick={() => setIsMenuOpen(false)}
-          className={`absolute left-0 right-0 top-0 z-50 flex flex-col items-center gap-5 bg-[#C5AE98] px-6 pt-7 pb-6 font-sans text-lg shadow-lg md:static md:flex md:flex-row md:gap-8 md:bg-transparent md:py-0 md:pl-0 md:pr-8 md:shadow-none ${
+          className={`absolute left-0 right-0 top-0 z-50 flex flex-col items-center gap-5 bg-[#C5AE98] px-6 pt-24 pb-6 font-sans text-lg shadow-lg md:static md:flex md:flex-row md:gap-8 md:bg-transparent md:py-0 md:pl-0 md:pr-8 md:shadow-none ${
             isMenuOpen ? "flex" : "hidden md:flex"
           }`}
         >
@@ -151,7 +170,13 @@ function Navbar() {
           </NavLink>
 
           {!loading && user && (
-            <div className="md:hidden w-full flex flex-col items-center gap-5 border-t border-white/30 pt-5 font-sans text-sm">
+             <div className="md:hidden w-full flex flex-col items-center gap-3 border-t border-white/30 pt-5 font-sans text-sm">
+              {user?.user_metadata?.first_name && (
+                <p className="max-w-full truncate font-semibold text-white">
+                  {user.user_metadata.first_name}
+                </p>
+              )}
+
               <p className="max-w-full truncate text-sm text-white">
                 {user.email}
               </p>
