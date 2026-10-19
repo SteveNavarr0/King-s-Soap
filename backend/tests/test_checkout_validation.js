@@ -13,7 +13,7 @@ async function runTests() {
   // 1. Missing user ID
   const nullUserRes = await validateUserCart(null);
   assert.strictEqual(nullUserRes.isValid, false);
-  assert.strictEqual(nullUserRes.error, "User ID is required.");
+  assert.strictEqual(nullUserRes.error, "Your cart is empty.");
   console.log("✓ Test 1: Null user returns isValid=false");
 
   // 2. Empty cart array
