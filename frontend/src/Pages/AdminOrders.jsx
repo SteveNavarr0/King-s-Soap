@@ -197,9 +197,9 @@ function AdminOrders() {
     ))}
 
     {orders.length === 0 && (
-      <p className="py-8 text-center">
+      <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
         No active orders found.
-      </p>
+      </div>
     )}
   </div>
   </div>

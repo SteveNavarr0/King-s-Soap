@@ -92,30 +92,32 @@ const PaymentSuccessful = () => {
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
-  return (
-    <div className="min-h-screen bg-[#C5AE98] text-white font-[Inter]">
-      <div style={{ width: "100%", height: "100%" }}>
-        <h1 className="text-4xl text-black font-bold font-[Inria_Serif] pl-11 pt-8">
-          Your Order History
-        </h1>
-      </div>
+return (
+  <div className="min-h-screen pt-28 md:pt-40 pb-16 bg-[#C5AE98] text-white">
+    <div className="mt-8 ml-8 mr-8 md:ml-13 md:mr-13">
+      <h1 className="text-3xl md:text-5xl font-serif">
+        Your Order History
+      </h1>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {loading || authLoading ? (
-          <p className="text-white/80">Loading your past orders...</p>
+    <p className="text-base md:text-xl font-serif leading-relaxed">
+      View your past orders
+    </p>
+  </div>
+
+    <main className="mt-4 md:mt-8 ml-8 mr-[22px] md:ml-13 md:mr-10">
+      {loading || authLoading ? (
+        <p className="text-white/80">Loading your past orders...</p>
         ) : queryError ? (
           <div className="border border-red-400 bg-red-500/20 rounded-xl p-6 text-center text-white">
             <p className="font-semibold">Error loading orders:</p>
             <p className="text-sm mt-1">{queryError}</p>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="border border-white/40 rounded-xl p-8 text-center bg-white/5">
-            <p className="text-lg text-white/90">
-              No past orders found for {user?.email}.
-            </p>
+         ) : orders.length === 0 ? (
+          <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+            No past orders found.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {orders.map((order) => {
               const firstItem = order.order_items?.[0];
               const product = firstItem?.products;
@@ -127,32 +129,32 @@ const PaymentSuccessful = () => {
               return (
                 <div
                   key={order.id}
-                  className="border border-white/40 rounded-xl p-6 bg-white/10 backdrop-blur-sm flex items-center justify-between shadow-sm transition hover:border-white"
+                  className="w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex items-center justify-between hover:scale-[1.02] transition duration-200"
                 >
-                  {/* Thumbnail Box using Admin Tile pattern */}
-                  {hasImage ? (
-                    <img
-                      src={images[0].image_url}
-                      alt={product?.name || "Order item"}
-                      className="w-28 h-20 object-cover rounded-md border border-white/20 shadow-inner flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-28 h-20 bg-gray-300/80 rounded-md overflow-hidden flex items-center justify-center border border-white/20 shadow-inner flex-shrink-0 text-gray-600 text-xs font-medium">
-                      No Image
-                    </div>
-                  )}
-
-                  {/* Order Date & Price */}
-                  <div className="flex-1 text-right pr-4">
-                    <span className="text-3xl md:text-4xl font-serif italic tracking-wide text-white drop-shadow-sm block">
-                      {formatDate(order.created_at)}
-                    </span>
-                    {order.total_amount && (
-                      <span className="text-sm text-white/80 font-medium block mt-1">
-                        Total: ${Number(order.total_amount).toFixed(2)}
-                      </span>
-                    )}
+                {/* Order thumbnail */}
+                {hasImage ? (
+                  <img
+                    src={images[0].image_url}
+                    alt={product?.name || "Order item"}
+                    className="w-16 h-14 md:w-20 md:h-20 shrink-0 object-cover rounded-sm mr-4"
+                  />
+                ) : (
+                  <div className="w-16 h-14 md:w-20 md:h-20 shrink-0 bg-white/20 rounded-sm mr-4 flex items-center justify-center text-xs text-white">
+                    No Image
                   </div>
+                )}
+                {/* Order Date & Price */}
+                <div className="flex-1 min-w-0 font-serif flex flex-col items-end whitespace-nowrap">
+                  <span className="text-base md:text-2xl font-medium capitalize">
+                    {formatDate(order.created_at)}
+                  </span>
+
+                  {order.total_amount && (
+                    <span className="text-xs md:text-sm text-white/70">
+                      Total: ${Number(order.total_amount).toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 </div>
               );
             })}

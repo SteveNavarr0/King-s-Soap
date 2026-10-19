@@ -278,8 +278,14 @@ const archiveMessage = async () => {
       </p>
     )}
 
-    {/* Message list section */}
+ {/* Message list section */}
     <div className="flex flex-col justify-left mt-4 md:mt-8">
+      {!fetchError && messages.length === 0 && (
+        <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+          No messages found.
+        </div>
+      )}
+
       {messages.map((message) => (
         
         <div
