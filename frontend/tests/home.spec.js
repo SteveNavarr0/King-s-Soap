@@ -118,7 +118,7 @@ test.describe("King's Soap - Home Page Functionality", () => {
 
         // Find hamburger menu button
         const menuButton = page.getByRole("button", {
-            name: "Toggle navigation menu"
+            name: "Open navigation menu"
         });
 
         // Verify button is visible
@@ -130,8 +130,18 @@ test.describe("King's Soap - Home Page Functionality", () => {
         // Open mobile menu
         await menuButton.click();
 
-        // Verify menu opened
-        await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+        // Verify the menu opened
+        await expect(
+            page.getByRole("button", {
+                name: "Close navigation menu"
+            })
+        ).toBeVisible();
+
+        await expect(
+            page.getByRole("button", {
+                name: "Close navigation menu"
+            })
+        ).toHaveAttribute("aria-expanded", "true");
 
         // Click Shop
         await page.getByRole("navigation")
@@ -141,7 +151,11 @@ test.describe("King's Soap - Home Page Functionality", () => {
         await expect(page).toHaveURL(/\/shop\/?$/);
 
         // Verify menu closed after navigation
-        await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+        await expect(
+            page.getByRole("button", {
+                name: "Open navigation menu"
+            })
+        ).toHaveAttribute("aria-expanded", "false");
 
     });
 
