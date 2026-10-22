@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { BsCheckCircle } from "react-icons/bs";
 import supabase from "../supabaseClient";
-
+import { useAuth } from "../context/AuthContext";
 
 const PaymentSuccessful = () => {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
+  
   const sessionId = searchParams.get("session_id");
 
   const [order, setOrder] = useState(null);
@@ -45,12 +47,21 @@ const PaymentSuccessful = () => {
         return;
       }
 
+
+      // 1. Immediately clean up guest cart (localStorage)
+      localStorage.removeItem("guestCart");
+
+      // 2. Immediately clean up logged-in user cart
+      if (user?.id) {
+        await supabase.from("cart").delete().eq("user_ID", user.id);
+      }
+
       setOrder(data);
       setLoading(false);
     };
 
     fetchOrder();
-  }, [sessionId]);
+  }, [sessionId, user]);
 
   // Add together the quantities of all products
   const totalQuantity =
@@ -61,7 +72,7 @@ const PaymentSuccessful = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[600px] flex items-center justify-center text-white">
+      <div className="min-h-screen pt-28 md:pt-40 pb-16 px-[22px] md:px-10 bg-[#C5AE98] flex items-center justify-center text-center text-white">
         Loading your order...
       </div>
     );
@@ -69,11 +80,11 @@ const PaymentSuccessful = () => {
 
   if (error || !order) {
     return (
-      <div className="min-h-[600px] flex flex-col items-center justify-center text-white gap-4">
+      <div className="min-h-screen pt-28 md:pt-40 pb-16 px-[22px] md:px-10 bg-[#C5AE98] flex flex-col items-center justify-center text-center text-white gap-4">
         <p className="text-lg">{error || "Order not found."}</p>
         <Link
           to="/"
-          className="bg-white/40 text-white px-4 py-2 rounded-md text-sm hover:bg-white/50 transition"
+          className="w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-md bg-white/15 border border-white/30 shadow-sm text-white font-sans text-sm md:text-xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
         >
           Return to Shop
         </Link>
@@ -82,24 +93,24 @@ const PaymentSuccessful = () => {
   }
 
   return (
-    <div className="min-h-[600px] flex justify-center items-start pt-10 px-6">
+    <div className="pt-28 md:pt-40 pb-0 md:pb-6 px-[22px] md:px-10 bg-[#C5AE98] text-white flex justify-center items-start">
 
-      <div className="w-full max-w-[820px] min-h-[500px] border border-white/40 rounded-lg flex flex-col items-center px-8 py-10">
+       <div className="w-full max-w-[820px] bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30 md:shadow-lg flex flex-col items-center">
 
         {/* Success Icon */}
         <BsCheckCircle className="text-white text-4xl mb-4" />
 
         {/* Title */}
-        <h1 className="text-4xl md:text-5xl text-white font-bold">
+        <h1 className="text-4xl text-center md:text-5xl text-white font-bold">
           Payment Successful!
         </h1>
 
         {/* Confirmation */}
-        <p className="text-white mt-2">
+        <p className="text-white mt-2 text-center">
           Thank you for your purchase!
         </p>
 
-        <p className="text-white text-sm">
+        <p className="text-white text-center text-sm">
           An order confirmation has been sent to {order.customer_email}
         </p>
 
@@ -108,9 +119,10 @@ const PaymentSuccessful = () => {
           Order Summary
         </h2>
 
-        <div className="bg-white/30 w-full max-w-[520px] px-6 py-8">
+        <div className="w-full max-w-[520px] bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
 
-          <div className="grid grid-cols-2 gap-y-8 text-white text-sm">
+          <div className="grid grid-cols-2 gap-y-8 text-white text-base">
+
 
             {/* Quantity */}
             <p>Quantity:</p>
@@ -138,10 +150,10 @@ const PaymentSuccessful = () => {
         </div>
 
         <Link
-          to="/orders"
-          className="mt-9 bg-white/40 text-white px-4 py-3 rounded-md text-sm hover:bg-white/50 transition"
+          to={user ? "/OrderHistory" : "/shop"}
+          className="mt-6 w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-md bg-white/15 border border-white/30 shadow-sm text-white font-sans text-base md:text-xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
         >
-          View My Orders
+          {user ? "View My Orders" : "Return to Shop"}
         </Link>
 
       </div>

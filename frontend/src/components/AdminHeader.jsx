@@ -1,182 +1,238 @@
-import supabase from "../supabaseClient";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { BsBag } from "react-icons/bs";
-import { useAuth } from "../context/AuthContext";
-import { useState, useRef, useEffect } from "react";
+import {Link, NavLink, useNavigate} from "react-router-dom";
+import supabase from "../supabaseClient";  
+import {useEffect, useRef, useState} from "react"; 
+import { useAuth } from "../context/AuthContext"
 
+
+/* Function to get the public URL of an image stored in Supabase storage. Variable used later */
 const getImageUrl = (imagePath) => {
-  const { data } = supabase.storage
-    .from("Product Images")
-    .getPublicUrl(imagePath);
-  return data.publicUrl;
+    const {data} = supabase.storage
+        .from("Product Images")
+        .getPublicUrl(imagePath);
+    return data.publicUrl
+
 };
 
-function Navbar() {
-  const { user, loading, signOutUser } = useAuth();
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const profileMenuRef = useRef(null);
-  const navigate = useNavigate();
+function AdminHeader() {
 
-  const logo = getImageUrl("images/logo.png");
+    const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target)
-      ) {
-        setIsProfileMenuOpen(false);
-      }
-    };
+    const {user, signOutUser, loading } = useAuth();
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+    const adminInitials =
+        user?.user_metadata?.first_name?.trim()?.[0]?.toUpperCase() || "";
 
-  const handleSignOut = async () => {
-    const { error } = await signOutUser();
+    const logo = getImageUrl("images/logo.png");
 
-    if (error) {
-      console.error("Could not sign out:", error);
-      return;
+    // Track whether the navigation menu is open
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+     // Store the number of unread customer messages
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Retrieve the number of unread messages
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            const { count, error } = await supabase
+                .from("messages")
+                .select("*", { count: "exact", head: true })
+                .eq("status", "unread");
+
+            if (error) {
+                console.error("Could not retrieve unread message count:", error);
+                return;
+            }
+
+             setUnreadCount(count || 0);
+        };
+
+        fetchUnreadCount();
+
+        window.addEventListener("admin-inbox-updated", fetchUnreadCount);
+
+        return () => {
+            window.removeEventListener("admin-inbox-updated", fetchUnreadCount);
+        };
+    }, []);
+
+
+    const profileMenuRef = useRef(null); /* This will be used to detect clicks outside the menu */
+
+     useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                profileMenuRef.current &&
+                !profileMenuRef.current.contains(event.target)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                setIsMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
+    
+
+    const handleSignOut = async () => {
+        const { error } = await signOutUser();
+
+        if (error) {
+            console.error("Could not sign out:", error);
+            return;
+        }
+
+        navigate("/login");
     }
 
-    navigate("/login");
-  };
 
-  return (
-    <nav className="bg-[#C5AE98] text-[#FFFFFF] p-2 text-center relative z-50">
-      <div className="flex justify-between items-center">
-        {/* Logo */}
-        <div>
-          <Link to="/" className="block outline-none">
-            <img 
-              src={logo} 
-              alt="King's Soap Logo" 
-              className="w-auto h-25 md:h-42 block" 
-            />
-          </Link>
-        </div>
+    return ( 
 
-        {/* Navigation Links */}
-        <div className="space-x-8 pr-8 font-[Inter] text-lg flex items-center">
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            Home
-          </NavLink>
-
-          <NavLink
-            to="/shop"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            Shop
-          </NavLink>
-
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            About
-          </NavLink>
-
-          <NavLink
-            to="/cart"
-            className={({ isActive }) =>
-              `inline-block transition duration-200 hover:scale-105 ${
-                isActive ? "text-[#8B6B4A]" : ""
-              }`
-            }
-          >
-            <BsBag className="text-2xl translate-y-[3px]" />
-          </NavLink>
-
-          {!loading && user ? (
-            <div ref={profileMenuRef} className="relative inline-block text-left">
-              <button
-                type="button"
-                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className={`inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 outline-none ${
-                  isProfileMenuOpen
-                    ? "text-[#8B6B4A] border-[#8B6B4A] bg-white/10"
-                    : "text-white border-white"
-                }`}
-              >
-                Account
-              </button>
-
-              {/* Profile dropdown menu */}
-              {isProfileMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-56 bg-[#D4C2AF] p-4 shadow-lg text-left">
-                  <p className="text-sm md:text-md text-white pb-1 truncate">
-                    {loading ? "Loading..." : user?.email}
-                  </p>
-
-                  <div className="w-full border-t-2 border-white/30 my-2"></div>
-
-                  <Link
-                    to="/userAccount"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
-                  >
-                    Account Dashboard
-                  </Link>
-
-                  <Link
-                    to="/changePassword"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition pb-2"
-                  >
-                    Change Password
-                  </Link>
-
-                  <div className="w-full border-t-2 border-white/30 my-2"></div>
-
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="block text-sm md:text-md text-white hover:scale-105 cursor-pointer transition w-full text-left"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
+        /* Admin Header Component */
+        <header className="relative z-40 flex items-start justify-between p-2">
+            {/* Logo*/}
+            <div className = "flex justify-left">
+                
+                <Link to="/Admin" className="block outline-none">
+                    <img src={logo} alt="King's Soap Logo" className= "w-auto h-25 md:h-42 block" />
+                 </Link>
+            
             </div>
-          ) : (
-            <NavLink
-              to="/login"
-              end
-              className={({ isActive }) =>
-                `inline-block border rounded-lg px-4 py-2 transition duration-200 hover:scale-105 hover:bg-white/20 ${
-                  isActive
-                    ? "text-[#8B6B4A] border-[#8B6B4A]"
-                    : "text-white border-white"
-                }`
-              }
-            >
-              Log in
-            </NavLink>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
+
+
+            {/* Profile button*/}
+            <div 
+                ref={profileMenuRef}
+                className="relative mt-6 md:mt-10 mr-3.5 md:mr-11 md:w-25 md:h-25 md:flex md:items-center md:justify-end">                 {/* Mobile hamburger */}
+                <button
+                    type="button"
+                    aria-label={isMenuOpen ? "Close admin menu" : "Open admin menu"}
+                    aria-expanded={isMenuOpen}
+                    onClick={() => setIsMenuOpen((open) => !open)}
+                    className="relative z-[60] flex h-12 w-12 flex-col items-center justify-center gap-1.5 text-white cursor-pointer md:hidden"
+                >
+                    {isMenuOpen ? (
+                        <span className="text-4xl">×</span>
+                    ) : (
+                        <>
+                            <span className="h-0.5 w-7 bg-current" />
+                            <span className="h-0.5 w-7 bg-current" />
+                            <span className="h-0.5 w-7 bg-current" />
+                        </>
+                    )}
+                </button>
+
+                {/* Desktop profile circle */}
+                <button
+                    type="button"
+                    aria-label={isMenuOpen ? "Close admin menu" : "Open admin menu"}
+                    aria-expanded={isMenuOpen}
+                    onClick={() => setIsMenuOpen((open) => !open)}
+                    className={`relative z-[60] hidden md:flex text-white text-3xl items-center hover:scale-105 cursor-pointer transition ${
+                        isMenuOpen
+                            ? "w-10 h-10 justify-end"
+                            : "w-25 h-25 justify-center rounded-full bg-white/15 backdrop-blur-lg border border-white/30 shadow-sm"
+                    }`}
+                >
+                    {isMenuOpen ? (
+                        <span className="text-4xl">×</span>
+                    ) : (
+                        adminInitials
+                    )}
+
+
+                    {/* Unread badge on the profile circle or hamburger */}
+                    {!isMenuOpen && unreadCount > 0 && (
+                        <span className="pointer-events-none absolute bottom-0 right-0 z-[70] flex h-5 md:h-8 min-w-5 md:min-w-8 items-center justify-center rounded-full bg-[#8B6B4A] px-1 text-xs text-white">
+                            {unreadCount}
+                        </span>
+                    )}
+
+                </button>
+
+
+                 {/* Mobile hamburger badge */}
+                {!isMenuOpen && unreadCount > 0 && (
+                    <span className="pointer-events-none absolute bottom-0 right-0 z-[70] flex md:hidden h-5 min-w-5 items-center justify-center rounded-full bg-[#8B6B4A] px-1 text-xs text-white">
+                        {unreadCount}
+                    </span>
+                )}
+
+                {/* Mobile top menu / Desktop right drawer */}
+                {isMenuOpen && (
+                    <nav
+                        aria-label="Admin navigation"
+                        className="fixed inset-x-0 top-0 z-50 max-h-dvh overflow-y-auto bg-[#C5AE98] px-6 pt-24 pb-6 shadow-lg text-white font-sans md:left-auto md:bottom-0 md:w-80 md:pt-40 md:pb-8"
+                    >
+                        {/* Admin navigation links */}
+                        <div className="flex flex-col items-center gap-5 text-lg">
+                            {[
+                                { label: "Home", to: "/admin" },
+                                { label: "Products", to: "/AdminProducts" },
+                                { label: "Orders", to: "/AdminOrders" },
+                                { label: "Shipping", to: "/adminShipping" },
+                                { label: "Discounts", to: "/AdminDiscounts" },
+                                { label: "Inbox", to: "/AdminInbox" },
+                            ].map(({ label, to }) => (
+                                <NavLink
+                                    key={to}
+                                    to={to}
+                                    end={to === "/admin"}
+                                    onClick={() => setIsMenuOpen(false)}
+                                     className={({ isActive }) =>
+                                        `relative inline-block transition duration-200 hover:scale-105 ${
+                                            isActive ? "text-[#8B6B4A]" : ""
+                                        }`
+                                    }
+                                >
+                                    {label}
+
+                                    {label === "Inbox" && unreadCount > 0 && (
+                                        <span className="absolute -top-2 -right-4 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#8B6B4A] px-1 text-xs text-white">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </NavLink>
+                            ))}
+                        </div>
+
+                        {/* Account information */}
+                        <div className="mt-6 border-t border-white/30 pt-5 flex flex-col items-center gap-3 text-sm">
+                            <p className="font-semibold">
+                                {user?.user_metadata?.first_name || ""}
+                            </p>
+
+                            <p className="max-w-full truncate">
+                                {loading ? "Loading..." : user?.email}
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={handleSignOut}
+                                className="cursor-pointer transition hover:scale-105"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </nav>
+                )}
+
+            </div>
+
+
+        </header>
+    )
 }
 
-export default Navbar;
+export default AdminHeader;

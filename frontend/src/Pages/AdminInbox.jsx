@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
 
@@ -61,6 +60,9 @@ function AdminInbox() {
         setError("Could not mark this message as read.");
         return;
       }
+
+      // Refresh the header's unread message count
+      window.dispatchEvent(new Event("admin-inbox-updated"));
 
       //Create updated copy of the message
       const updatedMessage = {
@@ -278,8 +280,14 @@ const archiveMessage = async () => {
       </p>
     )}
 
-    {/* Message list section */}
+ {/* Message list section */}
     <div className="flex flex-col justify-left mt-4 md:mt-8">
+      {!fetchError && messages.length === 0 && (
+        <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+          No messages found.
+        </div>
+      )}
+
       {messages.map((message) => (
         
         <div
@@ -470,7 +478,6 @@ const archiveMessage = async () => {
      </div>
 
 
-      {!selectedMessage && <AdminNav />}
         
     </div>
   );
