@@ -93,7 +93,7 @@ const PaymentSuccessful = () => {
   }
 
   return (
-    <div className="min-h-[600px] flex justify-center items-start pt-10 px-6">
+    <div className="min-h-[600px] flex justify-center items-start px-6 pt-28 md:pt-36">
 
       <div className="w-full max-w-[820px] min-h-[500px] border border-white/40 rounded-lg flex flex-col items-center px-8 py-10">
 
