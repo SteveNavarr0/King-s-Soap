@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import { useEffect, useState } from "react";
 import AdminProductTile from "../components/AdminProductTile";
 import supabase from "../supabaseClient";
@@ -9,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import AdminUpdateProduct from "./AdminUpdateProduct";
 
 function Admin() {
-  const { adminName } = useAuth();
+  const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
   const [activeOrderCount, setActiveOrderCount] = useState(0);
@@ -90,24 +89,18 @@ function Admin() {
       
       <div className="flex flex-col justify-left mt-8 md:mt-8 ml-8 mr-8 md:ml-13 md:mr-13 text-white">
         <h1 className="text-3xl md:text-5xl font-serif">
-          Welcome, {adminName.first}
+          Welcome{user?.user_metadata?.first_name
+            ? `, ${user.user_metadata.first_name}`
+            : ""}
         </h1>
 
         <p className="text-base font-serif md:text-xl leading-relaxed">
           Here's your shop at a glance
         </p>
 
-        <div className="mt-4 md:mt-8">
-          <AdminCard
-            title="Total Orders"
-            count={activeOrderCount}
-            icon={null}
-            to="/adminOrders"
-          />
-        </div>
+       
  {/* Top Sellers Section */}
- <div className="mt-6 md:mt-10 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
-
+<div className="mt-4 md:mt-8 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
 {/* Top Sellers Header */}
 <div className="flex items-center justify-between mb-6">
 
@@ -153,7 +146,6 @@ function Admin() {
         />
       )}
 
-      {!selectedProductId && <AdminNav />}      
     </div>
   );
 }

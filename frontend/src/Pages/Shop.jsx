@@ -138,8 +138,11 @@ const Shop = () => {
     <div className="w-full min-h-screen bg-[#C5AE98] relative">
       {notification.message && (
         <div
-          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${
-            notification.type === "error" ? "bg-red-600" : "bg-black"
+          role={notification.type === "error" ? "alert" : "status"}
+          className={`fixed top-28 right-[22px] md:top-40 md:right-10 z-[100] max-w-[calc(100%-44px)] rounded-lg border border-white/30 px-4 py-3 font-sans text-sm md:text-base text-white shadow-lg ${
+            notification.type === "error"
+              ? "bg-gray-800/80"
+              : "bg-[#8B6B4A]"
           }`}
         >
           {notification.message}
@@ -149,46 +152,52 @@ const Shop = () => {
       <ShopPageImage />
       <FilterBar />
 
-       <div className="max-w-6xl mx-auto px-6 pt-14 py-10">
+       <div className="max-w-6xl mx-auto px-6 pt-8 md:pt-12 py-10">
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-14">
           {products.map((product) => {
             const firstImage = product.product_images?.[0]?.image_url || "";
 
-            /* Added a flex container to center the product card and button*/
             return (
-              <div key={product.id} className="flex flex-col items-center"> 
-               <Link
-                to={`/product/${product.id}`}
+              <div
                 key={product.id}
-                className="block transition duration-200 hover:scale-102"
+                className="flex flex-col items-center overflow-hidden rounded-md bg-white/15"
               >
-                <div>
+                <Link
+                  to={`/product/${product.id}`}
+                  className="block w-full transition duration-200 hover:scale-102"
+                >
                   {firstImage ? (
                     <img
                       src={firstImage}
                       alt={product.name}
                       className="w-full aspect-[5/3] object-cover rounded-t-md"
                     />
-                   ) : (
+                  ) : (
                     <div className="flex w-full aspect-[5/3] items-center justify-center rounded-t-md bg-gray-200">
                       No image available
                     </div>
                   )}
 
-                  <div className="flex h-20 w-full flex-col items-center justify-center rounded-b-md bg-white/15 px-2 py-6 md:py-15 text-center font-serif text-white md:h-[70px]">
-                    <h2 className="text-sm md:text-lg">{product.name}</h2>
-                    <p className="text-sm md:text-lg">${Number(product.price).toFixed(2)}</p>
+                  <div className="flex h-20 md:h-30 w-full flex-col items-center justify-start px-2 pt-3 md:pt-6 text-center font-serif text-white">
+                    <h2 className="text-sm md:text-lg">
+                      {product.name}
+                    </h2>
+
+                    <p className="text-sm md:text-lg">
+                      ${Number(product.price).toFixed(2)}
+                    </p>
                   </div>
-                </div>
-              </Link>
-              {/* Add to Cart button below the product card */}
-              <button 
-              onClick={(e) => handleAddToCart(e,product)} //button for the add to cart function
-              className="mt-3 flex items-center justify-center gap-2 bg-[#E2DCD5] text-black text-sm font-medium px-4 py-1.5 rounded-full shadow-sm hover:bg-white transition-colors duration-200"
-              >
-              Add to Cart
-            </button>
-            </div>
+                </Link>
+
+                {/* Add to Cart inside the card */}
+                <button
+                  type="button"
+                  onClick={(e) => handleAddToCart(e, product)}
+                  className="mt-2 mb-4 w-[calc(100%-2rem)] max-w-60 h-8 md:h-10 rounded-md bg-white/15 border border-white/30 shadow-sm text-white font-sans text-base md:text-xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
+                >
+                  Add to Cart
+                </button>
+              </div>
             );
           })}
         </div>

@@ -241,14 +241,18 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#C5AE98] text-white font-[Inter]">
-      <div style={{ width: "100%", height: "100%" }}>
-        <h1 className="text-4xl text-black font-bold font-[Inria_Serif] pl-11 pt-8">
+    <div className="min-h-screen pt-28 md:pt-40 pb-16 bg-[#C5AE98] text-white">
+      <div className="mt-8 mx-[25px] md:mx-10">
+        <h1 className="text-3xl md:text-5xl font-serif">
           Your Order History
         </h1>
+
+        <p className="text-base md:text-xl font-serif leading-relaxed">
+          View your past orders
+        </p>
       </div>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mt-4 md:mt-8 ml-8 ml-[22px] mr-[22px] md:ml-10 md:mr-10">
         {/* Success / Error notification banner */}
         {notification && (
           <div
@@ -280,14 +284,12 @@ const OrderHistory = () => {
             <p className="font-semibold">Error loading orders:</p>
             <p className="text-sm mt-1">{queryError}</p>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="border border-white/40 rounded-xl p-8 text-center bg-white/5">
-            <p className="text-lg text-white/90">
-              No past orders found for {user?.email}.
-            </p>
+         ) : orders.length === 0 ? (
+          <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+            No past orders found.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {orders.map((order) => {
               const firstItem = order.order_items?.[0];
               const product = firstItem?.products;
@@ -299,54 +301,53 @@ const OrderHistory = () => {
               return (
                 <div
                   key={order.id}
-                  className="border border-white/40 rounded-xl p-6 bg-white/10 backdrop-blur-sm shadow-sm transition hover:border-white flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="w-full min-h-18 md:min-h-25 p-4 rounded-lg bg-white/15 md:border md:border-white/30 shadow-sm text-white flex flex-col md:flex-row md:items-start justify-between gap-4"
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Thumbnail Box using Admin Tile pattern */}
+                  <div className="min-w-0 flex-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 md:gap-y-1">
+                    {/* Thumbnail */}
                     {hasImage ? (
                       <img
                         src={images[0].image_url}
                         alt={product?.name || "Order item"}
-                        className="w-24 h-20 md:w-28 md:h-20 object-cover rounded-md border border-white/20 shadow-inner flex-shrink-0"
+                        className="w-16 h-14 md:w-20 md:h-20 self-center md:row-span-2 object-cover rounded-sm"
                       />
                     ) : (
-                      <div className="w-24 h-20 md:w-28 md:h-20 bg-gray-300/80 rounded-md overflow-hidden flex items-center justify-center border border-white/20 shadow-inner flex-shrink-0 text-gray-600 text-xs font-medium">
+                      <div className="w-16 h-14 md:w-20 md:h-20 self-center md:row-span-2 bg-white/20 rounded-sm flex items-center justify-center text-xs text-white">
                         No Image
                       </div>
                     )}
 
-                    {/* Order Details & Mobile Status */}
-                    <div>
-                      <h3 className="font-semibold text-lg text-white">
-                        {product?.name ||
-                          (order.order_items?.length
-                            ? `${order.order_items.length} item(s)`
-                            : "Order")}
-                      </h3>
-                      <p className="text-xs text-white/70 font-mono mt-0.5">
-                        Order #{order.id?.slice(0, 8)}
-                      </p>
-                      <div className="mt-2 block md:hidden">
-                        {getStatusBadge(order.status)}
-                      </div>
+                    {/* Order number beside the thumbnail */}
+                    <h3 className="self-center md:self-end font-semibold text-lg text-white">
+                      Order #{order.id?.slice(0, 8)}
+                    </h3>
+
+                    {/* Products below on mobile; beside thumbnail on desktop */}
+                    <div className="col-span-2 md:col-span-1 md:col-start-2 space-y-1 text-sm md:text-base text-white/70 break-words">
+                      {order.order_items?.map((item) => (
+                        <p key={item.id}>
+                          {item.products?.name || "Product unavailable"} × {item.quantity}
+                        </p>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Status (Desktop), Date, Price & Action Button */}
+                  {/* Date, Price, Status & Action Button */}
                   <div className="flex flex-col md:items-end justify-center border-t border-white/10 pt-3 md:border-t-0 md:pt-0">
-                    <div className="hidden md:block mb-2">
-                      {getStatusBadge(order.status)}
-                    </div>
-
                     <div className="flex md:flex-col justify-between items-baseline md:items-end w-full md:w-auto">
-                      <span className="text-2xl md:text-3xl font-serif italic tracking-wide text-white drop-shadow-sm">
+                      <span className="text-base md:text-2xl font-serif font-medium">
                         {formatDate(order.created_at)}
                       </span>
+
                       {order.total_amount && (
-                        <span className="text-sm text-white/90 font-medium md:mt-1">
+                        <span className="text-xs md:text-sm font-serif text-white/70">
                           Total: ${Number(order.total_amount).toFixed(2)}
                         </span>
                       )}
+                    </div>
+
+                    <div className="mt-3 self-start md:self-end">
+                      {getStatusBadge(order.status)}
                     </div>
 
                     {/* Cancellation action button (only visible for on_hold status) */}
@@ -365,7 +366,7 @@ const OrderHistory = () => {
 
                     {/* Feedback if cancellation is already requested */}
                     {order.status === "cancel_requested" && (
-                      <span className="text-xs text-orange-200/90 italic mt-2 self-start md:self-end">
+                      <span className="text-xs text-orange-400 italic mt-2 self-start md:self-end">
                         Cancellation under review
                       </span>
                     )}

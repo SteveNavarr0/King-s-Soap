@@ -1,6 +1,5 @@
 import React from "react";
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import AdminPostageQueue from "../components/AdminPostage";
 
 export default function AdminPostagePage() {
@@ -21,7 +20,6 @@ export default function AdminPostagePage() {
           <AdminPostageQueue />
         </div>
   
-        <AdminNav />
       </div>
     );
   }
