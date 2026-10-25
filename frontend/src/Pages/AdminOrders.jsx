@@ -14,7 +14,7 @@ function AdminOrders() {
       const { data, error } = await supabase
         .from("active_orders")
         .select("order_id, status, total, customer_email, fulfillment_type, tracking_number, order_date, items")
-        .order("order_date", { ascending: true });
+        .order("order_date", { ascending: false });
         if (error){
           console.error("Error fetching orders:", error);
           return;
@@ -109,7 +109,7 @@ function AdminOrders() {
             <div className="space-y-1 font-sans text-sm md:text-base">
               {order.items?.map((item) => (
                 <div key={item.order_item_id}>
-                  Product {item.product_name} × {item.quantity}
+                  {item.product_name} × {item.quantity}
                 </div>
               ))}
             </div>

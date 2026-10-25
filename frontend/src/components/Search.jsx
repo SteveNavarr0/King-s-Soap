@@ -17,6 +17,7 @@ function Search() {
   const { data, error } = await supabase
     .from("products")
     .select("id, name, price, description, product_images(image_url)")
+    .eq("is_active", true)
     .order("sales", { ascending: false })
     .limit(4);
 
@@ -46,7 +47,8 @@ const searchProducts = async (searchTerm) => {
     )
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
-    );
+    )
+    .eq("is_active", true);
 
   if (error) {
     console.error("Search error:", error);
