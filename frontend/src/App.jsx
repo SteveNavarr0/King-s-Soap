@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import CheckAdminPerm from "./components/CheckAdminPerm";
 
 import { useAuth } from "./context/AuthContext";
 
@@ -82,7 +83,7 @@ function App() {
       </AppContent>
 
       <div className="relative flex flex-col min-h-screen">
-         <div className="flex-grow">
+        <div className="flex-grow">
           <CartRouteLayer>
             {(routeLocation) => (
               <Routes location={routeLocation}>
@@ -99,7 +100,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                <Route path="/orders" element={<ProtectedRoute> <UserAccount /> </ProtectedRoute>}/><Route
                   path="/userChangePassword"
                   element={<UserChangePassword />}
                 />
@@ -115,51 +116,52 @@ function App() {
                   element={<PaymentSuccessful />}
                 />
                 <Route
-                  path="/PaymentSuccessful"
-                  element={<PaymentSuccessful />}
+                  path="/request-cancellation"
+                  element={<RequestCancellation />}
                 />
-                <Route
-                  path="/orders"
-                  element={
-                    <ProtectedRoute>
-                      <UserAccount />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-              path="/request-cancellation"
-              element={<RequestCancellation />}
-            />
-            <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/admin" element={<Admin />} />
-                
-                
-                <Route path="/adminInbox" element = {<AdminInbox/>}/>
-                <Route path="/adminProducts" element={<AdminProducts />} />
-                <Route path="/AdminProducts" element={<AdminProducts />} />
-                <Route
-                  path="/OldUIAdminDeleteProduct"
-                  element={<OldUIAdminDeleteProduct />}
-                />
-                <Route
-                  path="/adminDiscounts"
-                  element={< AdminDiscounts />}
-                />
+                <Route path="/product/:id" element={<ProductPage />} />
+
                 <Route path="/coconutOilShop" element={<CoconutOilShop />} />
-                <Route path="/organicShop" element={<OrganicShop/>} />
-                <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
-                <Route path="/lipBalmShop" element={<LipBalmShop/>} />
-                <Route path="/soapDishShop" element={<SoapDishShop/>} />
-                <Route path="/adminOrders" element={<AdminOrders/>} />
-                <Route path="/adminArchivedOrders" element={<AdminArchivedOrders/>} />
-                <Route path="/adminArchive" element={<AdminArchive />}/>
-                <Route path="/AdminArchive" element={<AdminArchive />}/>
-                <Route path="/admin/shipping" element={<AdminPostagePage />} />
-                <Route path="/adminShipping" element={<AdminPostagePage />} />
-                <Route path="/AdminShipping" element={<AdminPostagePage />} />
-                <Route path="/AdminPostage" element={<AdminPostagePage />} />
-                <Route path="/adminPostage" element={<AdminPostagePage />} />
-                <Route path="/adminOrders/:id" element={<AdminOrderDetails />}/>
+                <Route path="/organicShop" element={<OrganicShop />} />
+                <Route path="/allNaturalShop" element={<AllNaturalShop />} />
+                <Route path="/lipBalmShop" element={<LipBalmShop />} />
+                <Route path="/soapDishShop" element={<SoapDishShop />} />
+
+                <Route element={<CheckAdminPerm />}>
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/adminInbox" element={<AdminInbox />} />
+                  <Route path="/adminProducts" element={<AdminProducts />} />
+                  <Route
+                    path="/OldUIAdminDeleteProduct"
+                    element={<OldUIAdminDeleteProduct />}
+                  />
+                  <Route
+                    path="/adminDiscounts"
+                    element={<AdminDiscounts />}
+                  />
+                  <Route path="/adminOrders" element={<AdminOrders />} />
+                  <Route
+                    path="/adminArchivedOrders"
+                    element={<AdminArchivedOrders />}
+                  />
+                  <Route path="/adminArchive" element={<AdminArchive />} />
+                  <Route
+                    path="/admin/shipping"
+                    element={<AdminPostagePage />}
+                  />
+                  <Route
+                    path="/adminShipping"
+                    element={<AdminPostagePage />}
+                  />
+                  <Route
+                    path="/adminPostage"
+                    element={<AdminPostagePage />}
+                  />
+                  <Route
+                    path="/adminOrders/:id"
+                    element={<AdminOrderDetails />}
+                  />
+                </Route>
               </Routes>
             )}
           </CartRouteLayer>

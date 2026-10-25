@@ -13,7 +13,7 @@ const Shop = () => {
       const { data, error } = await supabase
         .from("products")
         .select("id, name, price, product_images(image_url, display_order)")
-        .eq("is_active", true);//Only fetch products that are currently active
+        .eq("Availability", true);//Only fetch products that are currently active
 
       if (error) {
         console.error("Error fetching products:", error);
