@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import AdminSearchArchive from "../components/AdminSearchArchive";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
@@ -25,7 +24,7 @@ function AdminArchive() {
       .select(
         "id, name, price, product_images(image_url, display_order), sales, is_active"
       )
-      .eq("is_active", false);
+      .eq("is_active", false);//Only fetch products that are currently not active;
 
     if (error) {
       console.error("Error fetching products:", error);
@@ -111,8 +110,7 @@ useEffect(() => {
         />
       )}
 
-      {/* Only show navigation when popup is closed */}
-      {selectedProductId === null && <AdminNav />}
+   
       
     </div>
   );

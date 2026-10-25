@@ -1,7 +1,7 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
+import { Link } from "react-router-dom";
 
 function AdminArchivedOrders() {
 
@@ -50,8 +50,15 @@ function AdminArchivedOrders() {
         View fulfilled and cancelled customer orders
       </p>
 
+      <Link
+          to="/adminOrders"
+          className="mt-4 md:mt-8 w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-full bg-white/15 border border-white/30 shadow-sm text-white font-sans text-sm md:text-2xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
+        >
+          Back to Orders
+      </Link>
+
       {/* Orders section */}
-      <div className="mt-4 md:mt-8 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
+      <div className="mt-6 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
         {/* Orders header */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-serif italic">
@@ -172,9 +179,9 @@ function AdminArchivedOrders() {
     ))}
 
     {orders.length === 0 && (
-      <p className="py-8 text-center">
-        No active orders found.
-      </p>
+      <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+        No archived orders found.
+      </div>
     )}
   </div>
   </div>
@@ -183,7 +190,6 @@ function AdminArchivedOrders() {
   </div>  
 
 
-      <AdminNav /> {/*Navigation bar/footer*/}
       
     </div>
   );

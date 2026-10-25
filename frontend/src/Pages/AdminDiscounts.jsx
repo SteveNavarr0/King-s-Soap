@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import AdminNav from "../components/AdminNav";
 import AdminHeader from "../components/AdminHeader";
 import AddNewDiscount from "../components/AdminAddNewDiscount";
 import { useEffect, useState } from "react";
@@ -127,8 +126,7 @@ function AdminDiscounts() {
             />
         )}
 
-        {/* Keep the admin navigation visible when neither popup is open. */}
-        {!isAddDiscountOpen && !selectedDiscountId && <AdminNav />}    
+           
       </div>
   );
 }
