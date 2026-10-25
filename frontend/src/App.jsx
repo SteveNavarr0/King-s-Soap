@@ -32,7 +32,6 @@ import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
 import OrganicShop from "./Pages/OrganicShop.jsx";
 import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
-import LipBalmShop from "./Pages/LipBalmShop.jsx";
 import SoapDishShop from "./Pages/SoapDishShop.jsx";
 import AdminOrders from "./Pages/AdminOrders.jsx";
 import AdminArchivedOrders from "./Pages/AdminArchivedOrders.jsx";
@@ -150,7 +149,6 @@ function App() {
                 <Route path="/coconutOilShop" element={<CoconutOilShop />} />
                 <Route path="/organicShop" element={<OrganicShop/>} />
                 <Route path="/allNaturalShop" element={<AllNaturalShop/>} />
-                <Route path="/lipBalmShop" element={<LipBalmShop/>} />
                 <Route path="/soapDishShop" element={<SoapDishShop/>} />
                 <Route path="/adminOrders" element={<AdminOrders/>} />
                 <Route path="/adminArchivedOrders" element={<AdminArchivedOrders/>} />
