@@ -11,6 +11,11 @@ const ORIGINAL_PASSWORD = process.env.PW_USER_PASSWORD;
 
 const loginPath = /\/login\/?$/i;
 
+
+// ============================================================
+// SHARED HELPERS AND TEST SETUP
+// ============================================================
+
 // Identify the Supabase password-login response.
 function isLoginResponse(response) {
   const url = new URL(response.url());
@@ -104,10 +109,7 @@ const test = base.extend({
         );
       }
 
-      const account = await login(
-        page,
-        ORIGINAL_PASSWORD
-      );
+      const account = await login(page, ORIGINAL_PASSWORD);
 
       await use(account);
     },
@@ -117,10 +119,12 @@ const test = base.extend({
 
 test.use({
   baseURL: BASE_URL,
+
   viewport: {
     width: 1440,
     height: 900,
   },
+
   storageState: {
     cookies: [],
     origins: [],
@@ -145,7 +149,7 @@ test.beforeAll(async ({}, testInfo) => {
   }
 });
 
-// Open the profile/account dropdown.
+// Open the account dropdown.
 async function openAccountMenu(page) {
   const navbar = page.getByRole("navigation");
 
@@ -213,14 +217,15 @@ async function logout(page) {
 }
 
 // Use a fresh browser context when verifying credentials.
-// This prevents an existing session from masking a failed login.
 async function withFreshPage(browser, callback) {
   const context = await browser.newContext({
     baseURL: BASE_URL,
+
     viewport: {
       width: 1440,
       height: 900,
     },
+
     storageState: {
       cookies: [],
       origins: [],
@@ -228,9 +233,7 @@ async function withFreshPage(browser, callback) {
   });
 
   try {
-    return await callback(
-      await context.newPage()
-    );
+    return await callback(await context.newPage());
   } finally {
     await context.close();
   }
@@ -243,8 +246,7 @@ async function verifyOriginalPassword(browser) {
   );
 }
 
-// Restore the original password using the same public API key
-// sent by the UI. No service-role key is needed.
+// Restore the original password after a password-change test.
 async function restorePassword(
   request,
   account,
@@ -258,25 +260,28 @@ async function restorePassword(
     account.tokenUrl,
     {
       headers,
+
       data: {
         email: EMAIL,
         password: temporaryPassword,
       },
+
       timeout: 15_000,
     }
   );
 
-  // If the password change never happened, verify that
-  // the original password still works.
+  // If the change never happened, confirm the original still works.
   if (!temporaryLogin.ok()) {
     const originalLogin = await request.post(
       account.tokenUrl,
       {
         headers,
+
         data: {
           email: EMAIL,
           password: ORIGINAL_PASSWORD,
         },
+
         timeout: 15_000,
       }
     );
@@ -304,9 +309,11 @@ async function restorePassword(
       ...headers,
       Authorization: `Bearer ${accessToken}`,
     },
+
     data: {
       password: ORIGINAL_PASSWORD,
     },
+
     timeout: 15_000,
   });
 
@@ -320,10 +327,12 @@ async function restorePassword(
     account.tokenUrl,
     {
       headers,
+
       data: {
         email: EMAIL,
         password: ORIGINAL_PASSWORD,
       },
+
       timeout: 15_000,
     }
   );
@@ -340,42 +349,30 @@ async function restorePassword(
 // ============================================================
 
 test.describe("King's Soap - Change Password", () => {
+
+  // ACC-PW-001: Valid Password Change, Confirmation, and Login Verification
   test(
     "ACC-PW-001: A valid change is saved, confirmed, and replaces the old password",
-    async ({
-      page,
-      browser,
-      request,
-      account,
-    }) => {
+    async ({ page, browser, request, account }) => {
       test.setTimeout(150_000);
 
-      const temporaryPassword =
-        `Account!9a${randomUUID()}`;
+      const temporaryPassword = `Account!9a${randomUUID()}`;
 
       await openPasswordPage(page);
 
       await page
-        .getByLabel("New Password", {
-          exact: true,
-        })
+        .getByLabel("New Password", { exact: true })
         .fill(temporaryPassword);
 
       await page
-        .getByLabel("Retype New Password", {
-          exact: true,
-        })
+        .getByLabel("Retype New Password", { exact: true })
         .fill(temporaryPassword);
 
-      // Always attempt restoration after submitting,
-      // including when an assertion fails.
       try {
+        // Submit the password change and capture its response.
         const [response] = await Promise.all([
           page.waitForResponse(
-            response =>
-              isPasswordUpdate(
-                response.request()
-              ),
+            response => isPasswordUpdate(response.request()),
             { timeout: 20_000 }
           ),
 
@@ -387,11 +384,12 @@ test.describe("King's Soap - Change Password", () => {
             .click(),
         ]);
 
-        expect(
+        await expect(
           response.ok(),
           `Password update returned HTTP ${response.status()}`
         ).toBe(true);
 
+        // Verify the success confirmation.
         await expect(
           page.getByText(
             "Password changed successfully. You will be redirected to the login page.",
@@ -399,74 +397,63 @@ test.describe("King's Soap - Change Password", () => {
           )
         ).toBeVisible();
 
-        await expect(page).toHaveURL(
-          loginPath,
-          { timeout: 10_000 }
-        );
+        await expect(page).toHaveURL(loginPath, {
+          timeout: 10_000,
+        });
 
-        // Redirecting to /login alone does not sign out.
+        // Redirecting to Login alone does not end the session.
         await logout(page);
 
-        // Verify the previous password is rejected.
-        await withFreshPage(
-          browser,
-          async freshPage => {
-            const rejection = await submitLogin(
-              freshPage,
-              ORIGINAL_PASSWORD
-            );
+        // Verify the previous password no longer works.
+        await withFreshPage(browser, async freshPage => {
+          const rejection = await submitLogin(
+            freshPage,
+            ORIGINAL_PASSWORD
+          );
 
-            expect(
-              rejection.status(),
-              "Old password must be rejected as invalid credentials"
-            ).toBe(400);
+          expect(
+            rejection.status(),
+            "Old password must be rejected as invalid credentials"
+          ).toBe(400);
 
-            const body = await rejection.json();
+          const body = await rejection.json();
 
-            const reason =
-              body.error_code ||
-              body.code ||
-              body.error_description ||
-              body.msg ||
-              body.message;
+          const reason =
+            body.error_code ||
+            body.code ||
+            body.error_description ||
+            body.msg ||
+            body.message;
 
-            expect(reason).toMatch(
-              /invalid_credentials|invalid login credentials/i
-            );
+          expect(reason).toMatch(
+            /invalid_credentials|invalid login credentials/i
+          );
 
-            await expect(
-              freshPage
-            ).toHaveURL(loginPath);
+          await expect(freshPage).toHaveURL(loginPath);
 
-            const navbar =
-              freshPage.getByRole("navigation");
+          const navbar = freshPage.getByRole("navigation");
 
-            await expect(
-              navbar.getByRole("link", {
-                name: "Log In",
-                exact: true,
-              })
-            ).toBeVisible();
+          await expect(
+            navbar.getByRole("link", {
+              name: "Log In",
+              exact: true,
+            })
+          ).toBeVisible();
 
-            await expect(
-              navbar.getByRole("button", {
-                name: "Account menu",
-                exact: true,
-              })
-            ).toHaveCount(0);
-          }
-        );
+          await expect(
+            navbar.getByRole("button", {
+              name: "Account menu",
+              exact: true,
+            })
+          ).toHaveCount(0);
+        });
 
-        // Verify the updated password works.
-        await withFreshPage(
-          browser,
-          freshPage =>
-            login(
-              freshPage,
-              temporaryPassword
-            )
+        // Verify the updated password works in a fresh session.
+        await withFreshPage(browser, freshPage =>
+          login(freshPage, temporaryPassword)
         );
       } finally {
+        // Attempt restoration even if an assertion fails.
         await restorePassword(
           request,
           account,
@@ -476,7 +463,10 @@ test.describe("King's Soap - Change Password", () => {
     }
   );
 
+
   const invalidCases = [
+
+    // ACC-PW-002: Reject Both Password Fields Empty
     {
       id: "002",
       name: "both fields empty",
@@ -485,6 +475,8 @@ test.describe("King's Soap - Change Password", () => {
       field: "New Password",
       validity: "valueMissing",
     },
+
+    // ACC-PW-003: Reject an Empty New Password
     {
       id: "003",
       name: "new password empty",
@@ -493,6 +485,8 @@ test.describe("King's Soap - Change Password", () => {
       field: "New Password",
       validity: "valueMissing",
     },
+
+    // ACC-PW-004: Reject an Empty Confirmation Password
     {
       id: "004",
       name: "confirmation empty",
@@ -501,6 +495,8 @@ test.describe("King's Soap - Change Password", () => {
       field: "Retype New Password",
       validity: "valueMissing",
     },
+
+    // ACC-PW-005: Reject a Password Shorter Than Six Characters
     {
       id: "005",
       name: "password shorter than six characters",
@@ -511,15 +507,12 @@ test.describe("King's Soap - Change Password", () => {
     },
   ];
 
+
+  // ACC-PW-002 through ACC-PW-005: Generate One Test for Each Invalid Case
   for (const example of invalidCases) {
     test(
       `ACC-PW-${example.id}: Reject ${example.name} without changing the password`,
-      async ({
-        page,
-        browser,
-        request,
-        account,
-      }) => {
+      async ({ page, browser, request, account }) => {
         await openPasswordPage(page);
 
         const updates = [];
@@ -532,16 +525,11 @@ test.describe("King's Soap - Change Password", () => {
 
         try {
           await page
-            .getByLabel("New Password", {
-              exact: true,
-            })
+            .getByLabel("New Password", { exact: true })
             .fill(example.password);
 
           await page
-            .getByLabel(
-              "Retype New Password",
-              { exact: true }
-            )
+            .getByLabel("Retype New Password", { exact: true })
             .fill(example.confirmation);
 
           await page
@@ -551,16 +539,14 @@ test.describe("King's Soap - Change Password", () => {
             })
             .click();
 
-          const input = page.getByLabel(
-            example.field,
-            { exact: true }
-          );
+          const input = page.getByLabel(example.field, {
+            exact: true,
+          });
 
-          // The browser should reject the input.
+          // Verify the browser rejects the invalid input.
           expect(
             await input.evaluate(
-              (element, key) =>
-                element.validity[key],
+              (element, key) => element.validity[key],
               example.validity
             )
           ).toBe(true);
@@ -568,8 +554,7 @@ test.describe("King's Soap - Change Password", () => {
           // Native error wording varies by browser.
           expect(
             await input.evaluate(
-              element =>
-                element.validationMessage
+              element => element.validationMessage
             )
           ).not.toBe("");
 
@@ -579,17 +564,15 @@ test.describe("King's Soap - Change Password", () => {
             /\/userChangePassword\/?$/i
           );
 
+          // Invalid input should never submit an update.
           expect(
             updates,
             "Invalid input must not submit a password update"
           ).toHaveLength(0);
 
-          await verifyOriginalPassword(
-            browser
-          );
+          await verifyOriginalPassword(browser);
         } finally {
-          // Recover if a regression allows invalid
-          // input to reach the server.
+          // Recover if invalid input unexpectedly reaches the server.
           if (updates.length) {
             await restorePassword(
               request,
@@ -602,14 +585,11 @@ test.describe("King's Soap - Change Password", () => {
     );
   }
 
+
+  // ACC-PW-006: Reject Mismatched Passwords Without Changing the Password
   test(
     "ACC-PW-006: Mismatched passwords show an error and leave the password unchanged",
-    async ({
-      page,
-      browser,
-      request,
-      account,
-    }) => {
+    async ({ page, browser, request, account }) => {
       await openPasswordPage(page);
 
       const updates = [];
@@ -622,16 +602,11 @@ test.describe("King's Soap - Change Password", () => {
 
       try {
         await page
-          .getByLabel("New Password", {
-            exact: true,
-          })
+          .getByLabel("New Password", { exact: true })
           .fill("ExamplePassword!92");
 
         await page
-          .getByLabel(
-            "Retype New Password",
-            { exact: true }
-          )
+          .getByLabel("Retype New Password", { exact: true })
           .fill("DifferentPassword!92");
 
         await page
@@ -642,10 +617,9 @@ test.describe("King's Soap - Change Password", () => {
           .click();
 
         await expect(
-          page.getByText(
-            "Passwords do not match.",
-            { exact: true }
-          )
+          page.getByText("Passwords do not match.", {
+            exact: true,
+          })
         ).toBeVisible();
 
         expect(
@@ -653,9 +627,7 @@ test.describe("King's Soap - Change Password", () => {
           "Mismatched passwords must not reach Supabase"
         ).toHaveLength(0);
 
-        await verifyOriginalPassword(
-          browser
-        );
+        await verifyOriginalPassword(browser);
       } finally {
         if (updates.length) {
           await restorePassword(
@@ -667,6 +639,7 @@ test.describe("King's Soap - Change Password", () => {
       }
     }
   );
+
 });
 
 
@@ -675,13 +648,14 @@ test.describe("King's Soap - Change Password", () => {
 // ============================================================
 
 test.describe("King's Soap - Account Logout", () => {
+
+  // ACC-OUT-001: Sign Out Redirects to Login and Updates the Navigation
   test(
     "ACC-OUT-001: Menu Sign Out returns to Login and updates the navigation",
     async ({ page }) => {
       await logout(page);
 
-      const navbar =
-        page.getByRole("navigation");
+      const navbar = page.getByRole("navigation");
 
       await expect(
         navbar.getByRole("link", {
@@ -699,6 +673,8 @@ test.describe("King's Soap - Account Logout", () => {
     }
   );
 
+
+  // ACC-OUT-002: Refresh Keeps the User Signed Out
   test(
     "ACC-OUT-002: Refresh does not restore the signed-in session",
     async ({ page }) => {
@@ -706,8 +682,7 @@ test.describe("King's Soap - Account Logout", () => {
 
       await page.reload();
 
-      const navbar =
-        page.getByRole("navigation");
+      const navbar = page.getByRole("navigation");
 
       await expect(
         navbar.getByRole("link", {
@@ -725,16 +700,15 @@ test.describe("King's Soap - Account Logout", () => {
     }
   );
 
-  // This checks the required behavior even though the
-  // supplied password route currently lacks protection.
+
+  // ACC-OUT-003: Direct Password-Page Access Requires Login After Sign Out
+  // This may fail because the supplied route lacks protection.
   test(
     "ACC-OUT-003: Direct access to Change Password requires login after logout",
     async ({ page }) => {
       await logout(page);
 
-      await page.goto(
-        "/userChangePassword"
-      );
+      await page.goto("/userChangePassword");
 
       await expect(
         page,
@@ -742,14 +716,15 @@ test.describe("King's Soap - Account Logout", () => {
       ).toHaveURL(loginPath);
 
       await expect(
-        page.getByPlaceholder(
-          "Email Address",
-          { exact: true }
-        )
+        page.getByPlaceholder("Email Address", {
+          exact: true,
+        })
       ).toBeVisible();
     }
   );
 
+
+  // ACC-OUT-004: Browser Back Cannot Restore Password-Page Access After Sign Out
   test(
     "ACC-OUT-004: Back cannot restore access to Change Password after logout",
     async ({ page }) => {
@@ -759,9 +734,7 @@ test.describe("King's Soap - Account Logout", () => {
 
       await page.goBack();
 
-      await expect(page).toHaveURL(
-        loginPath
-      );
+      await expect(page).toHaveURL(loginPath);
 
       await expect(
         page.getByRole("heading", {
@@ -772,18 +745,16 @@ test.describe("King's Soap - Account Logout", () => {
     }
   );
 
+
+  // ACC-OUT-005: The User Can Log In Again After Sign Out
   test(
     "ACC-OUT-005: The user can log in again after logout",
     async ({ page }) => {
       await logout(page);
 
-      await login(
-        page,
-        ORIGINAL_PASSWORD
-      );
+      await login(page, ORIGINAL_PASSWORD);
 
-      const navbar =
-        await openAccountMenu(page);
+      const navbar = await openAccountMenu(page);
 
       await expect(
         navbar.getByRole("button", {
@@ -800,4 +771,5 @@ test.describe("King's Soap - Account Logout", () => {
       ).toBeVisible();
     }
   );
+
 });
