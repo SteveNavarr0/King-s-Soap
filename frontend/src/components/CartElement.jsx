@@ -56,6 +56,7 @@ const CartElement = ({ onTotalChange }) => {
             name: item.name,
             price: item.price,
             stock: item.stock,
+            weight: item.weight || 4,
             product_images: [{ image_url: item.image }],
           },
         }));

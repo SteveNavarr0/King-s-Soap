@@ -214,12 +214,13 @@ export const validateCartHandler = async (req, res) => {
 export const previewDiscount = async (req, res) => {
   try {
     const code = req.body?.discountCode?.trim().toUpperCase();
+    const guestItems = req.body?.items || []; 
 
     if (!code) {
       return res.status(400).json({ message: "Enter a discount code." });
     }
 
-    const cart = await validateUserCart(req.user?.id, req.authToken);
+    const cart = await validateUserCart(req.user?.id, req.authToken, guestItems);
 
     if (!cart.isValid) {
       return res.status(400).json({ message: cart.error });
@@ -351,7 +352,8 @@ export const createCheckoutSession = async (req, res) => {
   // 3. Calculate total parcel weight (in ounces)
   let totalWeightOz = 0;
   result.cartItems.forEach((item) => {
-   const unitWeight = Number(item.products.weight) || 4; // fallback 4 oz
+   const product = item.products || item.product || item;
+   const unitWeight = Number(product.weight) || 4; // fallback 4 oz
    totalWeightOz += unitWeight * item.quantity;
   });
   const finalWeightOz = Math.max(totalWeightOz + 2, 1); // 2 oz packaging weight included (tare)
@@ -383,7 +385,7 @@ export const createCheckoutSession = async (req, res) => {
       const product = item.products || item.product || item;
       return {
         order_id: newOrder.id,
-        product_id: item.product_ID || product.id,
+        product_id: item.product_ID || product.id || item.id,
         quantity: item.quantity,
         unit_price: Number(product.price),
       };
