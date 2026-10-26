@@ -16,6 +16,7 @@ const Cart = () => {
   const [discountCode, setDiscountCode] = useState(""); // Code entered before checkout
   const [applyingDiscount, setApplyingDiscount] = useState(false); // Prevent repeat Apply requests.
   const [appliedDiscount, setAppliedDiscount] = useState(null); // Holds the validated discount preview.
+  const [guestEmail, setGuestEmail] = useState("");
 
   // A cart change makes the previously calculated discount estimate outdated.
   useEffect(() => {
@@ -27,23 +28,27 @@ const Cart = () => {
   const handleApplyDiscount = async () => {
     if (applyingDiscount) return;
 
-    if (!session?.access_token) {
-      setError("Please wait for your cart to load, then try again.");
-      return;
-    }
-
     setApplyingDiscount(true);
     setAppliedDiscount(null);
     setError(null);
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const guestCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
       const response = await fetch("http://localhost:3000/api/checkout/preview-discount", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ discountCode: discountCode.trim() }),
+        headers,
+        body: JSON.stringify({ 
+          discountCode: discountCode.trim(),
+          items: guestCart // <-- This ensures guests send their items for weight/price validation
+        }),
       });
 
       const data = await response.json();
@@ -62,13 +67,15 @@ const Cart = () => {
   };
 
   const handleCheckout = async (checkoutType = "shipping") => {
-    if (!session?.access_token && !localStorage.getItem("guest_user_Id")) {
-      setError("Please wait for your cart to load, then try again.");
-      return;
-    }
 
     if (total <= 0) {
       setError("Your cart is empty.");
+      return;
+    }
+
+    //validate guest email if user is not logged in
+    if (!user && (!guestEmail || !guestEmail.includes("@"))){
+      setError("Please enter a valid email address for your confirmation receipt.");
       return;
     }
 
@@ -97,7 +104,7 @@ const Cart = () => {
         headers,
         body: JSON.stringify({
           userId: user?.id || guestId,
-          email: user?.email || null,
+          email: user?.email || guestEmail,
           checkoutType,
           items: guestCart,
           discountCode: appliedDiscount?.code ?? "",
@@ -111,6 +118,7 @@ const Cart = () => {
       }
 
       if (data.url) {
+        localStorage.removeItem("guestCart");
         window.location.href = data.url;
       } else {
         throw new Error("No checkout URL was provided by the server.");
@@ -177,6 +185,28 @@ const Cart = () => {
             Shipping and taxes calculated at checkout
           </p>
 
+          {/* NEW: Guest Email Input Field (Only visible when user is not logged in) */}
+          {!user && (
+            <div className="mt-6 w-5/6">
+              <label htmlFor="guest-email" className="block font-serif text-base text-white">
+                Email Address <span className="text-red-300">*</span>
+              </label>
+              <p className="text-xs text-white/80 mb-1">Required for order confirmation & receipt</p>
+              <input
+                id="guest-email"
+                type="email"
+                value={guestEmail}
+                onChange={(event) => {
+                  setGuestEmail(event.target.value);
+                  setError(null);
+                }}
+                disabled={isSubmitting || applyingDiscount}
+                placeholder="your.email@example.com"
+                className="min-w-0 w-full rounded-lg border border-white/30 bg-white px-3 py-2 font-sans text-sm text-gray-800 placeholder-gray-400 outline-none disabled:opacity-50 md:text-base"
+              />
+            </div>
+          )}
+          
           <div className="mt-6 w-5/6">
             <label htmlFor="discount-code" className="block font-serif text-base text-white">
               Discount Code

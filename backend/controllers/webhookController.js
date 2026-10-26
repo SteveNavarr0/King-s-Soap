@@ -232,20 +232,31 @@ export const handleStripeWebhook = async (req, res) => {
         }
 
         // 5. Clear cart: DELETE FROM public.cart WHERE user_ID = metadata.user_id
-        if (userId) {
-          const { error: cartClearError } = await supabase
-            .from("cart")
-            .delete()
-            .eq("user_ID", userId);
+       try {
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-          if (cartClearError) {
-            console.error("Failed to clear cart after successful payment:", cartClearError);
+          if (userId && uuidRegex.test(userId)) {
+            const { error: cartClearError } = await supabase
+              .from("cart")
+              .delete()
+              .eq("user_ID", userId);
+
+            if (cartClearError) {
+              console.error("Failed to clear cart after successful payment:", cartClearError);
+            } else {
+              console.log(`Cart cleared for user ${userId}.`);
+            }
           } else {
-            console.log(`Cart cleared for user ${userId}.`);
+            console.log(`Skipping database cart clear for guest/non-UUID identifier: ${userId}`);
           }
+        } catch (cartErr) {
+          console.error("Error during cart clearing execution:", cartErr);
         }
 
         // 6. Send order confirmation email with cancellation request option
+        console.log("DEBUG CHECK - Customer Email captured:", customerEmail);
+        console.log("DEBUG CHECK - Order ID captured:", orderId);
+        
         if (customerEmail && orderId) {
           const customerName =
             session.customer_details?.name ||

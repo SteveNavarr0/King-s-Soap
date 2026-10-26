@@ -77,8 +77,10 @@ function CreateAccountElement() {
     }
 
     if (data?.user && data.user.identities && data.user.identities.length === 0) {
-      setErrorMessage("Email is already registered.");
-      return;
+            //If the user is trying to create an account, but the email is already registered, we will send a password reset email instead of creating a new account.
+        await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo: `${window.location.origin}/login`,
+      });      
     }
 
     navigate("/verifyaccount", {
