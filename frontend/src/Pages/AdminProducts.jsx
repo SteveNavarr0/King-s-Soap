@@ -36,8 +36,8 @@ function AdminProducts() {
         const { data, error } = await supabase
           .from("products")
           .select(
-            "id, name, price, product_images(image_url, display_order), sales, is_active")
-          .eq("is_active", true);//Only fetch products that are currently active;
+            "id, name, price, product_images(image_url, display_order), sales, Availability")
+          .eq("Availability", true);//Only fetch products that are currently active;
       
         if (error){
           console.error("Error fetching products:", error);

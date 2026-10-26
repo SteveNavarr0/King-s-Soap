@@ -50,7 +50,7 @@ const AdminUpdateProduct = ({
 
       const {data, error: fetchError} = await supabase
         .from("products")
-        .select("name, price, description, stock, weight, category, is_active, product_images(id, image_url, display_order)")
+        .select("name, price, description, stock, weight, category, Availability, product_images(id, image_url, display_order)")
         .eq("id", id) //Based on matching id
         .single(); //Retun one instead of the whole array
       
@@ -72,7 +72,7 @@ const AdminUpdateProduct = ({
       setStock(data.stock ?? "");
       setWeight(data.weight ?? "");
       setCategory(data.category ? data.category.split(",").map((item) => item.trim()): []);
-      setIsActive(data.is_active)
+      setIsActive(data.Availability)
       //Arrange from Main to last
       setExistingImages(
         [...(data.product_images || [])].sort( //Copy array > ...
@@ -300,7 +300,7 @@ const AdminUpdateProduct = ({
 };
 
 
-//Used when prodict is_active is true
+//Used when prodict Availability is true
 const deleteProduct = async () => {
   const confirmed = window.confirm(
     "Are you sure you want to delete this product?"
@@ -318,7 +318,7 @@ const deleteProduct = async () => {
     const { error: deleteError } = await supabase
       .from("products")
       .update({
-        is_active: false,
+        Availability: false,
       })
       .eq("id", id);
 
@@ -362,7 +362,7 @@ const handleRestoreProduct = async () => {
   try {
     const { error: restoreError } = await supabase
       .from("products")
-      .update({ is_active: true })
+      .update({ Availability: true })
       .eq("id", id);
 
     if (restoreError) {
