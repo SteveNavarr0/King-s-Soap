@@ -125,7 +125,6 @@ function App() {
                 <Route path="/coconutOilShop" element={<CoconutOilShop />} />
                 <Route path="/organicShop" element={<OrganicShop />} />
                 <Route path="/allNaturalShop" element={<AllNaturalShop />} />
-                <Route path="/lipBalmShop" element={<LipBalmShop />} />
                 <Route path="/soapDishShop" element={<SoapDishShop />} />
 
                 <Route element={<CheckAdminPerm />}>
