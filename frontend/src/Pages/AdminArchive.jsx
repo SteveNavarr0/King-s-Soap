@@ -22,9 +22,9 @@ function AdminArchive() {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, name, price, product_images(image_url, display_order), sales, is_active"
+        "id, name, price, product_images(image_url, display_order), sales, Availability"
       )
-      .eq("is_active", false);//Only fetch products that are currently not active;
+      .eq("Availability", false);
 
     if (error) {
       console.error("Error fetching products:", error);

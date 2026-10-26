@@ -19,8 +19,8 @@ function Admin() {
 
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, product_images(image_url, display_order), sales, is_active")
-        .eq("is_active", true);
+        .select("id, name, price, product_images(image_url, display_order), sales, Availability")
+        .eq("Availability", true);
 
       if (error) { //throws an error if request to supabase fails
         console.error("Error fetching products:", error);
