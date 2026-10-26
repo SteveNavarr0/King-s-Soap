@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { MdOutlineEmail } from "react-icons/md";
 import supabase from "../supabaseClient";
+import { useState, useEffect } from "react";
 
 const getImageUrl = (imagePath) => {
   const { data } = supabase.storage
@@ -15,14 +15,34 @@ function VerifyAccount() {
   const backgroundImage = getImageUrl("images/login-background-image.png");
   const location = useLocation();
   const email = location.state?.email;
-
+  const [counter, setCounter] = useState(0);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isSending, setIsSending] = useState(false);
+useEffect(() => {
+    if (counter <= 0) return;
+
+    const timer = setInterval(() => {
+      setCounter((prevCounter) => { 
+        if (prevCounter <= 1){
+          clearInterval(timer);
+          return 0;
+        }
+        return prevCounter - 1;
+      });
+    }, 1000);
+
+      return () => clearInterval(timer);
+    }, [counter > 0]);
+
 
   const handleResendEmail = async () => {
     setMessage("");
     setIsError(false);
+
+      if (counter > 0 || isSending) {
+        return;
+      }
 
     if (!email) {
       setIsError(true);
@@ -83,10 +103,10 @@ function VerifyAccount() {
           <button
             type="button"
             onClick={handleResendEmail}
-            disabled={isSending}
+            disabled={isSending || counter > 0}
             className="h-12 w-full cursor-pointer rounded-lg border border-white/30 bg-[#8B6B4A] font-sans text-base text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 md:text-xl"
           >
-            {isSending ? "Sending..." : "Resend Email"}
+            {isSending ? "Sending..." : counter > 0 ? `Resend Email in ${counter}s` : "ResendEmail"} 
           </button>
 
           {message && (

@@ -17,6 +17,7 @@ function Search() {
   const { data, error } = await supabase
     .from("products")
     .select("id, name, price, description, product_images(image_url)")
+    .eq("is_active", true)
     .order("sales", { ascending: false })
     .limit(4);
 
@@ -46,7 +47,8 @@ const searchProducts = async (searchTerm) => {
     )
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
-    );
+    )
+    .eq("is_active", true);
 
   if (error) {
     console.error("Search error:", error);
@@ -140,7 +142,7 @@ useEffect(() => {
     </div>
 
      {isFocused && results.length > 0 && (
-      <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg bg-white shadow-lg overflow-hidden">
+      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
         {results.map((product) => {
          {!searchTerm.trim() && (
                  <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50 border-b border-gray-100">

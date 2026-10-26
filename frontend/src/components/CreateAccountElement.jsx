@@ -58,7 +58,7 @@ function CreateAccountElement() {
 
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
       options: {
@@ -73,6 +73,11 @@ function CreateAccountElement() {
 
     if (error) {
       setErrorMessage(error.message);
+      return;
+    }
+
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setErrorMessage("Email is already registered.");
       return;
     }
 

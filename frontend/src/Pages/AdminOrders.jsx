@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import supabase from "../supabaseClient";
 import { Link } from "react-router-dom";
 import {useEffect, useState} from "react";  
@@ -15,7 +14,7 @@ function AdminOrders() {
       const { data, error } = await supabase
         .from("active_orders")
         .select("order_id, status, total, customer_email, fulfillment_type, tracking_number, order_date, items")
-        .order("order_date", { ascending: true });
+        .order("order_date", { ascending: false });
         if (error){
           console.error("Error fetching orders:", error);
           return;
@@ -52,13 +51,13 @@ function AdminOrders() {
       </p>
         <Link
           to="/adminArchivedOrders"
-          className="w-fit rounded-full border border-white/60 bg-white/10 px-5 py-2 font-serif text-sm text-white transition hover:scale-105 hover:bg-white/20"
+          className="mt-4 md:mt-8 w-[calc(50%-0.5rem)] lg:w-60 h-8 md:h-10 rounded-full bg-white/15 border border-white/30 shadow-sm text-white font-sans text-sm md:text-2xl flex items-center justify-center gap-2 hover:scale-105 cursor-pointer transition"
         >
           Order Archive
         </Link>
 
       {/* Orders section */}
-      <div className="mt-4 md:mt-8 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
+      <div className="mt-6 mb-6 bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
         {/* Orders header */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-serif italic">
@@ -110,7 +109,7 @@ function AdminOrders() {
             <div className="space-y-1 font-sans text-sm md:text-base">
               {order.items?.map((item) => (
                 <div key={item.order_item_id}>
-                  Product {item.product_name} × {item.quantity}
+                  {item.product_name} × {item.quantity}
                 </div>
               ))}
             </div>
@@ -197,9 +196,9 @@ function AdminOrders() {
     ))}
 
     {orders.length === 0 && (
-      <p className="py-8 text-center">
+      <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
         No active orders found.
-      </p>
+      </div>
     )}
   </div>
   </div>
@@ -208,7 +207,6 @@ function AdminOrders() {
   </div>  
 
 
-      <AdminNav /> {/*Navigation bar/footer*/}
       
     </div>
   );

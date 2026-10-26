@@ -1,5 +1,4 @@
 import AdminHeader from "../components/AdminHeader";
-import AdminNav from "../components/AdminNav";
 import SearchAddProduct from "../components/AdminSearchAddProduct";
 import supabase from "../supabaseClient";
 import {useEffect, useState} from "react";  
@@ -119,8 +118,8 @@ function AdminProducts() {
           Add, update, and manage your products
             </p>
           {/* Monthly sales summary */}
-          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl md:border md:border-white/30 bg-white/10 p-4 sm:p-6 md:grid-cols-3">
-            
+          <div className="mt-4 md:mt-8 grid grid-cols-1 gap-4 rounded-xl md:border md:border-white/30 bg-white/10 p-4 sm:p-6 md:grid-cols-3">
+          
             {/* Last month's sales */}
             <div className="rounded-lg bg-white/5 p-4">
               <p className="font-serif italic text-base md:text-lg">
@@ -221,7 +220,6 @@ function AdminProducts() {
         />
       )}
 
-      {!selectedProductId && !isAddProductOpen && <AdminNav />}      
     </div>
   );
 }
