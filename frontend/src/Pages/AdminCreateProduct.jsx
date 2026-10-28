@@ -35,29 +35,50 @@ function AdminCreateProduct( {
   
   //Add all fields to the product table
   const dBAddItem = async () => {
-
+    // Prevent another submission while processing or awaiting form reset
+    if (loading || success) {
+      return;
+    }
 
     //Make sure all fields are valid
     setSuccess("");
     setError("");
 
-    if (!productName) {
+    if (!productName.trim()) {
       setError("Product name is required");
       return;
     }
 
-    if (!price || isNaN(price)) {
-      setError("Please enter a valid decimal for price");
+    const numericPrice = Number(price);
+
+    if (
+      price.trim() === "" ||
+      !Number.isFinite(numericPrice) ||
+      numericPrice < 0
+    ) {
+      setError("Please enter a valid price of 0 or greater");
       return;
     }
 
-    if (!stock || isNaN(stock)) {
-      setError("Please enter a valid number for inventory");
+    const numericStock = Number(stock);
+
+    if (
+      stock.trim() === "" ||
+      !Number.isSafeInteger(numericStock) ||
+      numericStock < 0
+    ) {
+      setError("Please enter a whole number of 0 or greater for inventory");
       return;
     }
 
-    if (!weight || isNaN(weight)) {
-      setError("Please enter a valid number for weight");
+    const numericWeight = Number(weight);
+
+    if (
+      weight.trim() === "" ||
+      !Number.isFinite(numericWeight) ||
+      numericWeight <= 0
+    ) {
+      setError("Please enter a valid weight greater than 0");
       return;
     }
 
@@ -70,11 +91,11 @@ function AdminCreateProduct( {
 
     //Form send to backend. FormData is used due to file upload
     const formData = new FormData();
-      formData.append("productName", productName);
-      formData.append("price", price);
+      formData.append("productName", productName.trim());
+      formData.append("price", String(numericPrice));
       formData.append("description", description);
-      formData.append("stock", stock);
-      formData.append("weight", weight);
+      formData.append("stock", String(numericStock));
+      formData.append("weight", String(numericWeight));
       formData.append("category", category.join(", ")); // split text for db handling
 
 
@@ -259,15 +280,21 @@ function AdminCreateProduct( {
                <p className="text-green-600 text-sm md:text-xl text-center">{success}</p>
             )}
 
-            <button onClick ={dBAddItem}
-              disabled={loading}
-              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
-                loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
+            <button
+              type="button"
+              onClick={dBAddItem}
+              disabled={loading || Boolean(success)}
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center transition ${
+                loading || success
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:scale-105"
               }`}
-              >
-                {loading ? "Adding Item..." : "Add Item"
-              }
-        
+            >
+              {loading
+                ? "Adding Item..."
+                : success
+                  ? "Item Added"
+                  : "Add Item"}
             </button>
 
 

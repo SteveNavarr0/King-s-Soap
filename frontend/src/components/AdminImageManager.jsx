@@ -74,49 +74,101 @@ const AdminImageManager = ({
 
 
 
-    //Remove a newly selected image from the newly selected previewUrl array
+    // Remove a new image and renumber saved and new images together
     const removeNewImage = (indexToRemove) => {
-        //Remove the actual file
-        setNewImages(
-            newImages.filter(
-                (_, index) => index !== indexToRemove
+        const remainingImages = [
+            ...existingImages.map((image) => ({
+                type: "existing",
+                image,
+                display_order: image.display_order,
+            })),
+
+            ...newImages
+                .map((file, index) => ({
+                    type: "new",
+                    file,
+                    originalIndex: index,
+                    display_order:
+                        newImageOrders[index] ??
+                        existingImages.length + index + 1,
+                }))
+                .filter(
+                    (image) => image.originalIndex !== indexToRemove
+                ),
+        ]
+            .sort(
+                (firstImage, secondImage) =>
+                    firstImage.display_order -
+                    secondImage.display_order
             )
+            .map((image, index) => ({
+                ...image,
+                display_order: index + 1,
+            }));
+
+        // Update saved-image positions
+        if (setExistingImages) {
+            setExistingImages(
+                remainingImages
+                    .filter((image) => image.type === "existing")
+                    .map((image) => ({
+                        ...image.image,
+                        display_order: image.display_order,
+                    }))
+            );
+        }
+
+        // Keep the remaining new files and their positions aligned
+        const remainingNewImages = remainingImages.filter(
+            (image) => image.type === "new"
         );
 
-        //AdminUpdateProduct order array update
-        if (setNewImageOrders) {
-            setNewImageOrders((currentOrders) => {
-                const remainingOrders = currentOrders.filter(
-                    (_, index) => index !== indexToRemove
-                );
+        setNewImages(
+            remainingNewImages.map((image) => image.file)
+        );
 
-                //Close any position gap left by removed image
-                return remainingOrders.map(
-                    (_, index) =>
-                        existingImages.length + index + 1
-                );
-            });
+        if (setNewImageOrders) {
+            setNewImageOrders(
+                remainingNewImages.map(
+                    (image) => image.display_order
+                )
+            );
         }
     };
 
 
-    //Save selected files and assign their initial positions
+    
+     // Append selected files without resetting the current image order
     const handleNewImagesSelected = (event) => {
-        //Convert the browser's fileList into a normal array
-        const selectedFiles = Array.from(event.target.files);
+        const selectedFiles = Array.from(event.target.files || []);
 
-        //Store the actual image files
-        setNewImages(selectedFiles);
-
-        //Setter provided by AdminUpdateProduct
-        if (setNewImageOrders) {
-            setNewImageOrders(
-                selectedFiles.map(
-                    (_,index) =>
-                        existingImages.length + index + 1
-                )
-            );
+        if (selectedFiles.length === 0) {
+            return;
         }
+
+        const nextPosition =
+            existingImages.length + newImages.length + 1;
+
+        // Keep previously selected files and add this batch
+        setNewImages([...newImages, ...selectedFiles]);
+
+        if (setNewImageOrders) {
+            const currentOrders = newImages.map(
+                (_, index) =>
+                    newImageOrders[index] ??
+                    existingImages.length + index + 1
+            );
+
+            setNewImageOrders([
+                ...currentOrders,
+                ...selectedFiles.map(
+                    (_, index) => nextPosition + index
+                ),
+            ]);
+        }
+
+        // Allow the same file to be selected again if needed
+        event.target.value = "";
     };
 
 

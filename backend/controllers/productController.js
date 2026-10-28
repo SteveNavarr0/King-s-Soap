@@ -7,6 +7,67 @@ export const createProduct = async (req, res) => {
         console.log("Body:", req.body);
         console.log("Files:", req.files);
 
+
+        // Trim text fields and treat missing or non-text values as empty
+        const readTextField = (value) =>
+            typeof value === "string" ? value.trim() : "";
+
+        // Read the submitted fields without surrounding spaces
+        const productName = readTextField(req.body?.productName);
+        const priceInput = readTextField(req.body?.price);
+        const stockInput = readTextField(req.body?.stock);
+        const weightInput = readTextField(req.body?.weight);
+
+        // Convert numeric fields for validation and database storage
+        const numericPrice = Number(priceInput);
+        const numericStock = Number(stockInput);
+        const numericWeight = Number(weightInput);
+
+        // Reject missing names and names containing only spaces
+        if (!productName) {
+            return res.status(400).json({
+                message: "Product name is required",
+            });
+        }
+
+        // Price must be finite and non-negative; zero is allowed
+        // Check for empty input because Number("") becomes 0
+        if (
+            priceInput === "" ||
+            !Number.isFinite(numericPrice) ||
+            numericPrice < 0
+        ) {
+            return res.status(400).json({
+                message: "Please enter a valid price of 0 or greater",
+            });
+        }
+
+        // Inventory must be a whole number JavaScript can represent safely
+        // Zero is allowed; negatives, fractions, and empty input are rejected
+        if (
+            stockInput === "" ||
+            !Number.isSafeInteger(numericStock) ||
+            numericStock < 0
+        ) {
+            return res.status(400).json({
+                message: "Please enter a whole number of 0 or greater for inventory",
+            });
+        }
+
+        // Weight must be finite and greater than zero; decimals are allowed
+        if (
+            weightInput === "" ||
+            !Number.isFinite(numericWeight) ||
+            numericWeight <= 0
+        ) {
+            return res.status(400).json({
+                message: "Please enter a valid weight greater than 0",
+            });
+        }
+
+        // Validation passed; continue with the existing image-file check
+
+
         if (!req.files || req.files.length === 0) {
         return res.status(400).json({ message: "At least one image file is required" });
         }
@@ -68,11 +129,11 @@ export const createProduct = async (req, res) => {
 
         // Insert product details into product table
         const { data: productData, error: productError } = await supabase.from("products").insert([{
-            name: req.body.productName,
-            price: req.body.price,
+            name: productName,       // Validated name with surrounding spaces removed
+            price: numericPrice,     // Validated price: zero or greater
             description: req.body.description,
-            stock: req.body.stock,
-            weight: req.body.weight,
+            stock: numericStock,     // Validated inventory: non-negative whole number
+            weight: numericWeight,   // Validated weight: greater than zero
             category: req.body.category,
         },
     ])
