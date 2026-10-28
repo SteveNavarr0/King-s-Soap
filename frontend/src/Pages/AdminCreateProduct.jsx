@@ -4,7 +4,6 @@ const categoryOptions = [
   "Coconut Oil",
   "All Natural",
   "Organic",
-  "Lip Balm",
   "Soap Dish",
 ]; // restrict category options for easier filtering when adding an item
 

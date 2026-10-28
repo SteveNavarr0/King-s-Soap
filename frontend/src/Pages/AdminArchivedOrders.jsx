@@ -70,6 +70,15 @@ function AdminArchivedOrders() {
         </p>
       </div>
 
+
+      {orders.length === 0 && (
+        <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+          No archived orders found.
+        </div>
+      )}
+
+      {orders.length > 0 && (
+
       <div className="overflow-x-auto">
         {/* Full width on mobile; preserves the wide table layout on desktop */}
         <div className="w-full md:min-w-[1100px]">
@@ -178,22 +187,16 @@ function AdminArchivedOrders() {
       </div>
     ))}
 
-    {orders.length === 0 && (
-      <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
-        No archived orders found.
+
+          </div>
+        </div>
       </div>
-    )}
-  </div>
-  </div>
-  </div>
-  </div>
-  </div>  
+      )}
 
-
-      
+      </div>
+      </div>
     </div>
   );
 }
-
 
 export default AdminArchivedOrders;
