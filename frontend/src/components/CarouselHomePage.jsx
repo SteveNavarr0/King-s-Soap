@@ -36,7 +36,7 @@ function CarouselHomePage({
         to={buttonTo}
         className="block w-full cursor-pointer transition duration-200 hover:scale-102"
       >
-        <div className="relative w-full aspect-[5/3] overflow-hidden rounded-t-md md:h-[300px] md:aspect-auto">
+        <div className="relative w-full aspect-[3/3] overflow-hidden rounded-t-md md:h-[400px] md:aspect-auto">
           {images.map((image, index) => (
             <img
               key={index}

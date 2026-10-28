@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import SearchIcon from "./SearchIcon";
 import supabase from "../supabaseClient";
 
@@ -6,6 +6,8 @@ import supabase from "../supabaseClient";
 function AdminSearch({onProductSelect}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef(null);
 
 const searchProducts = async (searchTerm) => {
   const trimmedSearch = searchTerm.trim();
@@ -20,9 +22,10 @@ const searchProducts = async (searchTerm) => {
     .select(
       "id, name, price, description, product_images(image_url, display_order)"
     )
-    .or(
+     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
-    );
+    )
+    .eq("Availability", true);
 
   if (error) {
     console.error("Search error:", error);
@@ -72,6 +75,26 @@ const searchProducts = async (searchTerm) => {
 
   console.log("Search results:", rankedResults.slice(0, 4));
 };
+
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      searchRef.current &&
+      !searchRef.current.contains(event.target)
+    ) {
+      setIsSearchOpen(false);
+    }
+  };
+
+  document.addEventListener("pointerdown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("pointerdown", handleClickOutside);
+  };
+}, []);
+
+
 useEffect(() => {
     const searchDelay = setTimeout(() => {
       searchProducts(searchTerm);
@@ -85,7 +108,11 @@ useEffect(() => {
 
  return (
    // Full width above the buttons; fixed width when all controls share one row
-  <div className="relative w-full lg:w-60 h-8 md:h-10">
+    <div
+      ref={searchRef}
+      onFocus={() => setIsSearchOpen(true)}
+      className="relative w-full lg:w-60 h-8 md:h-10"
+    >    
     <input
       type="text"
       value={searchTerm}
@@ -100,16 +127,15 @@ useEffect(() => {
       <SearchIcon />
     </div>
 
-    {searchTerm.trim() && results.length > 0 && (
-      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
+      {isSearchOpen && searchTerm.trim() && results.length > 0 && (      <div className="absolute top-full right-0 z-50 mt-2 w-full rounded-lg bg-white shadow-lg overflow-hidden">
         {results.map((product) => {
           const firstImage =
             product.product_images?.[0]?.image_url || "";
 
           return (
             <button
+                type="button"
                 key={product.id}
-                to={`/adminUpdateProduct/${product.id}`}
                 onClick={() => {
                   onProductSelect?.(product.id);
                   setSearchTerm("");
