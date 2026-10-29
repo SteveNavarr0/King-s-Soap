@@ -26,6 +26,7 @@ import PaymentSuccessful from "./Pages/PaymentSuccessful";
 import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
 import Admin from "./Pages/Admin";
+import AdminHeader from "./components/AdminHeader";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminDiscounts from "./Pages/AdminDiscounts";
@@ -140,6 +141,19 @@ function App() {
 
                 <Route element={<CheckAdminPerm />}>
                   <Route path="/admin" element={<Admin />} />
+
+                  <Route
+                    path="/adminChangePassword"
+                    element={
+                      <>
+                        <div className="absolute inset-x-0 top-0 z-40">
+                          <AdminHeader />
+                        </div>
+                        <UserChangePassword returnTo="/admin" />
+                      </>
+                    }
+                  />
+
                   <Route path="/adminInbox" element={<AdminInbox />} />
                   <Route path="/adminProducts" element={<AdminProducts />} />
                   <Route
