@@ -19,7 +19,6 @@ import Footer from "./components/Footer";
 import VerifyAccount from "./Pages/VerifyAccount";
 import CreateAccount from "./Pages/CreateAccount";
 import EmailToPWReset from "./Pages/EmailToPWReset";
-import UserAccount from "./Pages/UserAccount";
 import UserChangePassword from "./Pages/UserChangePassword";
 import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
@@ -99,14 +98,6 @@ function App() {
                     </ProtectedRoute>
                       }
                     />    
-                <Route
-                  path="/userAccount"
-                  element={
-                    <ProtectedRoute>
-                      <UserAccount />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="/userChangePassword"
                   element={
