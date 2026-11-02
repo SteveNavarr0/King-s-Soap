@@ -29,7 +29,6 @@ import Admin from "./Pages/Admin";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminDiscounts from "./Pages/AdminDiscounts";
-import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
 import OrganicShop from "./Pages/OrganicShop.jsx";
 import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
@@ -142,10 +141,7 @@ function App() {
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/adminInbox" element={<AdminInbox />} />
                   <Route path="/adminProducts" element={<AdminProducts />} />
-                  <Route
-                    path="/OldUIAdminDeleteProduct"
-                    element={<OldUIAdminDeleteProduct />}
-                  />
+                  
                   <Route
                     path="/adminDiscounts"
                     element={<AdminDiscounts />}
