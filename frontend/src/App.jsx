@@ -20,7 +20,6 @@ import VerifyAccount from "./Pages/VerifyAccount";
 import CreateAccount from "./Pages/CreateAccount";
 import EmailToPWReset from "./Pages/EmailToPWReset";
 import UserChangePassword from "./Pages/UserChangePassword";
-import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
 import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
@@ -105,10 +104,6 @@ function App() {
                       <UserChangePassword />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/userChangeAddress"
-                  element={<UserChangeAddress />}
                 />
                 <Route path="/verifyaccount" element={<VerifyAccount />} />
                 <Route path="/createaccount" element={<CreateAccount />} />
