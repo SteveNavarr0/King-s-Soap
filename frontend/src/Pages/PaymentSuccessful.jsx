@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 const PaymentSuccessful = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-
   
   const sessionId = searchParams.get("session_id");
 
@@ -16,51 +15,67 @@ const PaymentSuccessful = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchOrder = async () => {
+    let isMounted = true;
+
+    const fetchOrderWithRetry = async (retries = 5, delay = 1500) => {
       if (!sessionId) {
-        setError("Unable to find checkout session.");
-        setLoading(false);
+        if (isMounted) {
+          setError("Unable to find checkout session.");
+          setLoading(false);
+        }
         return;
       }
 
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          order_items (
-            id,
-            quantity,
-            unit_price,
-            product_id,
-            products (
-              name
+      for (let i = 0; i < retries; i++) {
+        const { data, error } = await supabase
+          .from("orders")
+          .select(`
+            *,
+            order_items (
+              id,
+              quantity,
+              unit_price,
+              product_id,
+              products (
+                name
+              )
             )
-          )
-        `)
-        .eq("stripe_session_id", sessionId)
-        .single();
+          `)
+          .eq("stripe_session_id", sessionId)
+          .single();
 
-      if (error) {
-        console.error("Error fetching order:", error);
-        setError("Unable to load your order.");
+        if (data && !error) {
+          if (isMounted) {
+            setOrder(data);
+            setLoading(false);
+
+            // Clean up carts upon successful fetch
+            localStorage.removeItem("guestCart");
+            if (user?.id) {
+              await supabase.from("cart").delete().eq("user_ID", user.id);
+            }
+          }
+          return;
+        }
+
+        // If not found yet, wait before retrying (gives webhook time to finish)
+        if (i < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+
+      // If all retries fail
+      if (isMounted) {
+        setError("Unable to load your order. Please check your email for confirmation.");
         setLoading(false);
-        return;
       }
-
-
-      // 1. Immediately clean up guest cart (localStorage)
-      localStorage.removeItem("guestCart");
-
-      // 2. Immediately clean up logged-in user cart
-      if (user?.id) {
-        await supabase.from("cart").delete().eq("user_ID", user.id);
-      }
-
-      setOrder(data);
-      setLoading(false);
     };
 
-    fetchOrder();
+    fetchOrderWithRetry();
+
+    return () => {
+      isMounted = false;
+    };
   }, [sessionId, user]);
 
   // Add together the quantities of all products
@@ -73,7 +88,7 @@ const PaymentSuccessful = () => {
   if (loading) {
     return (
       <div className="min-h-screen pt-28 md:pt-40 pb-16 px-[22px] md:px-10 bg-[#C5AE98] flex items-center justify-center text-center text-white">
-        Loading your order...
+        Loading your order... (Confirming payment processing)
       </div>
     );
   }
@@ -94,8 +109,7 @@ const PaymentSuccessful = () => {
 
   return (
     <div className="pt-28 md:pt-40 pb-0 md:pb-6 px-[22px] md:px-10 bg-[#C5AE98] text-white flex justify-center items-start">
-
-       <div className="w-full max-w-[820px] bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30 md:shadow-lg flex flex-col items-center">
+      <div className="w-full max-w-[820px] bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30 md:shadow-lg flex flex-col items-center">
 
         {/* Success Icon */}
         <BsCheckCircle className="text-white text-4xl mb-4" />
@@ -110,9 +124,11 @@ const PaymentSuccessful = () => {
           Thank you for your purchase!
         </p>
 
-        <p className="text-white text-center text-sm">
-          An order confirmation has been sent to {order.customer_email}
-        </p>
+        {order.customer_email && (
+          <p className="text-white text-center text-sm">
+            An order confirmation has been sent to {order.customer_email}
+          </p>
+        )}
 
         {/* Order Summary */}
         <h2 className="text-white text-2xl font-semibold mt-8 mb-5">
@@ -120,9 +136,7 @@ const PaymentSuccessful = () => {
         </h2>
 
         <div className="w-full max-w-[520px] bg-white/10 rounded-xl p-4 md:p-8 md:border md:border-white/30">
-
           <div className="grid grid-cols-2 gap-y-8 text-white text-base">
-
 
             {/* Quantity */}
             <p>Quantity:</p>
@@ -130,7 +144,6 @@ const PaymentSuccessful = () => {
 
             {/* Items */}
             <p>Items:</p>
-
             <div>
               {order.order_items?.map((item) => (
                 <p key={item.id}>
@@ -146,7 +159,6 @@ const PaymentSuccessful = () => {
             </p>
 
           </div>
-
         </div>
 
         <Link
@@ -162,13 +174,3 @@ const PaymentSuccessful = () => {
 };
 
 export default PaymentSuccessful;
-
-
-  {/* Old Page
-    return (
-  <div style={{ width: "100%", height: "100%" }}>
-    <h1 className="text-4xl text-[#FFFFFF] font-[Inria_Serif] pl-11 pt-8">PaymentSuccessful</h1>
-  </div>
-
-  );
-  */}

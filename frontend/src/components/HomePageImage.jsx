@@ -16,10 +16,10 @@ function HomeImage() {
         <img src={HomePageImage} alt="HomePageImage" className="home-page-image mx-auto w-full" />
 
         {/*Darken the image behind the text on mobile*/}
-        <div className="absolute inset-0 bg-black/20 md:bg-transparent" aria-hidden="true" />
+        <div className="absolute inset-0 bg-black/20 lg:bg-transparent" aria-hidden="true" />
 
         {/*Text Over the Image*/}
-        <div className="absolute inset-0 flex flex-col items-center pt-6 text-white text-center pt-18">
+        <div className="absolute inset-0 flex flex-col items-center pt-23 md:pt-40 text-white text-center">
             <h1 className="text-2xl md:text-5xl font-serif">
             King’s Soap
             </h1>

@@ -46,15 +46,7 @@ function FilterBar() {
                         }    
                     > All Natural Soaps
                     </NavLink>
-          <NavLink 
-            
-                        to= "/lipBalmShop" 
-                        className={({ isActive }) => 
-                        `inline-block transition duration-200 hover:scale-105 ${
-                        isActive ? "text-[#8B6B4A]" : ""}`
-                        }    
-                    > Lip Balms
-                    </NavLink>
+          
            <NavLink 
             
                         to= "/soapDishShop" 

@@ -22,9 +22,9 @@ function AdminArchive() {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, name, price, product_images(image_url, display_order), sales, is_active"
+        "id, name, price, product_images(image_url, display_order), sales, Availability"
       )
-      .eq("is_active", false);//Only fetch products that are currently not active;
+      .eq("Availability", false);
 
     if (error) {
       console.error("Error fetching products:", error);
@@ -85,8 +85,9 @@ useEffect(() => {
             {fetchError}
           </p>
         )}
+        
         {/* Product list section */}
-        <div className="flex flex-col justify-left gap-4 mt-6 mr-8 md:mr-15">
+        <div className="flex flex-col justify-left gap-4 mt-6">
           {sortedProducts.map((product) => (
             <AdminProductTile
               key={product.id}
@@ -94,6 +95,12 @@ useEffect(() => {
               onClick={() => setSelectedProductId(product.id)}
             />
           ))}
+
+          {!fetchError && products.length === 0 && (
+            <div className="p-8 md:p-12 text-center text-white/80 font-serif italic text-base md:text-xl md:border md:border-white/20 rounded-xl bg-black/10">
+              No archived products found.
+            </div>
+          )}
         </div>
 
 

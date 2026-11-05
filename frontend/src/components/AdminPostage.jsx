@@ -13,7 +13,10 @@ export default function AdminPostageQueue() {
       .select("id, created_at, customer_email, total_amount, tracking_number, label_url, label_printed, status")
       .in("status", ["postage_ready","ready_to_ship"])
       .not("label_url", "is", null)
-      .order("label_printed", { ascending: true })
+      .order("label_printed", {
+        ascending: true,
+        nullsFirst: true,
+      })
       .order("created_at", { ascending: true });
 
     if (error) {

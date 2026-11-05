@@ -280,3 +280,9 @@ vite.config.ts.timestamp-*
 
 # Cline
 .clineignore
+
+#playwright auth 
+playwright/.auth/
+
+.env.test
+playwright/.auth/
