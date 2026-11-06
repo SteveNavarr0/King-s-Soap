@@ -65,11 +65,16 @@ test.describe('Cart UI and Checkout Edge Case Tests', () => {
   });
 
   test('Overlay close button dismisses or navigates back', async ({ page }) => {
-    // Verify the close '×' button is present on the overlay
+    // Navigate directly to the cart overlay page if not already there
+    await page.goto('http://localhost:5173/cart');
+
+    // Verify the close '×' button is present and click it
     const closeBtn = page.locator('button[aria-label="Close cart"]');
     if (await closeBtn.isVisible()) {
       await closeBtn.click();
-      // Verifies navigation or dismissal post-click
+      
+      // Wait for navigation back or verify it returned to the shop/home view
+      await page.waitForURL('http://localhost:5173/');
     }
   });
 
