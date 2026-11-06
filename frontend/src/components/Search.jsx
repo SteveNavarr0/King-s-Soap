@@ -10,14 +10,14 @@ function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
-  const blurTimeoutRef = useRef(null);
+  const searchRef = useRef(null);
 
  // Fetch top sellers when search term is empty
  const fetchTopSellingProducts = async () => {
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, price, description, product_images(image_url)")
-    .eq("is_active", true)
+    .select("id, name, price, description, product_images(image_url, display_order)")
+    .eq("Availability", true)
     .order("sales", { ascending: false })
     .limit(4);
 
@@ -48,7 +48,7 @@ const searchProducts = async (searchTerm) => {
     .or(
       `name.ilike.%${trimmedSearch}%,description.ilike.%${trimmedSearch}%`
     )
-    .eq("is_active", true);
+    .eq("Availability", true);
 
   if (error) {
     console.error("Search error:", error);
@@ -107,24 +107,36 @@ useEffect(() => {
     };
      }, [searchTerm, isFocused]);
 
-     const handleFocus = () => {
-       if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-       setIsFocused(true);
-       if (!searchTerm.trim()) {
-         fetchTopSellingProducts();
-       }
-     };
-    
-     const handleBlur = () => {
-       // 150ms buffer so clicking a product link registers before the menu closes
-       blurTimeoutRef.current = setTimeout(() => {
-         setIsFocused(false);
-       }, 150);
-     };
 
 
-  return (
-  <div className="relative w-full lg:w-60">
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      searchRef.current &&
+      !searchRef.current.contains(event.target)
+    ) {
+      setIsFocused(false);
+    }
+  };
+
+  document.addEventListener("pointerdown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("pointerdown", handleClickOutside);
+  };
+}, []);
+
+const handleFocus = () => {
+  setIsFocused(true);
+
+  if (!searchTerm.trim()) {
+    fetchTopSellingProducts();
+  }
+};
+
+
+return (
+  <div ref={searchRef} className="relative w-full lg:w-60">
     <input
       type="text"
       value={searchTerm}
@@ -132,7 +144,6 @@ useEffect(() => {
         setSearchTerm(event.target.value)
       }
       onFocus={handleFocus}
-      onBlur={handleBlur}
       className="w-full rounded-full bg-white px-4 py-1 pr-10 outline-none"
       placeholder="Search"
     />
@@ -149,8 +160,13 @@ useEffect(() => {
                    Popular Items
                  </div>
                )}
-         const firstImage =
-            product.product_images?.[0]?.image_url || "";
+
+               const orderedImages = [...(product.product_images ?? [])].sort(
+  (firstImage, secondImage) =>
+    firstImage.display_order - secondImage.display_order
+);
+
+const firstImage = orderedImages[0]?.image_url || "";
 
           return (
             <Link

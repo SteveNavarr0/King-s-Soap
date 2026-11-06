@@ -92,7 +92,14 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/cart" element={<Cart />} />
-                <Route path="/orderHistory" element={<OrderHistory />} />
+                <Route
+                  path="/orderHistory"
+                  element={
+                    <ProtectedRoute>
+                      <OrderHistory />
+                    </ProtectedRoute>
+                      }
+                    />    
                 <Route
                   path="/userAccount"
                   element={
@@ -101,9 +108,13 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/orders" element={<ProtectedRoute> <UserAccount /> </ProtectedRoute>}/><Route
+                <Route
                   path="/userChangePassword"
-                  element={<UserChangePassword />}
+                  element={
+                    <ProtectedRoute>
+                      <UserChangePassword />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/userChangeAddress"

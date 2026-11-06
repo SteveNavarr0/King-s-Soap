@@ -283,3 +283,6 @@ vite.config.ts.timestamp-*
 
 #playwright auth 
 playwright/.auth/
+
+.env.test
+playwright/.auth/

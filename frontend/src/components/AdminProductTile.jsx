@@ -28,9 +28,10 @@ const AdminProductTile = ({ product, onClick }) => {
         </span>
 
         {/* Sales Stats */}
-        <span className="text-base md:text-2xl whitespace-nowrap">
-          Sales: {product.sales ?? 0}
-        </span>
+        <div className="flex flex-col gap-1 text-base md:text-2xl">
+          <span>Sales: {product.sales ?? 0}</span>
+          <span>Stock: {product.stock ?? 0}</span>
+        </div>
       </button>
   );
 };

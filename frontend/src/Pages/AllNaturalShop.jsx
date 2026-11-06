@@ -198,7 +198,7 @@ const AllNaturalShop = () => {
                     <img
                       src={firstImage}
                       alt={product.name}
-                      className="w-full aspect-[5/3] object-cover rounded-t-md"
+                      className="w-full aspect-[3/3] object-cover rounded-t-md"
                     />
                   ) : (
                     <div className="flex w-full aspect-[5/3] items-center justify-center rounded-t-md bg-gray-200">

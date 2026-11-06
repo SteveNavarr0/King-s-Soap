@@ -1,5 +1,8 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.test" });
 
 /**
  * Read environment variables from file.
@@ -36,39 +39,60 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "admin-setup",
+      testMatch: /admin\.setup\.js/,
     },
 
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: "chromium",
+      testIgnore: /admin-.*\.spec\.js/,
+      use: { ...devices["Desktop Chrome"] },
     },
 
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: "firefox",
+      testIgnore: /admin-.*\.spec\.js/,
+      use: { ...devices["Desktop Firefox"] },
     },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    {
+      name: "webkit",
+      testIgnore: /admin-.*\.spec\.js/,
+      use: { ...devices["Desktop Safari"] },
+    },
 
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    {
+      name: "admin-chromium",
+      testMatch: /admin-.*\.spec\.js/,
+      testIgnore: /admin-login\.spec\.js/,
+      dependencies: ["admin-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+      },
+    },
+
+    {
+      name: "admin-firefox",
+      testMatch: /admin-.*\.spec\.js/,
+      testIgnore: /admin-login\.spec\.js/,
+      dependencies: ["admin-setup"],
+      use: {
+        ...devices["Desktop Firefox"],
+        storageState: "playwright/.auth/admin.json",
+      },
+    },
+
+    {
+      name: "admin-webkit",
+      testMatch: /admin-.*\.spec\.js/,
+      testIgnore: /admin-login\.spec\.js/,
+      dependencies: ["admin-setup"],
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: "playwright/.auth/admin.json",
+      },
+    },
   ],
 
   /* Run your local dev server before starting the tests */

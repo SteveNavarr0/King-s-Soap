@@ -33,6 +33,7 @@ const AdminUpdateProduct = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingField, setEditingField] = useState(null) //Will determine which is editable
   const toggleCategory = (selectedCategory) => { // checks whether or not the category has already been selected 
     if (category.includes(selectedCategory)) { //means the category has already been selected
@@ -97,12 +98,69 @@ const AdminUpdateProduct = ({
 
 
   const updateProduct = async () => { //Creates a function called updateProduct. Asynch allows it to wait for the db request
+    // Prevent another action while a request is processing
+    if (isSaving || loading) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Clear messages from the previous save attempt
+      setError("");
+      setSuccess("");
+   
+
+      // Reject empty names and names containing only spaces
+      if (!productName.trim()) {
+        setError("Product name is required");
+        return;
+      }
+
+
+            // Reject blank, non-numeric, infinite, or negative prices
+      const numericPrice = Number(price);
+
+      if (
+        price.trim() === "" ||
+        !Number.isFinite(numericPrice) ||
+        numericPrice < 0
+      ) {
+        setError("Please enter a valid price of 0 or greater");
+        return;
+      }
+
+      // Reject blank, negative, fractional, or unsafe inventory values
+      const numericStock = Number(stock);
+
+      if (
+        String(stock).trim() === "" ||
+        !Number.isSafeInteger(numericStock) ||
+        numericStock < 0
+      ) {
+        setError("Please enter a whole number of 0 or greater for inventory");
+        return;
+      }
+
+      // Reject blank, non-numeric, infinite, zero, or negative weights
+      const numericWeight = Number(weight);
+
+      if (
+        String(weight).trim() === "" ||
+        !Number.isFinite(numericWeight) ||
+        numericWeight <= 0
+      ) {
+        setError("Please enter a valid weight greater than 0");
+        return;
+      }
+
+
     const updatedProduct = { //Creates object only when function runs. Updated product stores values to be sent to DB
       name: productName.trim(),
-      price: Number(price).toFixed(2),
+      price: numericPrice.toFixed(2),
       description: description.trim(),
-      stock: Number(stock),
-      weight: Number(weight),
+      stock: numericStock,
+      weight: numericWeight,
       category: category.join(","),
     };
 
@@ -141,9 +199,13 @@ const AdminUpdateProduct = ({
         "Error updating image order:",
         failedOrderUpdate.error
       );
-      setError("Unable to save the image order.");
-      return;
 
+      // Product details saved, but some image-position updates failed
+      setError(
+        "Product details were saved, but not all existing image positions could be saved."
+      );
+
+      return;
     }
 
 
@@ -173,9 +235,14 @@ const AdminUpdateProduct = ({
 
       const imageResult = await imageResponse.json(); //Convert backend response to Javascript object
 
-      if (!imageResponse.ok) {
+       if (!imageResponse.ok) {
         console.error("Error adding product images:", imageResult);
-        setError(imageResult.message || "Unable to add product images.");
+
+        // Earlier save steps succeeded before the image upload failed
+        setError(
+          "Product details and existing image positions were saved, but the new images could not be added."
+        );
+
         return;
       }
 
@@ -205,8 +272,19 @@ const AdminUpdateProduct = ({
     }, 3000);
 
 
-    console.log("Product ID:", id);
-    console.log("Updated values:", updatedProduct);
+      console.log("Product ID:", id);
+      console.log("Updated values:", updatedProduct);
+    } catch (error) {
+      console.error("Error saving product:", error);
+
+      // An interrupted request may have completed some save steps
+      setError(
+        "Saving was interrupted. Some changes may already have been saved. Check the product before retrying."
+      );
+    } finally {
+      // Restore the buttons after success or failure
+      setIsSaving(false);
+    }
   };
   
 
@@ -248,23 +326,53 @@ const AdminUpdateProduct = ({
   }
 
 
-  //Remove the deleted image and renumber the remaining images
-  const reorderedRemainingImages = existingImages
-    .filter(
-      (existingImage) =>
-        existingImage.id !== imageToDelete.id //Is existingImage's id different from imageToDelete's id
-    )
+  // Combine remaining saved images and newly selected images
+  const remainingImages = [
+    ...existingImages
+      .filter((image) => image.id !== imageToDelete.id)
+      .map((image) => ({
+        type: "existing",
+        image,
+        display_order: image.display_order,
+      })),
+
+    ...newImages.map((_, index) => ({
+      type: "new",
+      newImageIndex: index,
+      display_order:
+        newImageOrders[index] ??
+        existingImages.length + index + 1,
+    })),
+  ]
     .sort(
       (firstImage, secondImage) =>
-        firstImage.display_order -
-      secondImage.display_order
+        firstImage.display_order - secondImage.display_order
     )
     .map((image, index) => ({
       ...image,
       display_order: index + 1,
     }));
 
-    setExistingImages(reorderedRemainingImages);
+  // Update saved images using their positions in the combined list
+  const reorderedRemainingImages = remainingImages
+    .filter((image) => image.type === "existing")
+    .map((image) => ({
+      ...image.image,
+      display_order: image.display_order,
+    }));
+
+  setExistingImages(reorderedRemainingImages);
+
+  // Update positions in the same order as the newImages file array
+  setNewImageOrders(
+    remainingImages
+      .filter((image) => image.type === "new")
+      .sort(
+        (firstImage, secondImage) =>
+          firstImage.newImageIndex - secondImage.newImageIndex
+      )
+      .map((image) => image.display_order)
+  );
 
     //Save each remaining image's new position to Supabase
     const orderUpdateResults = await Promise.all(
@@ -625,26 +733,32 @@ const handleRestoreProduct = async () => {
 
 
             {/*Run updateProduct function on click*/}
-            <button onClick ={updateProduct}
-              disabled={loading}
-              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
-                loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
+            <button
+              type="button"
+              onClick={updateProduct}
+              disabled={loading || isSaving}
+              aria-busy={isSaving}
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-[#8B6B4A] border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center transition ${
+                loading || isSaving
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:scale-105"
               }`}
-              >
-                {loading ? "Saving Changes..." : "Save Changes"
-              }
-        
+            >
+              {isSaving ? "Saving Changes..." : "Save Changes"}
             </button>
-
 
             {/*Delete product and readd functionality goes here*/}
             {/*When is_active is true, it is delete product, when false it is readd product*/}
-            <button onClick ={isActive ? deleteProduct : handleRestoreProduct}
-              disabled={loading}
-              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center hover:scale-105 cursor-pointer transition ${
-                loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105"
+            <button
+              type="button"
+              onClick={isActive ? deleteProduct : handleRestoreProduct}
+              disabled={loading || isSaving}
+              className={`mt-8 w-full py-2 md:h-10 rounded-lg bg-white/15 border border-white/30 shadow-sm text-white text-md md:text-xl flex items-center justify-center transition ${
+                loading || isSaving
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:scale-105"
               }`}
-              >
+            >
               {loading
                 ? (isActive ? "Deleting Product..." : "Re-adding Product...")
                 : (isActive ? "Delete Product" : "Re-add Product")

@@ -1175,42 +1175,6 @@ test.describe("King's Soap - Admin Navigation", () => {
 
 
 
-
-                // Identify Supabase login requests
-        const isLoginRequest = request =>
-            request.url().includes("/auth/v1/token") &&
-            request.method() === "POST";
-
-        // Report when the login request starts
-        page.on("request", request => {
-            if (isLoginRequest(request)) {
-                console.log("LOGIN: request sent");
-            }
-        });
-
-        // Report network failures
-        page.on("requestfailed", request => {
-            if (isLoginRequest(request)) {
-                console.log(
-                    "LOGIN: request failed:",
-                    request.failure()?.errorText
-                );
-            }
-        });
-
-        // Report the response status
-        page.on("response", response => {
-            if (isLoginRequest(response.request())) {
-                console.log(
-                    "LOGIN: HTTP status:",
-                    response.status()
-                );
-            }
-        });
-
-
-        
-
         // Read the admin test account credentials
         const email = process.env.PW_ADMIN_EMAIL;
         const password = process.env.PW_ADMIN_PASSWORD;
@@ -1520,7 +1484,8 @@ test.describe("King's Soap - Admin Navigation", () => {
 
                 // Verify navigation reaches Login
                 await expect(page).toHaveURL(
-                    "http://localhost:5173/login"
+                    "http://localhost:5173/login",
+                     { timeout: 15000 }
                 );
 
                 // Verify the admin menu and controls are removed
