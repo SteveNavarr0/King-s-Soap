@@ -31,6 +31,7 @@ const OrderHistory = () => {
         let query = supabase
           .from("orders")
           .select("*")
+          .neq("status", "pending")
           .order("created_at", { ascending: false });
 
         if (user.email && user.id) {
