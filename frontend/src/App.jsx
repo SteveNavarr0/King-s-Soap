@@ -23,7 +23,6 @@ import UserChangePassword from "./Pages/UserChangePassword";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
 import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
-import Admin from "./Pages/Admin";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminDiscounts from "./Pages/AdminDiscounts";
@@ -124,7 +123,7 @@ function App() {
                 <Route path="/soapDishShop" element={<SoapDishShop />} />
 
                 <Route element={<CheckAdminPerm />}>
-                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin" element={<AdminProducts />} />
                   <Route path="/adminInbox" element={<AdminInbox />} />
                   <Route path="/adminProducts" element={<AdminProducts />} />
                   
