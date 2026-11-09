@@ -11,7 +11,7 @@ const getImageUrl = (imagePath) => {
   return data.publicUrl;
 };
 
-function UserChangePassword() {
+function UserChangePassword({ returnTo = "/login" }) {
   const backgroundImage = getImageUrl("images/login-background-image.png");
   const navigate = useNavigate();
 
@@ -53,15 +53,18 @@ function UserChangePassword() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setMessage(
-        "Password changed successfully. You will be redirected to the login page."
-      );
       setPassword("");
       setConfirmPassword("");
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+      const { error: signOutError } = await supabase.auth.signOut();
+
+      if (signOutError) {
+        setErrorMsg(
+          "Your password was changed, but automatic sign-out failed. Please sign out using the account menu."
+        );
+      } else {
+        navigate("/login", { replace: true });
+      }
     }
 
     setLoading(false);
@@ -163,7 +166,7 @@ function UserChangePassword() {
           </button>
 
           <NavLink
-            to="/login"
+            to={returnTo}
             className="block text-center font-sans text-base text-gray-800 underline decoration-gray-800/30 underline-offset-4 transition hover:scale-101 md:text-lg"
           >
             Cancel
