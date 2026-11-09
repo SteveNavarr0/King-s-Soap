@@ -8,11 +8,6 @@ export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [adminName, setAdminName] = useState({
-        first: "",
-        last: "",
-    });
-
 
   useEffect(() => {
     // 1. Fetch current session on initial load
@@ -37,37 +32,6 @@ export const AuthContextProvider = ({ children }) => {
   }, []);
 
 
-  //Effect waits for useAuth to provide the logged in user and then finds matching row using user.id
-    useEffect(() => {
-        const fetchAdminName = async () => {
-            if (!user) {
-              setAdminName({
-                first: "",
-                last: "",
-              });
-                return;
-            }
-
-            const { data, error } = await supabase
-                .from("users")
-                .select("First, Last")
-                .eq("id", user.id)
-                .single();
-
-
-            if (error) {
-                console.error("Could not fetch admin name:")
-                return;
-            }
-
-            setAdminName({
-                first: data.First,
-                last: data.Last,
-            });
-        };
-
-        fetchAdminName();
-    }, [user]);
 
   const signInUser = async (email, password) => {
     setLoading(true);
@@ -104,7 +68,6 @@ export const AuthContextProvider = ({ children }) => {
       value={{
         session,
         user,
-        adminName,
         loading,
         signInUser,
         signOutUser,

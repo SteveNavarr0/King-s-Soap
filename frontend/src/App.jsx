@@ -19,18 +19,13 @@ import Footer from "./components/Footer";
 import VerifyAccount from "./Pages/VerifyAccount";
 import CreateAccount from "./Pages/CreateAccount";
 import EmailToPWReset from "./Pages/EmailToPWReset";
-import UserAccount from "./Pages/UserAccount";
 import UserChangePassword from "./Pages/UserChangePassword";
-import UserChangeAddress from "./Pages/UserChangeAddress";
 import PaymentSuccessful from "./Pages/PaymentSuccessful";
 import RequestCancellation from "./Pages/RequestCancellation.jsx";
 import ProductPage from "./Pages/ProductPage.jsx";
-import Admin from "./Pages/Admin";
-import AdminHeader from "./components/AdminHeader";
 import AdminProducts from "./Pages/AdminProducts.jsx";
 import AdminInbox from "./Pages/AdminInbox.jsx";
 import AdminDiscounts from "./Pages/AdminDiscounts";
-import OldUIAdminDeleteProduct from "./Pages/OldUIAdminDeleteProduct.jsx";
 import CoconutOilShop from "./Pages/CoconutOilShop.jsx";
 import OrganicShop from "./Pages/OrganicShop.jsx";
 import AllNaturalShop from "./Pages/AllNaturalShop.jsx";
@@ -102,24 +97,12 @@ function App() {
                       }
                     />    
                 <Route
-                  path="/userAccount"
-                  element={
-                    <ProtectedRoute>
-                      <UserAccount />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
                   path="/userChangePassword"
                   element={
                     <ProtectedRoute>
                       <UserChangePassword />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/userChangeAddress"
-                  element={<UserChangeAddress />}
                 />
                 <Route path="/verifyaccount" element={<VerifyAccount />} />
                 <Route path="/createaccount" element={<CreateAccount />} />
@@ -140,26 +123,10 @@ function App() {
                 <Route path="/soapDishShop" element={<SoapDishShop />} />
 
                 <Route element={<CheckAdminPerm />}>
-                  <Route path="/admin" element={<Admin />} />
-
-                  <Route
-                    path="/adminChangePassword"
-                    element={
-                      <>
-                        <div className="absolute inset-x-0 top-0 z-40">
-                          <AdminHeader />
-                        </div>
-                        <UserChangePassword returnTo="/admin" />
-                      </>
-                    }
-                  />
-
+                  <Route path="/admin" element={<AdminProducts />} />
                   <Route path="/adminInbox" element={<AdminInbox />} />
                   <Route path="/adminProducts" element={<AdminProducts />} />
-                  <Route
-                    path="/OldUIAdminDeleteProduct"
-                    element={<OldUIAdminDeleteProduct />}
-                  />
+                  
                   <Route
                     path="/adminDiscounts"
                     element={<AdminDiscounts />}
