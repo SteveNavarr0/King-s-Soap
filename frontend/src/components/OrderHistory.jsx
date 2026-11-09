@@ -31,6 +31,7 @@ const OrderHistory = () => {
         let query = supabase
           .from("orders")
           .select("*")
+          .neq("status", "pending")
           .order("created_at", { ascending: false });
 
         if (user.email && user.id) {
@@ -339,7 +340,8 @@ const OrderHistory = () => {
                         {formatDate(order.created_at)}
                       </span>
 
-                      {order.total_amount && (
+                      {/* Display saved totals, including zero. Hide only missing values. */}
+                      {order.total_amount != null && (
                         <span className="text-xs md:text-sm font-serif text-white/70">
                           Total: ${Number(order.total_amount).toFixed(2)}
                         </span>

@@ -217,6 +217,15 @@ function AdminHeader() {
                                 {loading ? "Loading..." : user?.email}
                             </p>
 
+
+                            <Link
+                                to="/adminChangePassword"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="transition duration-200 hover:scale-105"
+                            >
+                                Change Password
+                            </Link>
+
                             <button
                                 type="button"
                                 onClick={handleSignOut}
