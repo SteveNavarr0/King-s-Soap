@@ -178,10 +178,9 @@ function AdminHeader() {
                         {/* Admin navigation links */}
                         <div className="flex flex-col items-center gap-5 text-lg">
                             {[
-                                { label: "Home", to: "/admin" },
                                 { label: "Products", to: "/AdminProducts" },
                                 { label: "Orders", to: "/AdminOrders" },
-                                { label: "Shipping", to: "/adminShipping" },
+                                { label: "Shipping", to: "/AdminShipping" },
                                 { label: "Discounts", to: "/AdminDiscounts" },
                                 { label: "Inbox", to: "/AdminInbox" },
                             ].map(({ label, to }) => (
