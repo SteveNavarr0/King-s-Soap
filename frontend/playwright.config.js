@@ -1,8 +1,13 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config({ path: ".env.test" });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Explicitly load frontend/.env regardless of where the terminal command runs
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 /**
  * Read environment variables from file.
