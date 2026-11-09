@@ -5,6 +5,7 @@ import {
   acceptOrder,
   declineOrder,
   requestCancelOrder,
+  getOrderBySession,
 } from "../controllers/checkoutController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { previewDiscount } from "../controllers/checkoutController.js";
@@ -41,5 +42,10 @@ router.post("/orders/:id/cancel", requireAuth, declineOrder);
  * Customer cancellation request while order is on hold (notifies store admin).
  */
 router.post("/orders/:id/request-cancel", requestCancelOrder);
+
+/**
+ * Public lookup by Stripe session ID for the payment success page (works for guests).
+ */
+router.get("/orders/by-session/:sessionId", getOrderBySession);
 
 export default router;

@@ -129,7 +129,69 @@ export const validateUserCart = async (userId, authToken = null, guestItems = []
     if (!guestItems || guestItems.length === 0) {
       return { isValid: false, error: "Your cart is empty." };
     }
-    return validateAndFormatCartItems(guestItems);
+
+    // Guests only send product IDs and quantities; prices, stock, names, and
+    // images are re-fetched from the database so tampered localStorage data
+    // (e.g. edited prices) is never trusted.
+    const productIds = [
+      ...new Set(
+        guestItems
+          .map((item) => item.id || item.product_ID || item.product_id)
+          .filter(Boolean)
+      ),
+    ];
+
+    if (productIds.length === 0) {
+      return { isValid: false, error: "Your cart is empty." };
+    }
+
+    const { data: dbProducts, error: productsError } = await supabase
+      .from("products")
+      .select(`
+        id,
+        name,
+        price,
+        stock,
+        weight,
+        Availability,
+        product_images (
+          id,
+          image_url
+        )
+      `)
+      .in("id", productIds);
+
+    if (productsError) {
+      console.error("Database query error fetching guest products:", productsError);
+      throw new Error(`Failed to fetch products: ${productsError.message}`);
+    }
+
+    const productsById = new Map((dbProducts || []).map((p) => [p.id, p]));
+
+    const normalizedItems = [];
+    for (const item of guestItems) {
+      const productId = item.id || item.product_ID || item.product_id;
+      const product = productsById.get(productId);
+
+      if (!product) {
+        return {
+          isValid: false,
+          error: "A product in your cart is no longer available in the store.",
+        };
+      }
+
+      const quantity = Math.floor(Number(item.quantity));
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return {
+          isValid: false,
+          error: `Invalid quantity for "${product.name}".`,
+        };
+      }
+
+      normalizedItems.push({ products: product, quantity });
+    }
+
+    return validateAndFormatCartItems(normalizedItems);
   }
 
   // Use service-role client if configured, otherwise scoped client using user's auth token
@@ -806,6 +868,61 @@ export const requestCancelOrder = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || "Failed to submit cancellation request.",
+    });
+  }
+};
+
+/**
+ * Fetch an order by its Stripe checkout session ID for the payment success page.
+ * Public endpoint (no auth) so guest checkouts can view their order; the Stripe
+ * session ID acts as the secret since it only appears in the payer's success URL.
+ * Uses the service-role client to bypass RLS, returning only the fields the
+ * success page needs.
+ */
+export const getOrderBySession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!sessionId || !sessionId.startsWith("cs_")) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid checkout session ID is required.",
+      });
+    }
+
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select(`
+        id,
+        status,
+        total_amount,
+        customer_email,
+        order_items (
+          id,
+          quantity,
+          unit_price,
+          product_id,
+          products (
+            name
+          )
+        )
+      `)
+      .eq("stripe_session_id", sessionId)
+      .single();
+
+    if (error || !order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    return res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error("Error in getOrderBySession:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to load order.",
     });
   }
 };

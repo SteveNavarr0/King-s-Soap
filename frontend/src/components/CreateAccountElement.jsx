@@ -26,17 +26,25 @@ function CreateAccountElement() {
 
   const handleCreateAccount = async (event) => {
     event.preventDefault();
+
+    if (isSubmitting) return;
+
     setErrorMessage("");
 
-    if (!name.trim()) {
-      setErrorMessage("Please enter your name.");
+    const firstName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!firstName || firstName.length > 100) {
+      setErrorMessage("Please enter a name of 1–100 characters.");
       return;
     }
 
-    const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-    if (!emailRegex.test(trimmedEmail)) {
+    if (
+      trimmedEmail.length > 254 ||
+      !emailRegex.test(trimmedEmail)
+    ) {
       setErrorMessage("Please enter a valid email address.");
       return;
     }
@@ -44,9 +52,14 @@ function CreateAccountElement() {
     const hasLetter = /[A-Za-z]/.test(password);
     const hasNumber = /\d/.test(password);
 
-    if (password.length < 8 || !hasLetter || !hasNumber) {
+    if (
+      password.length < 8 ||
+      password.length > 128 ||
+      !hasLetter ||
+      !hasNumber
+    ) {
       setErrorMessage(
-        "Password must be at least 8 characters and include at least 1 letter and 1 number."
+        "Password must be 8–128 characters and include at least 1 letter and 1 number."
       );
       return;
     }
@@ -58,36 +71,47 @@ function CreateAccountElement() {
 
     setIsSubmitting(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: {
-        data: {
-          first_name: name.trim(),
+    try {
+      const { error } = await supabase.functions.invoke("user-resign-up", {
+        body: {
+          email: trimmedEmail,
+          password,
+          firstName,
+          redirectTo: `${window.location.origin}/login`,
         },
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
-    });
+      });
 
-    setIsSubmitting(false);
+      if (error) {
+        let message = error.message || "Unable to process signup.";
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
+        if (error.context instanceof Response) {
+          const result = await error.context.json().catch(() => null);
+
+          if (typeof result?.error === "string") {
+            message = result.error;
+          } else if (typeof result?.message === "string") {
+            message = result.message;
+          }
+        }
+
+        setErrorMessage(message);
+        return;
+      }
+
+      navigate("/verifyaccount", {
+        state: {
+          email: trimmedEmail,
+        },
+      });
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (data?.user && data.user.identities && data.user.identities.length === 0) {
-            //If the user is trying to create an account, but the email is already registered, we will send a password reset email instead of creating a new account.
-        await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/login`,
-      });      
-    }
-
-    navigate("/verifyaccount", {
-      state: {
-        email: trimmedEmail,
-      },
-    });
   };
 
   return (
@@ -97,6 +121,7 @@ function CreateAccountElement() {
         alt=""
         className="absolute inset-0 z-0 h-full w-full object-cover"
       />
+
       <div
         className="absolute inset-0 z-0 bg-black/25"
         aria-hidden="true"
@@ -111,12 +136,14 @@ function CreateAccountElement() {
             >
               First Name
             </label>
+
             <input
               id="signup-name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               required
+              maxLength={100}
               autoComplete="given-name"
               placeholder="Name"
               className="h-12 w-full rounded-lg border border-gray-300 px-4 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
@@ -130,12 +157,14 @@ function CreateAccountElement() {
             >
               Email
             </label>
+
             <input
               id="signup-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
+              maxLength={254}
               autoComplete="email"
               placeholder="user@example.com"
               className="h-12 w-full rounded-lg border border-gray-300 px-4 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
@@ -149,6 +178,7 @@ function CreateAccountElement() {
             >
               Password
             </label>
+
             <div className="relative">
               <input
                 id="signup-password"
@@ -157,10 +187,12 @@ function CreateAccountElement() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 minLength={8}
+                maxLength={128}
                 autoComplete="new-password"
                 placeholder="Password"
                 className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-12 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((shown) => !shown)}
@@ -179,6 +211,7 @@ function CreateAccountElement() {
             >
               Retype Password
             </label>
+
             <div className="relative">
               <input
                 id="signup-confirm-password"
@@ -186,10 +219,12 @@ function CreateAccountElement() {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 required
+                maxLength={128}
                 autoComplete="new-password"
                 placeholder="Retype password"
                 className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-12 font-sans text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-400"
               />
+
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((shown) => !shown)}
@@ -206,7 +241,7 @@ function CreateAccountElement() {
           </div>
 
           {errorMessage && (
-            <p className="font-sans text-base text-red-600">
+            <p role="alert" className="font-sans text-base text-red-600">
               {errorMessage}
             </p>
           )}
