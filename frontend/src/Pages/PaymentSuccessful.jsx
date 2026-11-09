@@ -26,36 +26,32 @@ const PaymentSuccessful = () => {
         return;
       }
 
+      const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
       for (let i = 0; i < retries; i++) {
-        const { data, error } = await supabase
-          .from("orders")
-          .select(`
-            *,
-            order_items (
-              id,
-              quantity,
-              unit_price,
-              product_id,
-              products (
-                name
-              )
-            )
-          `)
-          .eq("stripe_session_id", sessionId)
-          .single();
+        try {
+          // Fetch via the backend so guest orders (user_id = null) aren't blocked by RLS
+          const response = await fetch(
+            `${API_BASE_URL}/api/checkout/orders/by-session/${encodeURIComponent(sessionId)}`
+          );
 
-        if (data && !error) {
-          if (isMounted) {
-            setOrder(data);
-            setLoading(false);
+          if (response.ok) {
+            const { order: fetchedOrder } = await response.json();
 
-            // Clean up carts upon successful fetch
-            localStorage.removeItem("guestCart");
-            if (user?.id) {
-              await supabase.from("cart").delete().eq("user_ID", user.id);
+            if (isMounted) {
+              setOrder(fetchedOrder);
+              setLoading(false);
+
+              // Clean up carts upon successful fetch
+              localStorage.removeItem("guestCart");
+              if (user?.id) {
+                await supabase.from("cart").delete().eq("user_ID", user.id);
+              }
             }
+            return;
           }
-          return;
+        } catch (fetchErr) {
+          console.error("Error fetching order:", fetchErr);
         }
 
         // If not found yet, wait before retrying (gives webhook time to finish)
