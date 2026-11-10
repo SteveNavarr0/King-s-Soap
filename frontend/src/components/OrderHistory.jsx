@@ -294,8 +294,10 @@ const OrderHistory = () => {
             {orders.map((order) => {
               const firstItem = order.order_items?.[0];
               const product = firstItem?.products;
-              const images = product?.product_images;
 
+              const images = firstItem?.product_image_url
+                ? [{ image_url: firstItem.product_image_url }]
+                : product?.product_images;
               // Check if image exists using the exact admin pattern
               const hasImage = images && images.length > 0 && images[0].image_url;
 
@@ -327,7 +329,7 @@ const OrderHistory = () => {
                     <div className="col-span-2 md:col-span-1 md:col-start-2 space-y-1 text-sm md:text-base text-white/70 break-words">
                       {order.order_items?.map((item) => (
                         <p key={item.id}>
-                          {item.products?.name || "Product unavailable"} × {item.quantity}
+                          {item.product_name || item.products?.name || "Product unavailable"} × {item.quantity}
                         </p>
                       ))}
                     </div>

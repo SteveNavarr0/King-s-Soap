@@ -445,11 +445,17 @@ export const createCheckoutSession = async (req, res) => {
     // 4. Insert Order Items into Supabase
     const orderItems = result.cartItems.map((item) => {
       const product = item.products || item.product || item;
+
       return {
         order_id: newOrder.id,
         product_id: item.product_ID || product.id || item.id,
         quantity: item.quantity,
         unit_price: Number(product.price),
+        product_name: product.name,
+        product_image_url:
+          product.product_images?.[0]?.image_url ||
+          product.image ||
+          null,
       };
     });
 
