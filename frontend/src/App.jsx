@@ -6,6 +6,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import CheckAdminPerm from "./components/CheckAdminPerm";
+import AdminHeader from "./components/AdminHeader";
 
 import { useAuth } from "./context/AuthContext";
 
@@ -125,6 +126,17 @@ function App() {
                 <Route element={<CheckAdminPerm />}>
                   <Route path="/admin" element={<AdminProducts />} />
                   <Route path="/adminInbox" element={<AdminInbox />} />
+                  <Route
+                    path="/adminChangePassword"
+                    element={
+                      <>
+                        <div className="absolute inset-x-0 top-0 z-40">
+                          <AdminHeader />
+                        </div>
+                        <UserChangePassword returnTo="/admin" />
+                      </>
+                    }
+                  />
                   <Route path="/adminProducts" element={<AdminProducts />} />
                   
                   <Route
