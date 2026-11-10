@@ -12,7 +12,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function UserChangePassword({ returnTo = "/login" }) {
-  const backgroundImage = getImageUrl("images/login-background-image.png");
+  const backgroundImage = getImageUrl("images/login-background-image.jpg");
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");

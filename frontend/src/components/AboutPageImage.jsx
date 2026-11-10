@@ -6,7 +6,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function AboutImage() {
-    const AboutImage = getImageUrl('images/about-page/aboutHeader.png');
+    const AboutImage = getImageUrl('images/about-page/aboutHeader.jpg');
     return (
         <div className = 'relative flex justify-between items-center about-page-image'>
             <img src={AboutImage} alt='Image different soaps' className='aboutHeader mx-auto w-full' />

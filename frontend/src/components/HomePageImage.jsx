@@ -8,7 +8,7 @@ const getImageUrl =  (imagePath) => {
   };
 
 function HomeImage() {
-        const HomePageImage = getImageUrl("images/home-page-image.png");
+        const HomePageImage = getImageUrl("images/home-page-image.jpg");
     return (
         <div className = "relative flex justify-between items-center home-image">
             

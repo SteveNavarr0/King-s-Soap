@@ -9,7 +9,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function ShopPageImage() {
-  const imageUrl = getImageUrl("images/home-page-image.png");
+  const imageUrl = getImageUrl("images/home-page-image.jpg");
 
   return (
     <div className="relative">

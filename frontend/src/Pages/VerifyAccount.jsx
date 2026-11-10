@@ -1,4 +1,4 @@
-import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.png";
+import LoginBackgroundImage from "../assets/images/login-background-image/login-background-image.jpg";
 import { MdOutlineEmail } from "react-icons/md";
 import supabase from "../supabaseClient";
 import { useLocation } from "react-router-dom";

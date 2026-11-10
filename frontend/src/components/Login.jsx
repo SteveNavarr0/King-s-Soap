@@ -12,7 +12,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function HomeLogin() {
-  const backgroundImage = getImageUrl("images/login-background-image.png");
+  const backgroundImage = getImageUrl("images/login-background-image.jpg");
   const { signInUser } = useAuth();
   const navigate = useNavigate();
 
