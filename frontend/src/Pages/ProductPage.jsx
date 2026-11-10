@@ -22,6 +22,24 @@ const ProductPage = () => {
   // stores how many items the user wants to buy
   const [quantity, setQuantity] = useState(0);
 
+  // stores cart success and error messages
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+  };
+
+  // clear notifications after 3 seconds
+  useEffect(() => {
+    if (!notification) return;
+
+    const timeout = setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [notification]);
+
   // scroll to the top whenever a product page opens.
   useEffect(() => {
   window.scrollTo(0, 0);
@@ -117,7 +135,13 @@ const ProductPage = () => {
         }
 
         localStorage.setItem("guestCart", JSON.stringify(existingCart));
-        console.log(`Added ${quantity} of ${product.name} to guest cart.`);
+
+        showNotification(
+          existingItemIndex > -1
+            ? `Updated ${product.name} quantity in cart.`
+            : `Added ${product.name} to cart.`
+        );
+
         return;
         }
 
@@ -128,8 +152,9 @@ const ProductPage = () => {
       .eq("product_ID", product.id)
       .maybeSingle();
     
-    if (fecthError) {
+     if (fecthError) {
       console.error("Error fetching cart item:", fecthError);
+      showNotification("Could not load your cart. Please try again.", "error");
       return;
     }
 
@@ -148,7 +173,11 @@ const ProductPage = () => {
 
       if (updateError) {
         console.error("Error updating cart item:", updateError);
+        showNotification("Could not update your cart. Please try again.", "error");
+        return;
       }
+
+      showNotification(`Updated ${product.name} quantity in cart.`);
     } else {
       // If the item does not exist in the cart, insert it
       const { error: insertError } = await supabase
@@ -163,10 +192,12 @@ const ProductPage = () => {
 
       if (insertError) {
         console.error("Error adding item to cart:", insertError);
+        showNotification("Could not add this item to your cart. Please try again.", "error");
+        return;
       }
-    }   
 
-    console.log(`Added ${selectedQuantity} of ${product.name} to cart.`);
+      showNotification(`Added ${product.name} to cart.`);
+    }
     
   };
   // loading screen
@@ -179,9 +210,21 @@ const ProductPage = () => {
     return <div className="text-center mt-10">Product not found.</div>;
   }
 
-  return (
+   return (
     // full-page wrapper with tan background
     <div className="bg-[#C5AE98] px-4 pt-28 md:pt-32">
+      {notification && (
+        <div
+          role={notification.type === "error" ? "alert" : "status"}
+          className={`fixed top-28 right-[22px] md:top-40 md:right-10 z-[100] max-w-[calc(100%-44px)] rounded-lg border border-white/30 px-4 py-3 font-sans text-sm md:text-base text-white shadow-lg ${
+            notification.type === "error"
+              ? "bg-gray-800/80"
+              : "bg-[#8B6B4A]"
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
 
       {/* centered white product box */}
       <div className="mx-auto max-w-5xl rounded-lg bg-white px-10 py-10 md:max-w-[640px] lg:max-w-5xl">

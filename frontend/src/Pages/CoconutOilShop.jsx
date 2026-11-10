@@ -152,7 +152,12 @@ const CoconutOilShop = () => {
         }
 
         localStorage.setItem("guestCart", JSON.stringify(existingCart));
-        showNotification(`Added ${product.name} to cart.`);
+
+        showNotification(
+          existingItemIndex > -1
+            ? `Updated ${product.name} quantity in cart.`
+            : `Added ${product.name} to cart.`
+        );
       }
     } catch (err) {
       console.error("Cart error:", err);

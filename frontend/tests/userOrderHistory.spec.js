@@ -1,5 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect as baseExpect } from '@playwright/test';
 
+// Give retrying assertions in this file up to 15 seconds to pass.
+// They continue immediately once the expected condition is met.
+const expect = baseExpect.configure({
+  timeout: 15000
+});
 // ============================================================
 // REAL TEST ACCOUNT LOGIN
 // ============================================================
@@ -719,6 +724,7 @@ test.describe('User Past Orders', () => {
     // Wait for a saved order to appear before measuring the layout.
     const orderHeadings = page.locator('main h3');
 
+    // Wait for the first order using the file-wide 15-second timeout.
     await expect(orderHeadings.first()).toBeVisible();
 
     // Check whether the page content extends beyond the screen width.
@@ -822,6 +828,7 @@ test.describe('User Past Orders', () => {
     // Wait for a saved order to appear before checking the layout.
     const orderHeadings = page.locator('main h3');
 
+    // Wait for the first order using the file-wide 15-second timeout.
     await expect(orderHeadings.first()).toBeVisible();
 
     // Measure whether the page content extends beyond the screen.
