@@ -11,7 +11,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function EmailToPWReset() {
-  const backgroundImage = getImageUrl("images/login-background-image.png");
+  const backgroundImage = getImageUrl("images/login-background-image.jpg");
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);

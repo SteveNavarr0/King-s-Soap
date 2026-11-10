@@ -12,7 +12,7 @@ const getImageUrl = (imagePath) => {
 };
 
 function CreateAccountElement() {
-  const backgroundImage = getImageUrl("images/login-background-image.png");
+  const backgroundImage = getImageUrl("images/login-background-image.jpg");
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
