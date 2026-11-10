@@ -9,6 +9,7 @@ function CarouselHomePage({
   buttonTo,
   product,
   onAddToCart,
+  onProductOpen,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
@@ -34,6 +35,7 @@ function CarouselHomePage({
     <div className="flex w-full max-w-[500px] min-w-0 flex-col items-center overflow-hidden rounded-md bg-white/15">
       <Link
         to={buttonTo}
+        onClick={onProductOpen}
         className="block w-full cursor-pointer transition duration-200 hover:scale-102"
       >
         <div className="relative w-full aspect-[3/3] overflow-hidden rounded-t-md md:h-[400px] md:aspect-auto">

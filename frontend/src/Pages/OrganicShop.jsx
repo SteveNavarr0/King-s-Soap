@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { Link, useLocation, useNavigationType } from "react-router-dom";
 import supabase from "../supabaseClient";
 import ShopPageImage from "../components/ShopPageImage";
 import FilterBar from "../components/FilterBar";
 
 const OrganicShop = () => {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+
   const [products, setProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [notification, setNotification] = useState(null);
 
   const showNotification = (message, type = "success") => {
@@ -31,6 +35,7 @@ const OrganicShop = () => {
 
       if (error) {
         console.error("Error fetching products:", error);
+        setProductsLoaded(true);
         return;
       }
 
@@ -44,10 +49,31 @@ const OrganicShop = () => {
       }));
 
       setProducts(productsWithOrderedImages);
+      setProductsLoaded(true);
     };
 
     fetchProducts();
   }, []);
+
+  // Restore this page visit's scroll position on Back/Forward navigation.
+  useLayoutEffect(() => {
+    if (!productsLoaded || navigationType !== "POP") return;
+
+    const savedPosition = sessionStorage.getItem(
+      `shop-scroll:${location.key}`
+    );
+
+    if (savedPosition === null) return;
+
+    const scrollPosition = Number(savedPosition);
+    if (!Number.isFinite(scrollPosition)) return;
+
+    window.scrollTo({
+      top: scrollPosition,
+      left: 0,
+      behavior: "instant",
+    });
+  }, [productsLoaded, navigationType, location.key]);
 
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
@@ -197,6 +223,12 @@ const OrganicShop = () => {
               >
                 <Link
                   to={`/product/${product.id}`}
+                  onClick={() => {
+                    sessionStorage.setItem(
+                      `shop-scroll:${location.key}`,
+                      String(window.scrollY)
+                    );
+                  }}
                   className="block w-full transition duration-200 hover:scale-102"
                 >
                   {firstImage ? (

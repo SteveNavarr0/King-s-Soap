@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { useLocation, useNavigationType } from "react-router-dom";
 import CarouselHomePage from "../components/CarouselHomePage";
 import HomeImage from "../components/HomePageImage";
 import supabase from "../supabaseClient";
@@ -6,7 +7,11 @@ import supabase from "../supabaseClient";
 const Home = () => {
   //products var holds the data fetched from the products table in supabase
   //setProducts is a function that updates the products var
+  const location = useLocation();
+  const navigationType = useNavigationType();
+
   const [products, setProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [notification, setNotification] = useState(null);
 
   const showNotification = (message, type = "success") => {
@@ -41,17 +46,39 @@ const Home = () => {
         // Get top 6 products
        .limit(6); 
 
-      //error handling for fetch request 
+      //error handling for fetch request
       if (error) {
         console.error("Error fetching products:", error);
+        setProductsLoaded(true);
         return;
       }
-      
-      setProducts(data);
+
+      setProducts(data || []);
+      setProductsLoaded(true);
     };
 
-        fetchProducts();
+    fetchProducts();
   }, []);
+
+  // Restore Home's scroll position on Back/Forward navigation.
+  useLayoutEffect(() => {
+    if (!productsLoaded || navigationType !== "POP") return;
+
+    const savedPosition = sessionStorage.getItem(
+      `home-scroll:${location.key}`
+    );
+
+    if (savedPosition === null) return;
+
+    const scrollPosition = Number(savedPosition);
+    if (!Number.isFinite(scrollPosition)) return;
+
+    window.scrollTo({
+      top: scrollPosition,
+      left: 0,
+      behavior: "instant",
+    });
+  }, [productsLoaded, navigationType, location.key]);
 
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
@@ -202,6 +229,12 @@ const Home = () => {
               key={product.id}
               product={product}
               onAddToCart={handleAddToCart}
+              onProductOpen={() => {
+                sessionStorage.setItem(
+                  `home-scroll:${location.key}`,
+                  String(window.scrollY)
+                );
+              }}
               images={[...(product.product_images ?? [])]
                 .sort((a, b) => a.display_order - b.display_order)
                 .map((img) => img.image_url)}
