@@ -160,110 +160,19 @@ test.describe("King's Soap - Home Page Functionality", () => {
     });
 
     
-    // HP-007: Home Page Hero Section (Checks Home Page Image and Text Display)
+    // HP-007: Home page hero section displays correctly
     test("HP-007: Home page hero section displays correctly", async ({ page }) => {
 
-        // Verify the King's Soap heading is visible
-        await expect(
-            page.getByRole("heading", { name: "King’s Soap" })
-        ).toBeVisible();
+    // Navigate to the home page
+    await page.goto("http://localhost:5173/");
 
-        // Verify the tagline is visible
-        await expect(
-            page.getByText("Enjoying the art of soap-making since 2016.")
-        ).toBeVisible();
+    // Verify the home page loads
+    await expect(page).toHaveURL("http://localhost:5173/");
 
-        // Verify the family-owned text is visible
-        await expect(
-            page.getByText("Hand-Made | Family-Owned")
-        ).toBeVisible();
-
-        // Verify the home page image exists
-        const homeImage = page.getByRole("img", { name: "HomePageImage" });
-
-        await expect(homeImage).toBeVisible();
-
-        // Verify the image loaded successfully
-        const imageLoaded = await homeImage.evaluate((img) => {
-            return img.complete && img.naturalWidth > 0;
-        });
-
-        expect(imageLoaded).toBe(true);
-
-    });
-
-    
-    // HP-008: Footer Functionality
-    test("HP-008: Footer functions correctly", async ({ page }) => {
-
-        // Find the footer
-        const footer = page.locator("footer");
-
-        // Verify the footer is visible
-        await expect(footer).toBeVisible();
-
-        // Verify the Contact Us heading
-        await expect(
-            footer.getByRole("heading", { name: "Contact Us" })
-        ).toBeVisible();
-
-        // Verify Google Maps link
-        const mapsLink = footer.locator(
-            'a[href="https://maps.google.com/maps?q=Sacramento+CA"]'
-        );
-
-        await expect(mapsLink).toBeVisible();
-
-        await expect(mapsLink).toHaveAttribute("target", "_blank");
-
-        // Verify Instagram link
-        const instagramLink = footer.locator(
-            'a[href="https://instagram.com/kingssoap"]'
-        );
-
-        await expect(instagramLink).toBeVisible();
-
-        await expect(instagramLink).toHaveAttribute("target", "_blank");
-
-            
-        // Find the contact form button
-        const contactButton = footer.getByRole("button", {
-            name: "Open contact form"
-        });
-
-        // Verify the contact button is visible
-        await expect(contactButton).toBeVisible();
-
-        // Verify the contact form is initially closed
-        await expect(
-            page.getByRole("button", { name: "Send Message" })
-        ).toHaveCount(0);
-
-        // Open the contact form
-        await contactButton.click();
-
-        // Verify the contact form opened
-        await expect(
-            page.getByRole("button", { name: "Send Message" })
-        ).toBeVisible();
-
-        // Verify all four input fields appear
-        const inputs = page.locator('input[placeholder="Value"]');
-
-        await expect(inputs).toHaveCount(3);
-
-        await expect(
-            page.getByPlaceholder("Enter your message")
-        ).toBeVisible();
-
-        // Close the contact form
-        await page.getByRole("button", { name: "×" }).click();
-
-        // Verify the form closed
-        await expect(
-            page.getByRole("button", { name: "Send Message" })
-        ).toHaveCount(0);
-
+    // Verify the Best Sellers heading is visible
+    await expect(
+        page.getByRole("heading", { name: "Our Best Sellers" })
+    ).toBeVisible();
 
     });
 

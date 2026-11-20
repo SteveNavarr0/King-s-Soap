@@ -51,54 +51,98 @@ test("AB320 - Admin can open product image manager", async ({ page }) => {
 });
 
 
+// AB321 - Admin can upload a new product image
 test("AB321 - Admin can upload a new product image", async ({ page }) => {
 
+  // Navigate to Admin Products
   await page.goto("http://localhost:5173/AdminProducts");
 
+  // Locate the test product
   const product = page.getByText(productName, {
     exact: true
   });
 
-  await expect(product).toBeVisible({ timeout: 15000 });
+  // Verify product exists
+  await expect(product).toBeVisible();
+
+  // Open product update popup
   await product.click();
+
+  // Verify popup opens
+  await expect(
+    page.getByRole("button", {
+      name: "Save Changes"
+    })
+  ).toBeVisible();
 
   // Wait for product information to load
   await expect(
-    page.getByPlaceholder("Value").nth(0)
-  ).toHaveValue(productName, { timeout: 15000 });
+    page.getByRole("heading", {
+      name: productName,
+      exact: true
+    })
+  ).toBeVisible({ timeout: 10000 });
 
-  // Create a small PNG image for testing
-  const testImage = {
-    name: "playwright-test-image.png",
-    mimeType: "image/png",
-    buffer: Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==",
-      "base64"
-    )
-  };
+  // Locate image upload input
+  const imageInput = page.locator('input[type="file"]');
 
-  // Upload image through the file input
-  await page.locator('input[type="file"]').setInputFiles(testImage);
+  await expect(imageInput).toHaveCount(1);
 
-  // Verify the image was selected
+  // Upload existing test image
+  await imageInput.setInputFiles(
+    "tests/fixtures/product.png"
+  );
+
+  // Verify image was selected
   await expect(
     page.getByText("1 new image selected")
   ).toBeVisible();
 
-  // Verify the new image preview appears
-  await expect(
-    page.getByAltText("New product preview 1")
-  ).toBeVisible();
+  // Verify new image preview appears
+  const imagePreview = page.getByRole("img", {
+    name: "New product preview 1"
+  });
 
-  // Save the product
-  await page.getByRole("button", {
+  await expect(imagePreview).toBeVisible();
+
+  // Verify preview has a temporary image URL
+  await expect(imagePreview).toHaveAttribute(
+    "src",
+    /^blob:/
+  );
+
+  // Locate Save Changes button
+  const saveButton = page.getByRole("button", {
     name: "Save Changes"
-  }).click();
+  });
 
-  // Verify success message
+  await expect(saveButton).toBeEnabled();
+
+  // Capture failed network requests
+  page.on("response", (response) => {
+    if (response.status() >= 400) {
+      console.log(
+        "Failed request:",
+        response.status(),
+        response.url()
+      );
+    }
+  });
+
+  // Capture browser errors
+  page.on("pageerror", (error) => {
+    console.log("JavaScript error:", error.message);
+  });
+
+  // Save changes
+  await saveButton.click();
+
+  // Verify successful update
   await expect(
-    page.getByText("Product updated successfully.")
-  ).toBeVisible({ timeout: 15000 });
+    page.getByText("Product updated successfully.", {
+      exact: true
+    })
+  ).toBeVisible({ timeout: 20000 });
 
 });
 

@@ -6,64 +6,75 @@ const productName = "Playwright Updated Test Soap";
 // Run tests in order
 test.describe.configure({ mode: "serial" });
 
-// AB314 - Open Product Editing Form
+// AB314 - Admin can open product editing form
 test("AB314 - Admin can open product editing form", async ({ page }) => {
 
   // Navigate to Admin Products
   await page.goto("http://localhost:5173/AdminProducts");
 
-  // Locate the existing test product
+  // Verify Admin Products page loads
+  await expect(
+    page.getByRole("heading", { name: "Your Products" })
+  ).toBeVisible();
+
+  // Locate the product in inventory
   const product = page.getByText(productName, {
     exact: true
   });
 
-  // Verify product is displayed
-  await expect(product).toBeVisible({
-    timeout: 15000
-  });
+  // Verify product exists
+  await expect(product).toBeVisible();
 
-  // Open the editing popup
+  // Click product to open update popup
   await product.click();
 
-  // Verify popup displays the correct product name
+  // Verify product editing form has opened
+  await expect(
+    page.getByRole("button", { name: "Save Changes" })
+  ).toBeVisible();
+
+  // Verify product name loads into the editing form
   await expect(
     page.getByRole("heading", {
-      name: productName
+      name: productName,
+      exact: true
     })
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 10000 });
 
   // Verify editing fields are displayed
-  await expect(page.getByText("Product Name", {
-    exact: true
-  })).toBeVisible();
-
-  await expect(page.getByText("Price", {
-    exact: true
-  })).toBeVisible();
-
-  await expect(page.getByText("Description", {
-    exact: true
-  })).toBeVisible();
-
-  await expect(page.getByText("Inventory", {
-    exact: true
-  })).toBeVisible();
-
-  await expect(page.getByText("Weight", {
-    exact: true
-  })).toBeVisible();
-
-  // Verify Save Changes button exists
   await expect(
-    page.getByRole("button", {
-      name: "Save Changes"
-    })
+    page.getByText("Product Name", { exact: true })
   ).toBeVisible();
 
-  // Verify product name is loaded into the form
   await expect(
-    page.getByPlaceholder("Value").nth(0)
-  ).toHaveValue(productName);
+    page.getByText("Price", { exact: true })
+  ).toBeVisible();
+
+  await expect(
+    page.getByText("Description", { exact: true })
+  ).toBeVisible();
+
+  await expect(
+    page.getByText("Inventory", { exact: true })
+  ).toBeVisible();
+
+  await expect(
+    page.getByText("Weight", { exact: true })
+  ).toBeVisible();
+
+  // Verify pencil edit buttons are available
+  await expect(
+    page.getByRole("button", { name: "edit product name" })
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: "edit price" })
+  ).toBeVisible();
+
+  // Verify Delete Product button exists
+  await expect(
+    page.getByRole("button", { name: "Delete Product" })
+  ).toBeVisible();
 
 });
 

@@ -47,43 +47,81 @@ test("AB303 - Product name is required", async ({ page }) => {
   ).toBeVisible();
 });
 
+// AB304 - Invalid price is rejected
 test("AB304 - Invalid price is rejected", async ({ page }) => {
+
+  // Navigate to Admin Products
   await page.goto("http://localhost:5173/AdminProducts");
 
+  // Open Add Product popup
   await page.getByRole("button", {
-    name: /Add a Product/i
+    name: "Add a Product +"
   }).click();
 
-  await page.getByPlaceholder("Value").nth(0).fill("Test Soap");
-  await page.getByPlaceholder("Value").nth(1).fill("abc");
+  // Verify popup is open
+  await expect(
+    page.getByRole("heading", {
+      name: "Add a New Product"
+    })
+  ).toBeVisible();
 
+  // Enter valid product name
+  await page.getByPlaceholder("Value").nth(0).fill("Test Soap");
+
+  // Enter invalid negative price
+  await page.getByPlaceholder("Value").nth(1).fill("-10");
+
+  // Attempt to add product
   await page.getByRole("button", {
     name: "Add Item"
   }).click();
 
+  // Verify invalid price is rejected
   await expect(
-    page.getByText("Please enter a valid decimal for price")
+    page.getByText("Please enter a valid price of 0 or greater")
   ).toBeVisible();
+
 });
 
+// AB305 - Invalid inventory is rejected
 test("AB305 - Invalid inventory is rejected", async ({ page }) => {
+
+  // Navigate to Admin Products
   await page.goto("http://localhost:5173/AdminProducts");
 
+  // Open Add Product popup
   await page.getByRole("button", {
-    name: /Add a Product/i
+    name: "Add a Product +"
   }).click();
 
-  await page.getByPlaceholder("Value").nth(0).fill("Test Soap");
-  await page.getByPlaceholder("Value").nth(1).fill("9.99");
-  await page.getByPlaceholder("Value").nth(3).fill("abc");
+  // Verify popup is open
+  await expect(
+    page.getByRole("heading", {
+      name: "Add a New Product"
+    })
+  ).toBeVisible();
 
+  // Enter valid product name
+  await page.getByPlaceholder("Value").nth(0).fill("Test Soap");
+
+  // Enter valid price
+  await page.getByPlaceholder("Value").nth(1).fill("10.99");
+
+  // Enter invalid negative inventory
+  await page.getByPlaceholder("Value").nth(3).fill("-5");
+
+  // Attempt to add product
   await page.getByRole("button", {
     name: "Add Item"
   }).click();
 
+  // Verify invalid inventory is rejected
   await expect(
-    page.getByText("Please enter a valid number for inventory")
+    page.getByText(
+      "Please enter a whole number of 0 or greater for inventory"
+    )
   ).toBeVisible();
+
 });
 
 test("AB306 - Product image is required", async ({ page }) => {

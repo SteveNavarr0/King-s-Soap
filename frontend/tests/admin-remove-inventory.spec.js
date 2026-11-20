@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe.configure({ mode: "serial" });
 
 // Manually enter the product name you want to test
-const productName = "Playwright Test Soap 1793137769683";
+const productName = "Playwright Test Soap 1795143003147";
 
 // AB309 - Open Update Product popup
 test("AB309 - Admin can open product update popup", async ({ page }) => {
