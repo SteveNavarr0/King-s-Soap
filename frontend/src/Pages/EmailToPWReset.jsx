@@ -39,7 +39,7 @@ function EmailToPWReset() {
     setErrorMsg("");
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "http://localhost:5173/UserChangePassword",
+      redirectTo: "https://shopkingssoap.com/UserChangePassword",
     });
 
     if (error) {
