@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 
 import messageRoutes from "./routes/messageRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
 import checkoutRoutes from "./routes/checkoutRoutes.js";
 import { handleStripeWebhook } from "./controllers/webhookController.js";
 import discountRoutes from "./routes/discountRoutes.js";
@@ -18,9 +17,24 @@ dotenv.config(); // Use port from .env file if available, otherwise use default 
 const app = express(); // Main Express application instance
 const PORT = process.env.PORT || 3000;
 
-app.use(cors()); // For enabling CORS (Frontend can make requests to this backend from a different origin)
+// Allow requests from the local frontend and production website
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://shopkingssoap.com",
+  "https://www.shopkingssoap.com",
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+}));
+
+
 app.use(helmet()); // For security headers
-app.use(morgan("dev")); // For logging HTTP requests to backend console
+
+// Detailed request logging in development only
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev"));
+}
 
 // DT-490: Mount raw Stripe webhook handler BEFORE express.json()
 app.post(
@@ -29,19 +43,42 @@ app.post(
   handleStripeWebhook
 );
 
-app.use(express.json()); // For parsing JSON request bodies
+// Parse JSON request bodies for all other API routes
+app.use(express.json());
 
-app.use("/api/products", productRoutes);//Connects request from the frontend to the backend routes in productRoutes.js
-app.use("/api/users", userRoutes);//Connects request from the frontend to the backend routes in productRoutes.js
-app.use("/api/products", productRoutes); // Connects request from the frontend to the backend routes in productRoutes.js
-app.use("/api/checkout", checkoutRoutes); // Checkout endpoints: validation, sessions, orders
-app.use("/api/discounts", discountRoutes); //Require a signed in user for discount requests
+app.use("/api/products", productRoutes);
+app.use("/api/checkout", checkoutRoutes);
+app.use("/api/discounts", discountRoutes);
 app.use("/api/messages", messageRoutes);
 
+
+// Global error handler - prevent internal errors from reaching customers
+app.use((err, req, res, next) => {
+  console.error(
+    "Unhandled API error:",
+    err?.code || err?.type || "Unknown error"
+  );
+
+  const status =
+    Number.isInteger(err.status) &&
+    err.status >= 400 &&
+    err.status < 600
+      ? err.status
+      : 500;
+
+  return res.status(status).json({
+    success: false,
+    message:
+      status >= 500
+        ? "An unexpected server error occurred. Please try again."
+        : "The request could not be processed.",
+  });
+});
+
 if (process.env.NODE_ENV !== "test") {
-    app.listen(PORT, () => {
-        console.log("Server is running on port " + PORT);
-    });
+  app.listen(PORT, () => {
+    console.log("Server is running on port " + PORT);
+  });
 }
 
 export default app;

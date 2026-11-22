@@ -533,25 +533,34 @@ test.describe("King's Soap - Shop Page Functionality", () => {
 
   });
 
-  // SP023: Verify search requests only active products
-  test("SP023: Search requests only active products", async ({ page }) => {
+  // SP023: Verify search requests only available products
+test("SP023: Search requests only available products", async ({ page }) => {
+  const availableSearchRequest = page.waitForRequest((request) => {
+    const requestUrl = new URL(request.url());
 
-    const activeSearchRequest = page.waitForRequest((request) => {
-      const requestUrl = decodeURIComponent(request.url());
+    const availabilityFilter =
+      requestUrl.searchParams.get("Availability");
 
-      return (
-        requestUrl.includes("/rest/v1/products") &&
-        requestUrl.includes("or=(") &&
-        requestUrl.includes("is_active=eq.true")
-      );
-    });
+    const searchFilter =
+      requestUrl.searchParams.get("or");
 
-    await page.getByPlaceholder("Search").fill("lavender");
-
-    await activeSearchRequest;
-
+    return (
+      requestUrl.pathname.endsWith("/rest/v1/products") &&
+      availabilityFilter === "eq.true" &&
+      searchFilter !== null
+    );
   });
 
+  await page
+    .getByPlaceholder("Search")
+    .fill("lavender");
+
+  const matchedRequest = await availableSearchRequest;
+
+  expect(matchedRequest.url()).toContain(
+    "Availability=eq.true"
+  );
+});
   // SP024: Verify clicking a search result opens its product page
   test("SP024: Clicking a search result opens its product page", async ({ page }) => {
 

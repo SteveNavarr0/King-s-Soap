@@ -40,7 +40,7 @@ export const sendBrevoEmail = async ({ to, subject, htmlContent, textContent }) 
     return { success: true, messageId: result.messageId };
   } catch (err) {
     console.error("Failed to connect to Brevo API:", err.message || err);
-    return { success: false, error: err.message };
+    return { success: false, error:  "Email service temporarily unavailable.", };
   }
 };
 
@@ -53,11 +53,25 @@ export const sendOrderConfirmationEmail = async ({
   orderId,
   totalAmount,
   isPickup = false,
+  cancellationToken,
 }) => {
   if (!customerEmail) return;
 
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-  const cancellationUrl = `${clientUrl}/request-cancellation?orderId=${encodeURIComponent(orderId)}`;
+  // Require a cancellation token before generating the email
+  if (!cancellationToken) {
+    throw new Error("Cancellation token is required.");
+  }
+
+const clientUrl = process.env.CLIENT_URL?.replace(/\/+$/, "");
+
+if (!clientUrl) {
+  throw new Error("CLIENT_URL is not configured.");
+}
+  // Include the order ID and secure cancellation token in the link
+  const cancellationUrl =
+    `${clientUrl}/request-cancellation` +
+    `?orderId=${encodeURIComponent(orderId)}` +
+    `&token=${encodeURIComponent(cancellationToken)}`;
 
   const subject = `King's Soap: Order Confirmation (#${orderId.slice(0, 8)})`;
   const textContent = `Hello ${customerName},

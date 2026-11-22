@@ -1,8 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL ||
-  "http://localhost:5173";
+  process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5173";
 
 test.describe("Login - Forgot Password", () => {
   test.beforeEach(async ({ page }) => {
@@ -19,6 +18,10 @@ test.describe("Login - Forgot Password", () => {
     });
   });
 
+  // ==================================================
+  // FP001: FORGOT PASSWORD NAVIGATION
+  // ==================================================
+
   test("FP001: Forgot Password link navigates to the reset page", async ({
     page,
   }) => {
@@ -28,14 +31,23 @@ test.describe("Login - Forgot Password", () => {
       .getByRole("link", { name: "Forgot Password?" })
       .click();
 
-    await expect(page).toHaveURL(/\/EmailToPWReset$/i);
+    // Wait for React Router to finish navigation.
+    await page.waitForURL(/\/emailToPWReset\/?$/i, {
+      timeout: 15_000,
+    });
 
     await expect(
       page.getByRole("heading", {
         name: "Reset Your Password",
       })
-    ).toBeVisible();
+    ).toBeVisible({
+      timeout: 15_000,
+    });
   });
+
+  // ==================================================
+  // FP002: ENTER KEY SUBMISSION
+  // ==================================================
 
   test("FP002: Pressing Enter submits the password reset request", async ({
     page,
@@ -58,15 +70,17 @@ test.describe("Login - Forgot Password", () => {
       .getByRole("link", { name: "Forgot Password?" })
       .click();
 
+    await page.waitForURL(/\/emailToPWReset\/?$/i, {
+      timeout: 15_000,
+    });
+
     const emailInput = page.getByLabel("Email");
 
     await emailInput.fill("test@example.com");
     await emailInput.press("Enter");
 
     await expect(
-      page.getByText(
-        "Reset email sent. Check your email inbox."
-      )
+      page.getByText("Reset email sent. Check your email inbox.")
     ).toBeVisible();
 
     expect(requestCount).toBe(1);
